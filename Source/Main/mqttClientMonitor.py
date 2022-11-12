@@ -14,15 +14,15 @@ import  yaml, json
 from    paho.mqtt import client as mqtt_client
 import  uuid
 
-import Topic_Threads as Topic
-try:
-    import Topic_Threads as Topic
-    THREADS=True
-except:
-    import time
-    print('NOT USING THREADS')
-    time.sleep(5)
-    THREADS=False # per lanciare questo singolo file
+import Topic_noThreads as Topic
+THREADS=False
+THREADS=True
+# try:
+# except:
+#     import time
+#     print('NOT USING THREADS')
+#     time.sleep(5)
+#     THREADS=False # per lanciare questo singolo file
 
 ##########################################################################
 # https://coloredlogs.readthedocs.io/en/latest/readme.html#installation
@@ -155,6 +155,7 @@ def checkPayload(payload):
     except (Exception) as e:
         pass # payload is a str
 
+
     return payload
 
 ####################################################################
@@ -206,7 +207,7 @@ def run(my_logger, topic_list: list=['+/#'], clear_retained: bool=False):
     logger=my_logger
 
     if THREADS:
-        Topic.set(my_logger=logger)
+        Topic.setup(my_logger=logger)
 
     if not '+/#' in topic_list:
         topic_list.append('tasmota/discovery/#')

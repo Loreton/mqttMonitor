@@ -1,7 +1,7 @@
 #!/usr/bin/python
 #
 # updated by ...: Loreto Notarantonio
-# Date .........: 11-11-2022 14.29.12
+# Date .........: 12-11-2022 12.43.27
 #
 
 import sys; sys.dont_write_bytecode = True
@@ -61,7 +61,6 @@ def telegramSend(group_name: str, message: dict, logger):
 
     logger.warning('url:  %s',   url)
     if bot_name and token and chat_id:
-        logger.info('url: %s',   url)
         response = requests.get(url).json()
         logger.info('   response: %s',   response)
 

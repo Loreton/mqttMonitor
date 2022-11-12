@@ -9,13 +9,14 @@
 
 import  sys; sys.dont_write_bytecode = True
 import  os
-from LnDict import LoretoDict
-from TelegramMessage import telegramSend
-
-
 import threading
 from queue import Queue
 import time
+import json
+
+
+from LnDict import LoretoDict
+from TelegramMessage import telegramSend
 
 import Tasmota_Formatter as tasmotaFmt
 
@@ -136,7 +137,7 @@ def setup(my_logger):
 #          "hn": "Crepuscolare-1093",
 #          "mac": "DC4F22BE4445"
 #####################################################################
-def topic_tasmota_discovery(topic, mac_table, payload):
+def tasmota_discovery_modify_topic(topic, mac_table, payload):
     _tasmota, _discovery, _mac,  _sensors, *rest=topic.split('/')
 
     topic=None
@@ -168,29 +169,33 @@ def topic_tasmota_discovery(topic, mac_table, payload):
 ######################################################
 # process topic name and paylod data to findout query,
 # topic='LnCmnd/telegram/query'
-# payload={"topic_name": "Tasmota_002", "query": "status"} # importante DQ
+# payload={"topic_name": "Tasmota_002", "display": "status"} # importante DQ
 ######################################################
-def from_telegram_command(topic: str, payload: dict, device: dict):
-    _,  topic_name, _query=topic.split('/')
+def telegram_notify(topic: str, payload: (dict, str), device: dict):
+    _,  topic_name, action=topic.split('/')
 
-    if isinstance(payload, dict):
-        query=payload['query']
-    else:
-        query=payload.strip()
+    # if isinstance(payload, dict):
+    #     action=payload['display']
+    # else:
+    #     action=payload.strip()
 
-    qdata=LoretoDict()
-    if query=='status':
-        qdata.update(tasmotaFmt.deviceInfo(device))
-        qdata['Wifi']=tasmotaFmt.wifi(device)
-        qdata['relays']=tasmotaFmt.relayStatus(device)
-    elif query=='power':
-        qdata.update(tasmotaFmt.deviceInfo(device))
-        qdata['relays']=tasmotaFmt.relayStatus(device)
+    _dict_data=LoretoDict()
+
+    if action=='status':
+        _dict_data.update(tasmotaFmt.deviceInfo(device))
+        _dict_data['Wifi']=tasmotaFmt.wifi(device)
+        _dict_data['relays']=tasmotaFmt.relayStatus(device)
+
+    elif action=='power_update': # payload dovrebbe contenere qualcosa tipo: {"POWER1":"OFF"}
+        # _dict_data.update(tasmotaFmt.deviceInfo(device))
+        _dict_data['relays']=tasmotaFmt.relayStatus(device, new_value=payload)
+
     else:
         return
 
 
-    tg_msg=LoretoDict({topic_name: qdata })
+    tg_msg=LoretoDict({topic_name: _dict_data })
+    logger.warning('sending telegram message: %s', tg_msg)
     telegramSend(group_name=topic_name, message=tg_msg.to_yaml(sort_keys=False), logger=logger)
 
 
@@ -204,86 +209,41 @@ def from_telegram_command(topic: str, payload: dict, device: dict):
 
 
 
+#----------------------------------------------
+def refreshData(topic_name: str, mqttClient_CB):
+    result=mqttClient_CB.publish(f'cmnd/{topic_name}/backlog', 'power', qos=0, retain=False)
+    result=mqttClient_CB.publish(f'cmnd/{topic_name}/backlog', 'status 0', qos=0, retain=False)
+    result=mqttClient_CB.publish(f'cmnd/{topic_name}/backlog', 'timers', qos=0, retain=False)
+    result=mqttClient_CB.publish(f'cmnd/{topic_name}/backlog', 'pulsetime', qos=0, retain=False)
+    result=mqttClient_CB.publish(f'cmnd/{topic_name}/backlog', 'topic', qos=0, retain=False)
+    result=mqttClient_CB.publish(f'cmnd/{topic_name}/backlog', 'teleperiod 30', qos=0, retain=False)
+#----------------------------------------------
 
 
-######################################################
-# process payload data,
-# insert it to device dictionary
-# an save all to json file
-######################################################
-def payload_worker(topic, payload, device, fUPDATE_file: bool=False):
-    logger.notify("%s - start payload worker", topic)
-    prefix, topic_name, suffix, *rest=topic.split('/')
-    loretoPtr=device['Loreto']
 
+### create entry for device name
+def createDeviceEntry(topic_name):
+    filename=os.path.expandvars(f"$ln_RUNTIME_DIR/mqtt_monitor/{topic_name}.json")
 
-    if not suffix in device:
-        device[suffix]=payload
+    if os.path.exists(filename):
+        with open(filename, 'r') as fin:
+            device=json.load(fin)
     else:
-        device[suffix].update(payload)
+        device=LoretoDict()
+        device.setkp(keypath="Loreto.file_out", value=filename)
 
-    if prefix == 'tele' and suffix=='STATE':
-        pass
-    elif prefix == 'tele' and suffix=='HASS_STATE':
-        pass
-    elif prefix == 'stat' and suffix.startswith('STATUS'):
-        pass
-    elif prefix == 'stat' and suffix=='RESULT':
-        if payload.key_startswith('POWER'):
-            time.sleep(5)
-            topic=f'LnCmnd/{topic_name}/query'
-            import pdb; pdb.set_trace(); pass # by Loreto
-            from_telegram_command(topic=topic, payload='power', device=device)
-
-    elif prefix == 'shellies' and suffix=='ext_temperatures':
-        pass
-    elif prefix == 'tasmota' and suffix=='sensors':
-        pass
-
-    # topic: stat/VescoviNew/RESULT payload: {'POWER1': 'ON'}
-    elif prefix == 'stat' and suffix=='RESULT':
-        pass
-
-    # elif prefix == 'LnCmnd' and suffix=='query':
-    #     fUPDATE_file=False
-    #     time.sleep(5)
-    #     from_telegram_command(topic=topic, payload=payload, device=device)
-
-    else:
-        fUPDATE_file=False
-        logger.warning("topic: %s not managed", topic)
-        logger.notify(payload)
-
-    if fUPDATE_file:
-        device.toJsonFile(file_out=loretoPtr["file_out"], replace=True)
-
-    logger.notify("%s - end payload worker", topic)
-    return 0
-
-
+    return device
 
 
 
 #########################################################
 # In tasmota abbiamo:
-#  Device name: Configuration->Other
-#          nome del device che compare sulla home
-#  Friendly name: Configuration->Other
-#          nome del/dei realys contenuti nel dispositivo
-#  Topic name: Configuration->MQTT
-#          nome del topic con cui si presenta nel Broker MQTT
+#  Device name: Configuration->Other           nome del device che compare sulla home
+#  Friendly name: Configuration->Other          nome del/dei realys contenuti nel dispositivo
+#  Topic name: Configuration->MQTT              nome del topic con cui si presenta nel Broker MQTT
 #  Per comodità cerco di utilizzare il topic_name==Device_name
 #########################################################
 def process(topic, payload, mqttClient_CB):
-    #----------------------------------------------
-    def refreshData(topic_name: str, mqttClient_CB):
-        result=mqttClient_CB.publish(f'cmnd/{topic_name}/backlog', 'power', qos=0, retain=False)
-        result=mqttClient_CB.publish(f'cmnd/{topic_name}/backlog', 'status 0', qos=0, retain=False)
-        result=mqttClient_CB.publish(f'cmnd/{topic_name}/backlog', 'timers', qos=0, retain=False)
-        result=mqttClient_CB.publish(f'cmnd/{topic_name}/backlog', 'pulsetime', qos=0, retain=False)
-        result=mqttClient_CB.publish(f'cmnd/{topic_name}/backlog', 'topic', qos=0, retain=False)
-        result=mqttClient_CB.publish(f'cmnd/{topic_name}/backlog', 'teleperiod 30', qos=0, retain=False)
-    #----------------------------------------------
     if isinstance(payload, dict):
         payload=LoretoDict(payload)
 
@@ -291,19 +251,59 @@ def process(topic, payload, mqttClient_CB):
         cambiare il topic attraverso il MAC
     """
     if topic.startswith("tasmota/discovery"):
-        topic=topic_tasmota_discovery(topic, macTable, payload)
+        topic=tasmota_discovery_modify_topic(topic, macTable, payload)
+
 
     prefix, topic_name, suffix, *rest=topic.split('/')
 
-    if topic_name in devices:
-        device=devices[topic_name]
+    ### create device dictionary entry if not exists
+    if not topic_name in devices:
+        device=createDeviceEntry(topic_name)
+        devices[topic_name]=device
+        refreshData(topic_name, mqttClient_CB)
 
-        if prefix == 'LnCmnd' and suffix=='query':
-            refreshData(topic_name, mqttClient_CB)
-            time.sleep(5)
-            from_telegram_command(topic=topic, payload=payload, device=device)
-            return
+    device=LoretoDict(devices[topic_name])
 
+    ### add/update payload to device
+    if suffix in device and isinstance(payload, dict):
+        device[suffix].update(payload)
+    else:
+        device[suffix]=payload
+
+
+
+    ### Proces topic
+    fTHREADS=False
+    fUPDATE_file=False
+
+    if prefix == 'stat':
+        if suffix.startswith('STATUS'):
+            fUPDATE_file=True
+
+        elif suffix=='RESULT':
+            if payload.key_startswith('POWER'):
+                topic=f'LnCmnd/{topic_name}/power_update' # something has been changed
+                telegram_notify(topic=topic, payload=payload, device=device)
+            else:
+                fUPDATE_file=True
+
+    elif prefix == 'LnCmnd' and suffix=='display':
+        fUPDATE_file=False
+        telegram_notify(topic=topic, payload=payload, device=device)
+
+    elif prefix == 'tele' and suffix=='STATE':
+        fUPDATE_file=True
+
+    elif prefix == 'tele' and suffix=='HASS_STATE':
+        fUPDATE_file=True
+
+    elif prefix == 'shellies' and suffix=='ext_temperatures':
+        fUPDATE_file=True
+
+    elif prefix == 'tasmota' and suffix=='sensors':
+        fUPDATE_file=True
+
+    elif fTHREADS:
         ### prepare for thread
         functionPtr=payload_worker
         funcArgs={'topic': topic, 'payload': payload, 'device': device, 'fUPDATE_file': True}
@@ -323,11 +323,9 @@ def process(topic, payload, mqttClient_CB):
         logger.notify('-'*10)
 
     else:
-        ### create entry for device name
-        devices[topic_name]=LoretoDict()
-        devices[topic_name]['Loreto']=LoretoDict()
+        logger.warning("topic: %s not managed", topic)
+        logger.notify(payload)
 
-        devices[topic_name]['Loreto']['file_out']=os.path.expandvars(f"$ln_RUNTIME_DIR/mqtt_monitor/{topic_name}.json")
-        if prefix in ['tele', 'stat', 'cmnd', 'LnCmnd']:
-            refreshData(topic_name, mqttClient_CB)
-
+    if fUPDATE_file:
+        fileout=device['Loreto.file_out']
+        device.toJsonFile(file_out=fileout, replace=True)

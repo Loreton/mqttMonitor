@@ -47,6 +47,39 @@ def deviceInfo(device: dict):
 
 ####################################################################
 ### preparazione stato dei relè
+# new_value potrebbe contenere:  {"POWER1":"OFF"}
+# e quindi va in override su quanto letto da device
+####################################################################
+def relayStatus(device: dict, new_value: dict={}) -> dict:
+
+    relays=[x for x in device.getkp('sensors.fn') if (x != '' and x != None)]
+    _dict=LoretoDict()
+
+    key='scramble@#,.$%$'
+    if new_value and isinstance(new_value, dict):
+        key=next(k for k in new_value.keys() if 'POWER' in k)
+
+    for inx, name in enumerate(relays):
+        if inx==0:
+            power_status=device.getkp(keypaths=['RESULT.POWER', 'RESULT.POWER1', 'STATE.POWER', 'STATE.POWER1'], default='???')
+            if key in ['POWER', 'POWER1']:
+                power_status=new_value[key]
+        else:
+            power_status=device.getkp(keypaths=[f'RESULT.POWER{inx+1}', f'STATE.POWER{inx+1}'], default='???')
+            if key in [f'POWER{inx+1}']:
+                power_status=new_value[key]
+
+        _dict.set_keypath(f"{name}.Power", value=power_status, create=True)
+
+        ### Pulsetime
+        pt_value, pt_remaining=getPulseTime(device, inx)
+        _dict.set_keypath(f"{name}.Pulsetime", value=pt_value, create=True)
+        _dict.set_keypath(f"{name}.Remaining", value=pt_remaining, create=True)
+
+    return _dict
+
+
+####################################################################
 #
 # {"PulseTime":{"Set":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"Remaining":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]}}
 #
@@ -60,28 +93,6 @@ def deviceInfo(device: dict):
 #           After this amount of time, the power will be turned OFF.
 #
 ####################################################################
-def relayStatus(device: dict) -> dict:
-
-    relays=[x for x in device.getkp('sensors.fn') if (x != '' and x != None)]
-    _dict=LoretoDict()
-
-
-    for inx, name in enumerate(relays):
-        if inx==0:
-            power_status=device.getkp(keypaths=[f'STATE.POWER', f'STATE.POWER1'], default='???')
-        else:
-            power_status=device.getkp(keypaths=[f'STATE.POWER{inx+1}'], default='???')
-
-        _dict.set_keypath(f"{name}.Power", value=power_status, create=True)
-
-        ### Pulsetime
-        pt_value, pt_remaining=getPulseTime(device, inx)
-        _dict.set_keypath(f"{name}.Pulsetime", value=pt_value, create=True)
-        _dict.set_keypath(f"{name}.Remaining", value=pt_remaining, create=True)
-
-    return _dict
-
-
 def getPulseTime(device, inx):
 
     def secondsToPulseTime(seconds: float) -> int:
@@ -107,10 +118,10 @@ def getPulseTime(device, inx):
         return millisecs_to_HMS_ms(milliseconds=milliseconds, strip_leading=True)
 
 
-    SET=device.getkp('RESULT.PulseTime.Set')
-    REMAINING=device.getkp('RESULT.PulseTime.Remaining')
-    pulsetime_value=pulseTimeToSeconds(SET[inx])
-    pulsetime_remaining=pulseTimeToSeconds(REMAINING[inx])
+    SET=device['RESULT.PulseTime.Set']
+    REMAINING=device['RESULT.PulseTime.Remaining']
+    pulsetime_value=pulseTimeToSeconds(SET[inx]) if SET else None
+    pulsetime_remaining=pulseTimeToSeconds(REMAINING[inx]) if REMAINING else None
 
     return pulsetime_value, pulsetime_remaining
 
