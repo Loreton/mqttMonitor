@@ -161,6 +161,14 @@ def tasmota_discovery_modify_topic(topic, mac_table, payload):
 
 
 
+def getRelayNames(device: dict) -> list:
+    ### capture relay friendlyNames
+    fn=device.getkp('sensors.fn')
+    if fn:
+        friendlyNames=[x for x in fn if (x != '' and x != None)]
+        return friendlyNames
+    else:
+        return []
 
 
 
@@ -180,24 +188,49 @@ def tasmota_discovery_modify_topic(topic, mac_table, payload):
 def telegram_notify(topic: str, payload: (dict, str), device: dict):
     _,  topic_name, suffix=topic.split('/')
 
-    _dict_data=LoretoDict()
+    _dict=LoretoDict()
 
-    if suffix=='summary':
-        _dict_data.update(tasmotaFmt.deviceInfo(device))
-        _dict_data['Wifi']=tasmotaFmt.wifi(device)
-        _dict_data['relays']=tasmotaFmt.relayStatus(device)
+    if 'STATE' in device and 'sensors' in device:
+        relayNames=getRelayNames(device)
 
-    elif suffix=='timers':
-        _dict_data['Timers']=tasmotaFmt.timers(device=device, payload=payload)
 
-    elif suffix=='power':     # payload dovrebbe contenere qualcosa tipo: {"POWER1":"OFF"}
-        _dict_data['relays']=tasmotaFmt.relayStatus(device, new_value=payload)
+        if suffix=='summary':
+            _dict.update(tasmotaFmt.deviceInfo(device))
+            _dict['Wifi']=tasmotaFmt.wifi(device)
+            _dict['relays']=tasmotaFmt.relayStatus(device)
+
+        elif suffix=='summary2':
+            _dict.update(tasmotaFmt.deviceInfo(device))
+            _dict['Wifi']=tasmotaFmt.wifi(device)
+
+            for index, name in enumerate(relayNames):
+                pt_value, pt_remaining=tasmotaFmt.getPulseTime(device, index)
+                relay_status=tasmotaFmt.retrieveRelayStatus2(device, index+1)
+                timers_status=tasmotaFmt.timers2(device, index+1)
+
+                _dict.setkp(f"RL_{name}.Pulsetime", value=pt_value, create=True)
+                _dict.setkp(f"RL_{name}.Remaining", value=pt_remaining, create=True)
+                _dict.setkp(f"RL_{name}.Status", value=relay_status, create=True)
+                _dict.setkp(f"RL_{name}.Timers", value=timers_status, create=True)
+
+
+
+
+
+        elif suffix=='timers':
+            _dict['Timers']=tasmotaFmt.timers(device=device, payload=payload)
+
+        elif suffix=='power':     # payload dovrebbe contenere qualcosa tipo: {"POWER1":"OFF"}
+            _dict['relays']=tasmotaFmt.relayStatus(device, new_value=payload)
+
+        else:
+            return
 
     else:
-        return
+        _dict['relays']="undiscovered"
 
 
-    tg_msg=LoretoDict({topic_name: _dict_data })
+    tg_msg=LoretoDict({topic_name: _dict })
     logger.warning('sending telegram message: %s', tg_msg)
     telegramSend(group_name=topic_name, message=tg_msg.to_yaml(sort_keys=False), logger=logger)
 
@@ -320,8 +353,8 @@ def process(topic, payload, mqttClient_CB):
             telegram_notify(topic=topic, payload=payload, device=device)
             fUPDATE_device=True
 
-        elif _topic in ['stat.RESULT', 'tele.STATE', 'tele.LWT', 'tele.HASS_STATE', 'shellies.ext_temperatures', 'tasmota.sensors']:
-            fUPDATE_device=True
+    elif _topic in ['tele.STATE', 'tele.LWT', 'tele.HASS_STATE', 'shellies.ext_temperatures', 'tasmota.sensors']:
+        fUPDATE_device=True
 
     else:
         logger.warning("topic: %s not managed", topic)
