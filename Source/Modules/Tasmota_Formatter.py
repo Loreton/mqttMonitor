@@ -9,6 +9,7 @@ import  sys; sys.dont_write_bytecode = True
 import  os
 from LnDict import LoretoDict
 from LnTime import millisecs_to_HMS_ms
+from datetime import timedelta, datetime
 
 
 
@@ -45,6 +46,7 @@ def deviceInfo(device: dict):
 
 
 
+
 ####################################################################
 ### preparazione stato dei relè
 # new_value potrebbe contenere:  {"POWER1":"OFF"}
@@ -52,27 +54,57 @@ def deviceInfo(device: dict):
 ####################################################################
 def relayStatus(device: dict, new_value: dict={}) -> dict:
 
-    relays=[x for x in device.getkp('sensors.fn') if (x != '' and x != None)]
+    # -------------------------------------------------
+    # def getPowerStatus(relayNr: int, device: dict) -> str:
+    def retrieveRelayStatus(relayNr):
+
+        # verifica dello status più aggiornato
+        stateTime=datetime.strptime(device['STATE.Time'], '%Y-%m-%dT%H:%M:%S')
+        stsTime=datetime.strptime(device['STATUS11.StatusSTS.Time'], '%Y-%m-%dT%H:%M:%S')
+
+        if stsTime.timestamp() > stateTime.timestamp():
+            kp='STATUS11.StatusSTS.POWER'
+        else:
+            kp='STATE.POWER'
+
+        status=device[kp]
+        if not status:
+            status=device[f'{kp}{relayNr}']
+
+        return status
+    # -------------------------------------------------
+
+
+    if not 'STATE' in device and not 'sensors' in device:
+        return "undiscovered"
+
+    ### capture relay friendlyNames
+    fn=device.getkp('sensors.fn')
+    friendlyNames=[x for x in fn if (x != '' and x != None)]
+    device['Loreto']['nRelays']=len(friendlyNames)
     _dict=LoretoDict()
 
-    key='scramble@#,.$%$'
+    '''prendiamo in considerazione  new_value
+        se viene passato come argomento'''
+    key=None
     if new_value and isinstance(new_value, dict):
-        key=next(k for k in new_value.keys() if 'POWER' in k)
+        key=next(k for k in new_value.keys() if 'POWER' in k) # get first POWERx key
 
-    for inx, name in enumerate(relays):
-        if inx==0:
-            power_status=device.getkp(keypaths=['RESULT.POWER', 'RESULT.POWER1', 'STATE.POWER', 'STATE.POWER1'], default='???')
-            if key in ['POWER', 'POWER1']:
-                power_status=new_value[key]
-        else:
-            power_status=device.getkp(keypaths=[f'RESULT.POWER{inx+1}', f'STATE.POWER{inx+1}'], default='???')
-            if key in [f'POWER{inx+1}']:
-                power_status=new_value[key]
+
+    ### inseriamo comunque tutti i relays
+    for index, name in enumerate(friendlyNames):
+        power_status=retrieveRelayStatus(relayNr=index+1)
+        if key:
+            if index==0 and key in ['POWER', 'POWER1']:
+                power_status=new_value[key] ### lo specifio lo cambiamo se necessario
+            elif key in ['POWER{index+1}']:
+                power_status=new_value[key] ### lo specifio lo cambiamo se necessario
 
         _dict.set_keypath(f"{name}.Power", value=power_status, create=True)
 
+
         ### Pulsetime
-        pt_value, pt_remaining=getPulseTime(device, inx)
+        pt_value, pt_remaining=getPulseTime(device, index)
         _dict.set_keypath(f"{name}.Pulsetime", value=pt_value, create=True)
         _dict.set_keypath(f"{name}.Remaining", value=pt_remaining, create=True)
 
@@ -94,15 +126,6 @@ def relayStatus(device: dict, new_value: dict={}) -> dict:
 #
 ####################################################################
 def getPulseTime(device, inx):
-
-    def secondsToPulseTime(seconds: float) -> int:
-        seconds=float(seconds)
-        if seconds<=11.1:
-            pulsetime_value=seconds*10
-        else:
-            pulsetime_value=int(seconds)+100
-
-        return int(pulsetime_value)
 
     def pulseTimeToSeconds(value: int) -> int:
         """Errori strani:
@@ -127,3 +150,116 @@ def getPulseTime(device, inx):
 
 
 
+def setPulseTime(device, inx):
+    """da sviluppare"""
+
+    def secondsToPulseTime(seconds: float) -> int:
+        seconds=float(seconds)
+        if seconds<=11.1:
+            pulsetime_value=seconds*10
+        else:
+            pulsetime_value=int(seconds)+100
+
+        return int(pulsetime_value)
+
+
+    SET=device['RESULT.PulseTime.Set']
+    REMAINING=device['RESULT.PulseTime.Remaining']
+    pulsetime_value=pulseTimeToSeconds(SET[inx]) if SET else None
+    pulsetime_remaining=pulseTimeToSeconds(REMAINING[inx]) if REMAINING else None
+
+    return pulsetime_value, pulsetime_remaining
+
+
+
+
+
+####################################################################
+# "RESULT": {
+#         "Timers": "ON",
+#         "Timer1": {
+#             "Enable": 1,
+#             "Mode": 0,
+#             "Time": "01:00",
+#             "Window": 0,
+#             "Days": "1111111",
+#             "Repeat": 1,
+#             "Output": 1,
+#             "Action": 0
+#         },
+#
+# voglamo tradurlo in:
+#    Timers:
+#       T1: 17:21 on LMMGVSD sS
+#       T2: 22:30 off LMMGVSD
+####################################################################
+def timers(device: dict, payload: dict) -> dict:
+
+    # -----------------------------------
+    def _convertWeekDays(val):
+        _it_days='DLMMGVS' # tasmota days start from Sunday
+        _en_days='SMTWTFS' # tasmota days start from Sunday
+        _data=''
+        for i in range(0, 7):
+            _data+=_en_days[i] if val[i]=='1' else '_ '
+        return _data[1:] + _data[0] # lets start from Monday
+
+
+
+    # -----------------------------------
+    def sum_offset(t0_time, offset):
+        offset_HH, offset_MM=offset.split(':')
+        offset_minutes=abs(int(offset_HH))*60+int(offset_MM)
+        if offset_minutes==0:
+            return t0_time
+
+        t0_HH, t0_MM=t0_time.split(':')
+        t0=timedelta(hours=int(t0_HH), minutes=int(t0_MM))
+        ofs=timedelta(hours=int(offset_HH), minutes=int(offset_MM))
+
+        if offset[0]=='-':
+            new_time=t0-ofs
+        else:
+            new_time=t0+ofs
+
+        return time.strftime("%H:%M", time.gmtime(new_time.total_seconds()))
+
+    # -----------------------------------
+
+
+    myTimers={}
+    _action=['off', 'on', 'toggle', 'rule/blink']
+    _mode=['clock time', 'sunrise', 'sunset']
+
+    import pdb; pdb.set_trace(); pass # by Loreto
+    myTimers['Enabled']=payload['Timers']
+    if myTimers['Enabled']=='ON':
+
+        for i in range(1, 17):
+            timerx=payload[f'Timer{i}']
+            if timerx['Enable']==0:
+                continue
+
+            MODE=_mode[int(timerx['Mode'])]
+            ACTION=_action[int(timerx['Action'])]
+            REPEAT='YES' if timerx['Repeat']=='1' else 'NO'
+            offset=timerx["Time"]
+            DAYS=_convertWeekDays(timerx['Days'])
+            RELAY=timerx['Output']
+
+            if MODE == 'sunset':
+                onTime=' sS'
+                offset=timerx["Time"]
+                _time=sum_offset(t0_time=sunset_time,offset=offset)
+
+            elif MODE == 'sunrise':
+                onTime=' sR'
+                _time=sum_offset(t0_time=sunrise_time,offset=offset)
+
+            else:
+                onTime=''
+                _time=timerx["Time"]
+
+            myTimers[f'T{i}']=f'{_time} {RELAY}.{ACTION} {DAYS}{onTime}'
+
+    return myTimers
