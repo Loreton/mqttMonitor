@@ -10,19 +10,27 @@ import  os
 from LnDict import LoretoDict
 from LnTime import millisecs_to_HMS_ms
 from datetime import timedelta, datetime
+import time
+from LnSuntimes import sunTime_casetta
+
+
+
+def setup(my_logger):
+    global logger
+    logger=my_logger
 
 
 
 ####################################################################
 ### preparazione stato WiFi
 ####################################################################
-def wifi(device: dict):
-    wifi=device.getkp(keypaths=['STATE.Wifi', 'STATUS11.StatusSTS.Wifi'], default={})
+def wifi(data: dict):
+    wifi=data.getkp(keypaths=['STATE.Wifi', 'STATUS11.StatusSTS.Wifi'], default={})
     if wifi:
         wifi.pop('AP', None)
         wifi.pop('Mode', None)
         wifi.pop('LinkCount', None)
-        wifi.pop('DownTime', None)
+        wifi.pop('Downtime', None)
 
     return wifi
 
@@ -30,14 +38,14 @@ def wifi(device: dict):
 ####################################################################
 ### info varie
 ####################################################################
-def deviceInfo(device: dict):
+def deviceInfo(data: dict):
     infodata=LoretoDict()
-    infodata['device_name']      = device.getkp('sensors.dn')
-    infodata['ip_address']       = device.getkp('sensors.ip')
-    infodata['firmware_version'] = device.getkp('sensors.sw')
-    infodata['modello']          = device.getkp('sensors.md')
-    infodata['host_name']        = device.getkp('sensors.hn')
-    infodata['online offline']   = device.get('LWT')
+    infodata['device_name']      = data.getkp('sensors.dn')
+    infodata['ip_address']       = data.getkp('sensors.ip')
+    infodata['firmware']         = data.getkp('sensors.sw')
+    infodata['modello']          = data.getkp('sensors.md')
+    infodata['host_name']        = data.getkp('sensors.hn')
+    infodata['status']           = data.get('LWT')
 
     return infodata
 
@@ -52,11 +60,11 @@ def deviceInfo(device: dict):
 # new_value potrebbe contenere:  {"POWER1":"OFF"}
 # e quindi va in override su quanto letto da device
 ####################################################################
-def relayStatus(device: dict, new_value: dict={}) -> dict:
+def relayStatus___(device: dict, new_value: dict={}) -> dict:
 
     # -------------------------------------------------
     # def getPowerStatus(relayNr: int, device: dict) -> str:
-    def retrieveRelayStatus(relayNr):
+    def retrieveRelayStatus__(relayNr):
 
         # verifica dello status più aggiornato
         stateTime=datetime.strptime(device['STATE.Time'], '%Y-%m-%dT%H:%M:%S')
@@ -114,23 +122,54 @@ def relayStatus(device: dict, new_value: dict={}) -> dict:
     return _dict
 
 
-# -------------------------------------------------
-def retrieveRelayStatus2(device, relayNr):
+############################################################################
+# new_data --> {"POWER1":"OFF"}
+############################################################################
+def retrieveRelayStatus(data: dict, relayNr: int, new_data: dict={}) -> str:
+    # if 'RESULT' in data:
+    #     data=LoretoDict(data['RESULT'])
 
+    power_status='N/A'
+    logger.notify(data)
     # verifica dello status più aggiornato
-    stateTime=datetime.strptime(device['STATE.Time'], '%Y-%m-%dT%H:%M:%S')
-    stsTime=datetime.strptime(device['STATUS11.StatusSTS.Time'], '%Y-%m-%dT%H:%M:%S')
+    if 'STATE' in data:
+        stateTime=datetime.strptime(data['STATE.Time'], '%Y-%m-%dT%H:%M:%S')
+        kp='STATE.POWER'
+
+        power_status=data[f'{kp}{relayNr}']
+        if not power_status and relayNr==1:
+            power_status=data[kp] # potrebbe essere POWER e non POWER1
+
+    '''prendiamo in considerazione  new_data se viene passato come argomento'''
+    if new_data and isinstance(new_data, dict):
+        key=next(k for k in new_data.keys() if 'POWER' in k) # get first POWERx key
+
+        if key:
+            if relayNr==1 and key in ['POWER', 'POWER1']:
+                power_status=new_data[key] ### lo specifio lo cambiamo se necessario
+            elif key in [f'POWER{relayNr}']:
+                power_status=new_data[key] ### lo specifio lo cambiamo se necessario
+
+            # _dict.set_keypath(f"{name}.Power", value=power_status, create=True)
+
+
+    '''
+    stateTime=datetime.strptime(data['STATE.Time'], default=0), '%Y-%m-%dT%H:%M:%S')
+    stsTime=datetime.strptime(data['STATUS11.StatusSTS.Time'], '%Y-%m-%dT%H:%M:%S')
 
     if stsTime.timestamp() > stateTime.timestamp():
         kp='STATUS11.StatusSTS.POWER'
     else:
         kp='STATE.POWER'
 
-    status=device[kp]
-    if not status:
-        status=device[f'{kp}{relayNr}']
+    power_status=data[f'{kp}{relayNr}']
+    if not power_status and relayNr==1:
+        power_status=data[kp] # potrebbe essere POWER e non POWER1
+    '''
 
-    return status
+
+
+    return power_status
 
 
 
@@ -150,7 +189,9 @@ def retrieveRelayStatus2(device, relayNr):
 #           After this amount of time, the power will be turned OFF.
 #
 ####################################################################
-def getPulseTime(device, inx):
+def getPulseTime(data: dict, relanNr: int):
+    # if 'RESULT' in data:
+        # data=data['RESULT']
 
     def pulseTimeToSeconds(value: int) -> int:
         """Errori strani:
@@ -165,17 +206,16 @@ def getPulseTime(device, inx):
             milliseconds=(value-100)*1000
         return millisecs_to_HMS_ms(milliseconds=milliseconds, strip_leading=True)
 
-
-    SET=device['RESULT.PulseTime.Set']
-    REMAINING=device['RESULT.PulseTime.Remaining']
-    pulsetime_value=pulseTimeToSeconds(SET[inx]) if SET else None
-    pulsetime_remaining=pulseTimeToSeconds(REMAINING[inx]) if REMAINING else None
+    SET=data['PulseTime.Set']
+    REMAINING=data['PulseTime.Remaining']
+    pulsetime_value=pulseTimeToSeconds(SET[relanNr]) if SET else None
+    pulsetime_remaining=pulseTimeToSeconds(REMAINING[relanNr]) if REMAINING else None
 
     return pulsetime_value, pulsetime_remaining
 
 
 
-def setPulseTime(device, inx):
+def setPulseTime(data, relanNr):
     """da sviluppare"""
 
     def secondsToPulseTime(seconds: float) -> int:
@@ -188,10 +228,10 @@ def setPulseTime(device, inx):
         return int(pulsetime_value)
 
 
-    SET=device['RESULT.PulseTime.Set']
-    REMAINING=device['RESULT.PulseTime.Remaining']
-    pulsetime_value=pulseTimeToSeconds(SET[inx]) if SET else None
-    pulsetime_remaining=pulseTimeToSeconds(REMAINING[inx]) if REMAINING else None
+    SET=data['RESULT.PulseTime.Set']
+    REMAINING=data['RESULT.PulseTime.Remaining']
+    pulsetime_value=pulseTimeToSeconds(SET[relanNr]) if SET else None
+    pulsetime_remaining=pulseTimeToSeconds(REMAINING[relanNr]) if REMAINING else None
 
     return pulsetime_value, pulsetime_remaining
 
@@ -199,6 +239,8 @@ def setPulseTime(device, inx):
 
 
 
+
+
 ####################################################################
 # "RESULT": {
 #         "Timers": "ON",
@@ -218,7 +260,9 @@ def setPulseTime(device, inx):
 #       T1: 17:21 on LMMGVSD sS
 #       T2: 22:30 off LMMGVSD
 ####################################################################
-def timers(device: dict, payload: dict) -> dict:
+def timers(data: dict, outputRelay: int=0) -> dict:
+    # if 'RESULT' in data:
+        # data=data['RESULT']
 
     # -----------------------------------
     def _convertWeekDays(val):
@@ -250,116 +294,27 @@ def timers(device: dict, payload: dict) -> dict:
         return time.strftime("%H:%M", time.gmtime(new_time.total_seconds()))
 
     # -----------------------------------
-
-
-    myTimers={}
-    _action=['off', 'on', 'toggle', 'rule/blink']
-    _mode=['clock time', 'sunrise', 'sunset']
-
-    myTimers['Enabled']=payload['Timers']
-    if myTimers['Enabled']=='ON':
-
-        for i in range(1, 17):
-            timerx=payload[f'Timer{i}']
-            if timerx['Enable']==0:
-                continue
-
-            MODE=_mode[int(timerx['Mode'])]
-            ACTION=_action[int(timerx['Action'])]
-            REPEAT='YES' if timerx['Repeat']=='1' else 'NO'
-            offset=timerx["Time"]
-            DAYS=_convertWeekDays(timerx['Days'])
-            RELAY=timerx['Output']
-
-            if MODE == 'sunset':
-                onTime=' sS'
-                offset=timerx["Time"]
-                _time=sum_offset(t0_time=sunset_time,offset=offset)
-
-            elif MODE == 'sunrise':
-                onTime=' sR'
-                _time=sum_offset(t0_time=sunrise_time,offset=offset)
-
-            else:
-                onTime=''
-                _time=timerx["Time"]
-
-            myTimers[f'T{i}']=f'{_time} {RELAY}.{ACTION} {DAYS}{onTime}'
-
-    return myTimers
-
-
-
-
-
-####################################################################
-# "RESULT": {
-#         "Timers": "ON",
-#         "Timer1": {
-#             "Enable": 1,
-#             "Mode": 0,
-#             "Time": "01:00",
-#             "Window": 0,
-#             "Days": "1111111",
-#             "Repeat": 1,
-#             "Output": 1,
-#             "Action": 0
-#         },
-#
-# voglamo tradurlo in:
-#    Timers:
-#       T1: 17:21 on LMMGVSD sS
-#       T2: 22:30 off LMMGVSD
-####################################################################
-def timers2(device: dict, output: int) -> dict:
-
-    # -----------------------------------
-    def _convertWeekDays(val):
-        _it_days='DLMMGVS' # tasmota days start from Sunday
-        _en_days='SMTWTFS' # tasmota days start from Sunday
-        _data=''
-        for i in range(0, 7):
-            _data+=_en_days[i] if val[i]=='1' else '_ '
-        return _data[1:] + _data[0] # lets start from Monday
-
-
-
-    # -----------------------------------
-    def sum_offset(t0_time, offset):
-        offset_HH, offset_MM=offset.split(':')
-        offset_minutes=abs(int(offset_HH))*60+int(offset_MM)
-        if offset_minutes==0:
-            return t0_time
-
-        t0_HH, t0_MM=t0_time.split(':')
-        t0=timedelta(hours=int(t0_HH), minutes=int(t0_MM))
-        ofs=timedelta(hours=int(offset_HH), minutes=int(offset_MM))
-
-        if offset[0]=='-':
-            new_time=t0-ofs
-        else:
-            new_time=t0+ofs
-
-        return time.strftime("%H:%M", time.gmtime(new_time.total_seconds()))
-
-    # -----------------------------------
-
+    if outputRelay<1:
+        outputRelay=list(range(1,16+1)) # possono essere massimo 16 timers
+    else:
+        outputRelay=[min(int(outputRelay), 16)] # per evitare > 16
 
     myTimers={}
     _action=['off', 'on', 'toggle', 'rule/blink']
     _mode=['clock time', 'sunrise', 'sunset']
 
-    basePtr='timers'
-    myTimers['Enabled']=device['timers.Timers']
+    basePtr='timers.' if 'timers' in data else ''
+    myTimers['Enabled']=data[f'{basePtr}Timers']
+
 
     if myTimers['Enabled']=='ON':
 
         for i in range(1, 17):
-            timerx=device[f'timers.Timer{i}']
+            timerx=data[f'{basePtr}Timer{i}']
             if timerx['Enable']==0:
                 continue
 
-            if timerx['Output']!=output:
+            if int(timerx['Output']) not in outputRelay:
                 continue
 
             MODE=_mode[int(timerx['Mode'])]

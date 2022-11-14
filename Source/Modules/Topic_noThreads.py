@@ -18,7 +18,7 @@ import json
 from LnDict import LoretoDict
 from TelegramMessage import telegramSend
 
-import Tasmota_Formatter as tasmotaFmt
+import Tasmota_Formatter as tasmotaFormatter
 
 
 # es http://stackoverflow.com/questions/10525185/python-threading-how-do-i-lock-a-thread
@@ -88,6 +88,8 @@ def setup(my_logger):
     devices=LoretoDict()
     macTable=LoretoDict()
     myThreads = []
+
+    tasmotaFormatter.setup(my_logger=logger)
 
     # -------------------------------------------------------
     # - Facciamo partire i threads
@@ -177,7 +179,7 @@ def getRelayNames(device: dict) -> list:
 ######################################################
 # process topic name and paylod data to findout query,
 #
-# topic='LnCmnd/telegram/status' (comando esterno)
+# topic='LnCmnd/telegram/query' (comando esterno)
 #      payload="summary"
 #      payload="timers"
 #
@@ -186,6 +188,7 @@ def getRelayNames(device: dict) -> list:
 #
 ######################################################
 def telegram_notify(topic: str, payload: (dict, str), device: dict):
+    logger.notify('processing topic %s for telegram message', topic)
     _,  topic_name, suffix=topic.split('/')
 
     _dict=LoretoDict()
@@ -193,35 +196,35 @@ def telegram_notify(topic: str, payload: (dict, str), device: dict):
     if 'STATE' in device and 'sensors' in device:
         relayNames=getRelayNames(device)
 
-
         if suffix=='summary':
-            _dict.update(tasmotaFmt.deviceInfo(device))
-            _dict['Wifi']=tasmotaFmt.wifi(device)
-            _dict['relays']=tasmotaFmt.relayStatus(device)
-
-        elif suffix=='summary2':
-            _dict.update(tasmotaFmt.deviceInfo(device))
-            _dict['Wifi']=tasmotaFmt.wifi(device)
+            _dict.update(tasmotaFormatter.deviceInfo(data=device))
+            _dict['Wifi']=tasmotaFormatter.wifi(data=device)
 
             for index, name in enumerate(relayNames):
-                pt_value, pt_remaining=tasmotaFmt.getPulseTime(device, index)
-                relay_status=tasmotaFmt.retrieveRelayStatus2(device, index+1)
-                timers_status=tasmotaFmt.timers2(device, index+1)
+                pt_value, pt_remaining=tasmotaFormatter.getPulseTime(data=device, relayNr=index)
+                relay_status=tasmotaFormatter.retrieveRelayStatus(data=device, relayNr=index+1)
+                timers_status=tasmotaFormatter.timers(data=device, outputRelay=index+1)
 
                 _dict.setkp(f"RL_{name}.Pulsetime", value=pt_value, create=True)
                 _dict.setkp(f"RL_{name}.Remaining", value=pt_remaining, create=True)
                 _dict.setkp(f"RL_{name}.Status", value=relay_status, create=True)
                 _dict.setkp(f"RL_{name}.Timers", value=timers_status, create=True)
 
+        elif suffix=='timers_in_payload':
+            _dict['Timers']=tasmotaFormatter.timers(data=payload, outputRelay=0)
 
 
+        elif suffix=='power_in_payload':     # payload dovrebbe contenere qualcosa tipo: {"POWER1":"OFF"}
+            # import pdb; pdb.set_trace(); pass # by Loreto
+            for index, name in enumerate(relayNames):
+                relay_status=tasmotaFormatter.retrieveRelayStatus(data=device, new_data=payload, relayNr=index+1)
+                _dict.setkp(f"RL_{name}.Status", value=relay_status, create=True)
 
-
-        elif suffix=='timers':
-            _dict['Timers']=tasmotaFmt.timers(device=device, payload=payload)
-
-        elif suffix=='power':     # payload dovrebbe contenere qualcosa tipo: {"POWER1":"OFF"}
-            _dict['relays']=tasmotaFmt.relayStatus(device, new_value=payload)
+        elif suffix=='pulsetime_in_payload':     # payload dovrebbe contenere qualcosa tipo: {"POWER1":"OFF"}
+            for index, name in enumerate(relayNames):
+                pt_value, pt_remaining=tasmotaFormatter.getPulseTime(data=payload, relanNr=index)
+                _dict.setkp(f"RL_{name}.Pulsetime", value=pt_value, create=True)
+                _dict.setkp(f"RL_{name}.Remaining", value=pt_remaining, create=True)
 
         else:
             return
@@ -266,18 +269,20 @@ def createDeviceEntry(topic_name):
             device=json.load(fin)
     else:
         device=LoretoDict()
-        # device=OrderedDict()
         device.setkp(keypath="Loreto.file_out", value=filename, create=True)
-        #device["Loreto"]["file_out"], value=filename
 
     return device
 
 
+################################################
 ### add/update payload to device
+### crea una entry con il suffix
+################################################
 def updateDevice(topic: str, payload: dict, writeFile=True):
     prefix, topic_name, suffix, *rest=topic.split('/')
     device=devices[topic_name]
-    if suffix in device and isinstance(device[suffix], dict):
+
+    if suffix in device and isinstance(payload, dict):
         device[suffix].update(payload)
     else:
         device[suffix]=payload
@@ -290,13 +295,13 @@ def updateDevice(topic: str, payload: dict, writeFile=True):
 
 #########################################################
 # In tasmota abbiamo:
-#  Device name: Configuration->Other           nome del device che compare sulla home
-#  Friendly name: Configuration->Other          nome del/dei realys contenuti nel dispositivo
-#  Topic name: Configuration->MQTT              nome del topic con cui si presenta nel Broker MQTT
+#  Device name:     Configuration->Other  nome del device che compare sulla home
+#  Friendly name:   Configuration->Other  nome del/dei realys contenuti nel dispositivo
+#  Topic name:      Configuration->MQTT   nome del topic con cui si presenta nel Broker MQTT
 #  Per comodità cerco di utilizzare il topic_name==Device_name
 #########################################################
 def process(topic, payload, mqttClient_CB):
-    logger.notify('processing topic: %s', topic)
+    logger.info('processing topic: %s', topic)
 
     """ topic='tasmota/discovery/DC4F22D3B32F/sensors'
         cambiare il topic attraverso il MAC
@@ -305,7 +310,9 @@ def process(topic, payload, mqttClient_CB):
         topic=tasmota_discovery_modify_topic(topic, macTable, payload)
 
     prefix, topic_name, suffix, *rest=topic.split('/')
-
+    if topic_name in ['tasmotas']:
+        import pdb; pdb.set_trace(); pass # by Loreto
+        return
 
     ### create device dictionary entry if not exists
     if not topic_name in devices:
@@ -318,8 +325,6 @@ def process(topic, payload, mqttClient_CB):
     if isinstance(payload, dict):
         payload=LoretoDict(payload)
 
-
-
     _topic=f'{prefix}.{suffix}'
 
     ### Proces topic
@@ -328,38 +333,42 @@ def process(topic, payload, mqttClient_CB):
     if prefix == 'cmnd':
         logger.warning('ignoring command: %s', topic)
 
-    elif prefix == 'LnCmnd':
+    elif prefix=='LnCmnd':
         telegram_notify(topic=topic, payload=payload, device=device)
 
     elif prefix == 'stat' and suffix.startswith('STATUS'):
         fUPDATE_device=True
 
-    elif _topic.startswith('stat.POWER'):
+    elif _topic=='stat.POWER':
         pass
-        ''' skip perchè prendiamo il topic 'stat/xxxx/RESULT {"POWER": "OFF"}'
-                payload={suffix: payload}
-                topic=f'LnCmnd/{topic_name}/power_update' # something has been changed
-                telegram_notify(topic=topic, payload=payload, device=device)
-                fUPDATE_device=True
+        ''' skip perchè prendiamo il topic con dict payload 'stat/xxxx/RESULT {"POWER": "OFF"}'
         '''
 
-    elif _topic=='stat.RESULT':
+    elif prefix=='stat' and suffix=='RESULT':
+        # per evitare di modifiacre il topic per updateDevice()
+        lncmnd_topic=None
+
         if payload.key_startswith('POWER'):
-            topic=f'dummy/{topic_name}/power'
-            telegram_notify(topic=topic, payload=payload, device=device)
-            fUPDATE_device=True
+            lncmnd_topic=f'LnCmnd/{topic_name}/power_in_payload'
+
         elif 'Timers' in payload:
-            topic=f'dummy/{topic_name}/timers'
-            telegram_notify(topic=topic, payload=payload, device=device)
+            lncmnd_topic=f'LnCmnd/{topic_name}/timers_in_payload'
+
+        elif 'PulseTime' in payload:
+            lncmnd_topic=f'LnCmnd/{topic_name}/pulsetime_in_payload'
+
+        ### process data
+        if lncmnd_topic:
+            telegram_notify(topic=lncmnd_topic, payload=payload, device=device)
             fUPDATE_device=True
+
 
     elif _topic in ['tele.STATE', 'tele.LWT', 'tele.HASS_STATE', 'shellies.ext_temperatures', 'tasmota.sensors']:
         fUPDATE_device=True
 
     else:
         logger.warning("topic: %s not managed", topic)
-        logger.notify(payload)
-        fUPDATE_device=False
+        logger.warning(payload)
 
 
 

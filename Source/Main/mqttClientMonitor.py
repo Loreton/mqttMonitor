@@ -164,24 +164,25 @@ def checkPayload(payload):
 def on_message(client, userdata, message):
     payload=checkPayload(message.payload)
 
-    if payload:
-        logger.info("Received:")
 
-        if message.retain==1:
-            logger.warning("   topic: %s - retained: %s", message.topic, message.retain)
-            logger.warning("   payload: %s", payload)
-            if message.topic=='tele/xxxxxVecoviNew/LWT': # forzatura per uno specifico....
-                clear_retained_topic(client, message)
-        else:
-            logger.info("   topic: %s", message.topic)
-            logger.info("   payload: %s", payload)
+    # if payload: NON ricordo perché l'ho inserito
+    logger.info("Received:")
 
-
-        if CLEAR_RETAINED and message.retain:
+    if message.retain==1:
+        logger.warning("   topic: %s - retained: %s", message.topic, message.retain)
+        logger.warning("   payload: %s", payload)
+        if message.topic=='tele/xxxxxVecoviNew/LWT': # forzatura per uno specifico....
             clear_retained_topic(client, message)
+    else:
+        logger.info("   topic: %s", message.topic)
+        logger.info("   payload: %s", payload)
 
-        if THREADS:
-            Topic.process(topic=message.topic, payload=payload, mqttClient_CB=client)
+
+    if CLEAR_RETAINED and message.retain:
+        clear_retained_topic(client, message)
+
+    if THREADS:
+        Topic.process(topic=message.topic, payload=payload, mqttClient_CB=client)
 
 
 
@@ -211,6 +212,7 @@ def run(my_logger, topic_list: list=['+/#'], clear_retained: bool=False):
 
     if not '+/#' in topic_list:
         topic_list.append('tasmota/discovery/#')
+        # topic_list.append('+/#')
     subscribe(client, topic_list)
 
     client.loop_forever()
