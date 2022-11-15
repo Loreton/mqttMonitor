@@ -6,5 +6,7 @@
 # "${LNLIB_DIR}/System/subprocessPopen.py"   =
 # "${LNLIB_DIR}/System/subprocessRun.py"     =
 "${LNLIB_DIR}/Dictionary/LoretoDict_202211.py"      LnDict.py
+
 ${LNLIB_DIR}/Time/Time_LN.py                       LnTime.py
+${LNLIB_DIR}/Time/Timer_LN.py                       LnTimer.py
 ${LNLIB_DIR}/Time/suntimes_LN.py                       LnSuntimes.py

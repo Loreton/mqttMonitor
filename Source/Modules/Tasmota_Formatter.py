@@ -84,7 +84,7 @@ def relayStatus___(device: dict, new_value: dict={}) -> dict:
 
 
     if not 'STATE' in device and not 'sensors' in device:
-        return "undiscovered"
+        return "N/A"
 
     ### capture relay friendlyNames
     fn=device.getkp('sensors.fn')
@@ -130,7 +130,7 @@ def retrieveRelayStatus(data: dict, relayNr: int, new_data: dict={}) -> str:
     #     data=LoretoDict(data['RESULT'])
 
     power_status='N/A'
-    logger.notify(data)
+    # logger.notify(data)
     # verifica dello status più aggiornato
     if 'STATE' in data:
         stateTime=datetime.strptime(data['STATE.Time'], '%Y-%m-%dT%H:%M:%S')
@@ -299,15 +299,19 @@ def timers(data: dict, outputRelay: int=0) -> dict:
     else:
         outputRelay=[min(int(outputRelay), 16)] # per evitare > 16
 
-    myTimers={}
     _action=['off', 'on', 'toggle', 'rule/blink']
     _mode=['clock time', 'sunrise', 'sunset']
+    sunrise_time, sunset_time=sunTime_casetta(str_format='%H:%M')
 
+
+
+    myTimers={}
     basePtr='timers.' if 'timers' in data else ''
-    myTimers['Enabled']=data[f'{basePtr}Timers']
+    areEnabled=(data[f'{basePtr}Timers']=="ON")
 
-
-    if myTimers['Enabled']=='ON':
+    if areEnabled:
+        # if myTimers['Enabled']=='ON':
+        # myTimers['Enabled']=data[f'{basePtr}Timers']
 
         for i in range(1, 17):
             timerx=data[f'{basePtr}Timer{i}']
@@ -338,5 +342,7 @@ def timers(data: dict, outputRelay: int=0) -> dict:
                 _time=timerx["Time"]
 
             myTimers[f'T{i}']=f'{_time} {RELAY}.{ACTION} {DAYS}{onTime}'
+    else:
+        myTimers='Disabled'
 
     return myTimers

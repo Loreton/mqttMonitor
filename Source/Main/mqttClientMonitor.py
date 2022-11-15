@@ -8,21 +8,17 @@
 
 
 import  sys; sys.dont_write_bytecode = True
-import  os
+import  os, signal
 
 import  yaml, json
 from    paho.mqtt import client as mqtt_client
 import  uuid
+import  time
+import  subprocess, shlex
 
 import Topic_noThreads as Topic
-THREADS=False
-THREADS=True
-# try:
-# except:
-#     import time
-#     print('NOT USING THREADS')
-#     time.sleep(5)
-#     THREADS=False # per lanciare questo singolo file
+from TelegramMessage import telegramSend
+from LnTimer import TimerLN as LnTimer
 
 ##########################################################################
 # https://coloredlogs.readthedocs.io/en/latest/readme.html#installation
@@ -146,7 +142,7 @@ def checkPayload(payload):
     try:
         payload=payload.decode("utf-8")
     except (Exception) as e:
-        logger.error('payload error: %s', message.payload)
+        logger.error('payload error: %s', payload)
         logger.error('    exception: %s', e)
         return None
 
@@ -164,6 +160,11 @@ def checkPayload(payload):
 def on_message(client, userdata, message):
     payload=checkPayload(message.payload)
 
+    if message.topic=='LnCmnd/mqtt_monitor_application/query':
+        logger.notify('%s keepalive message has been received', message.topic)
+        publish_timer.restart() # if message has been received means application is alive.
+        return
+
 
     # if payload: NON ricordo perché l'ho inserito
     logger.info("Received:")
@@ -175,14 +176,13 @@ def on_message(client, userdata, message):
             clear_retained_topic(client, message)
     else:
         logger.info("   topic: %s", message.topic)
-        logger.info("   payload: %s", payload)
+        logger.debug("   payload: %s", payload)
 
 
     if CLEAR_RETAINED and message.retain:
         clear_retained_topic(client, message)
 
-    if THREADS:
-        Topic.process(topic=message.topic, payload=payload, mqttClient_CB=client)
+    Topic.process(topic=message.topic, payload=payload, mqttClient_CB=client)
 
 
 
@@ -198,24 +198,102 @@ def subscribe(client: mqtt_client, topics: list):
 
 
 
+
+
 ####################################################################
 #
 ####################################################################
 def run(my_logger, topic_list: list=['+/#'], clear_retained: bool=False):
-    global CLEAR_RETAINED, logger
+    global CLEAR_RETAINED, logger,  myself_timer, publish_timer, client
     client = connect_mqtt()
     CLEAR_RETAINED=clear_retained
     logger=my_logger
 
-    if THREADS:
-        Topic.setup(my_logger=logger)
+    publish_timer=LnTimer(name='ping publish', default_time=100, start=False, logger=logger)
+    publish_timer.start()
+
+    # myself_timer=LnTimer(name='ping mySelf', default_time=6, start=False, logger=logger)
+    # myself_timer.start()
+
+
+    Topic.setup(my_logger=logger)
+    topic_list.append('LnCmnd/#')
 
     if not '+/#' in topic_list:
         topic_list.append('tasmota/discovery/#')
         # topic_list.append('+/#')
     subscribe(client, topic_list)
 
-    client.loop_forever()
+    '''
+    fFOREVER=False
+    if fFOREVER:
+        client.loop_forever()
+    '''
+
+
+    """ ho notato che dopo un pò il client va in hang e non cattura più
+        i messaggi. Il codice che segue serve a monitorare lo status
+        dell'applicazione e farla ripartire se necessario.
+    """
+    client.loop_start()
+    telegramSend(group_name='Ln_MqttMonitor', message="application has been started!", logger=logger)
+    time.sleep(4) # Wait for connection setup to complete
+
+
+    print('Started...')
+
+    while True:
+        """ publish_timer if exausted means that the application is responding """
+        if publish_timer.is_exausted(logger=logger.debug):
+            logger.error('publish_timer - exausted')
+            logger.error('restarting application')
+            telegramSend(group_name='Ln_MqttMonitor', message="publish_timer - exausted - application is restarting!", logger=logger)
+            os.kill(int(os.getpid()), signal.SIGINT)
+
+
+        time.sleep(60)
+        logger.info('send publih check message')
+        result=client.publish(topic='LnCmnd/mqtt_monitor_application/query', payload='publish timer', qos=0, retain=False)
+
+
+
+
+
+#######################################################
+# Intercetta il Ctrl-C
+#######################################################
+def signal_handler_Mqtt(signalLevel, frame):
+    logger.warning("signalLevel: %s", signalLevel)
+
+    # client.Stop(termination_code=0, msg="signal_handler_Mqtt function") # stop mqtt and return
+    client.loop_stop()
+    pid=os.getpid()
+
+    # if systemd:
+    #     logger.warning("MQTT server - Terminating on SIGTERM signalLevel [%s] under systemd control ", signalLevel)
+    #     # threading.Thread(target=shutdown).start()
+    #     sys.exit(1)
+
+    if int(signalLevel)==2:
+        print('\n'*5)
+        logger.warning("MQTT server - Restarting on SIGINT [ctrl-c] signalLevel [%s]", signalLevel)
+        command=f'ps -p {pid} -o args'
+        splitted_cmd=shlex.split(command)
+        output=subprocess.check_output(splitted_cmd, universal_newlines=True)
+        cmd_line=output.split('\n')[1]
+        splitted_cmd=shlex.split(cmd_line)
+        logger.warning('restarting: %s', splitted_cmd)
+        print('\n'*5)
+        # time.sleep(2)
+        # input('Press enter to continue...')
+        os.execv(sys.executable, splitted_cmd)
+    else:
+        logger.warning("MQTT server - Terminating on SIGTERM signalLevel [%s]", signalLevel)
+        sys.exit(1)
+
+
+import signal
+signal.signal(signal.SIGINT, signal_handler_Mqtt)
 
 
 

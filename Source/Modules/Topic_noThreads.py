@@ -21,95 +21,19 @@ from TelegramMessage import telegramSend
 import Tasmota_Formatter as tasmotaFormatter
 
 
-# es http://stackoverflow.com/questions/10525185/python-threading-how-do-i-lock-a-thread
-
-# splitted INIT con lo start
-class myThread(threading.Thread):
-    def __init__(self, lock, argsFunc=(), name=None, daemon=True, inputQueue=None, outputQueue=None, start=False):
-        threading.Thread.__init__(self, args=argsFunc)
-        self.name    = name
-        self.daemon  = daemon   # True... die when main die
-        self.inputQ  = inputQueue
-        self.outputQ = outputQueue
-        self.lock    = lock
-        if start:
-            self.start_my_thread()
-
-    def start_my_thread(self, lock=None, name=None, daemon=True, inputQueue=None, outputQueue=None ):
-        if name        : self.name    = name
-        if daemon      : self.daemon  = daemon    # True... die when main die
-        if inputQueue  : self.inputQ  = inputQueue
-        if outputQueue : self.outputQ = outputQueue
-        if lock        : self.lock    = lock
-        self.start()
-
-
-    # ------------------------------------------------------------------
-    # - funzione che scoda il messaggio e lo manda in esecuzione
-    # - chiude quando il main chiude
-    # -  Es.:
-    # -      functionName = {'funcPTR': ptrFunctions[index]}
-    # -      ... oppure
-    # -      functionName = {'funcName': ptrFunctions[index]}
-    # -
-    # -      parameters   = {'parm01': 'pippo', 'parm02': 'pluto'}
-    # -      myQueue.put([functionName, **parameters])
-    # -------------------------------------------------------------------
-    def run(self):
-        while True:  # while main thread is alive and all daemons died
-            functionPtr, funcArgs=self.inputQ.get()
-            logger.trace('')
-            logger.trace('---------- ThreaderExecutor --------------')
-            logger.trace("function name: %s", functionPtr.__name__)
-            logger.trace("function args: %s", funcArgs)
-
-            try:
-                result = functionPtr(**funcArgs)
-            except:
-                result = -1
-
-            if self.outputQ:
-                self.outputQ.put([functionPtr.__name__, result])
-            '''
-                You don't have to call task_done() unless you use Queue.join() function.
-                Queue.join() blocks until all items in the queue have been gotten and processed.
-            self.inputQ.task_done()
-            '''
-
-
-
-
-
 
 
 def setup(my_logger):
-    global logger, devices, myThreads, inputQ, resultQ, macTable
+    global logger, devices, macTable, startTime
     logger=my_logger
     devices=LoretoDict()
     macTable=LoretoDict()
-    myThreads = []
-
+    startTime=time.time()
     tasmotaFormatter.setup(my_logger=logger)
 
-    # -------------------------------------------------------
-    # - Facciamo partire i threads
-    # -------------------------------------------------------
-    max_threads=5
-    inputQ = Queue()
-    resultQ = Queue()
-    resultQ = None
-    print_lock = threading.Lock()
-    autostart=True
 
-    ### initialize Threads
-    for index in range(1, max_threads+1):
-        t = myThread(lock=print_lock, name=f'mqtt_monitor{index:02}', inputQueue=inputQ, outputQueue=resultQ, start=autostart)
-        myThreads.append(t)
 
-    # start manually
-    if not autostart:
-        for t in myThreads:
-            t.start_my_threads()
+
 
 
 
@@ -188,7 +112,7 @@ def getRelayNames(device: dict) -> list:
 #
 ######################################################
 def telegram_notify(topic: str, payload: (dict, str), device: dict):
-    logger.notify('processing topic %s for telegram message', topic)
+    logger.info('processing topic %s for telegram message', topic)
     _,  topic_name, suffix=topic.split('/')
 
     _dict=LoretoDict()
@@ -230,12 +154,17 @@ def telegram_notify(topic: str, payload: (dict, str), device: dict):
             return
 
     else:
-        _dict['relays']="undiscovered"
+        logger.warning('%s - non discovered too', topic_name)
+        # _dict['relays']="N/A"
+
+    fSLEEP=(time.time()-startTime)>10 # ignore first messages during progrram startup
+
+    if _dict and fSLEEP:
+        tg_msg=LoretoDict({topic_name: _dict })
+        logger.warning('sending telegram message: %s', tg_msg)
+        telegramSend(group_name=topic_name, message=tg_msg.to_yaml(sort_keys=False), logger=logger)
 
 
-    tg_msg=LoretoDict({topic_name: _dict })
-    logger.warning('sending telegram message: %s', tg_msg)
-    telegramSend(group_name=topic_name, message=tg_msg.to_yaml(sort_keys=False), logger=logger)
 
 
 
@@ -310,8 +239,14 @@ def process(topic, payload, mqttClient_CB):
         topic=tasmota_discovery_modify_topic(topic, macTable, payload)
 
     prefix, topic_name, suffix, *rest=topic.split('/')
+    if prefix == 'cmnd':
+        logger.warning('skipping topic: %s', topic)
+        return
+        ### messo qui piuttosto che prima per permettere la creare
+
     if topic_name in ['tasmotas']:
-        import pdb; pdb.set_trace(); pass # by Loreto
+        logger.warning('skipping topic: %s', topic)
+        """comando per tutti, catturiamo solo i risultati"""
         return
 
     ### create device dictionary entry if not exists
@@ -330,10 +265,8 @@ def process(topic, payload, mqttClient_CB):
     ### Proces topic
     fUPDATE_device=False
 
-    if prefix == 'cmnd':
-        logger.warning('ignoring command: %s', topic)
 
-    elif prefix=='LnCmnd':
+    if prefix=='LnCmnd':
         telegram_notify(topic=topic, payload=payload, device=device)
 
     elif prefix == 'stat' and suffix.startswith('STATUS'):
@@ -344,7 +277,7 @@ def process(topic, payload, mqttClient_CB):
         ''' skip perchè prendiamo il topic con dict payload 'stat/xxxx/RESULT {"POWER": "OFF"}'
         '''
 
-    elif prefix=='stat' and suffix=='RESULT':
+    elif prefix=='stat' and suffix=='RESULT' and payload:
         # per evitare di modifiacre il topic per updateDevice()
         lncmnd_topic=None
 
