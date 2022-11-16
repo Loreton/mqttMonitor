@@ -162,7 +162,7 @@ def on_message(client, userdata, message):
 
     if message.topic=='LnCmnd/mqtt_monitor_application/query':
         logger.notify('%s keepalive message has been received', message.topic)
-        publish_timer.restart() # if message has been received means application is alive.
+        publish_timer.restart(100) # if message has been received means application is alive.
         return
 
 
@@ -182,7 +182,8 @@ def on_message(client, userdata, message):
     if CLEAR_RETAINED and message.retain:
         clear_retained_topic(client, message)
 
-    Topic.process(topic=message.topic, payload=payload, mqttClient_CB=client)
+    if not just_monitor:
+        Topic.process(topic=message.topic, payload=payload, mqttClient_CB=client)
 
 
 
@@ -203,14 +204,23 @@ def subscribe(client: mqtt_client, topics: list):
 ####################################################################
 #
 ####################################################################
-def run(my_logger, topic_list: list=['+/#'], clear_retained: bool=False):
-    global CLEAR_RETAINED, logger,  myself_timer, publish_timer, client
-    client = connect_mqtt()
-    CLEAR_RETAINED=clear_retained
-    logger=my_logger
+# def run(my_logger, topic_list: list=['+/#'], clear_retained: bool=False):
+    # logger=my_logger
+def run(gVars: dict):
+    global CLEAR_RETAINED, logger,  myself_timer, publish_timer, client, systemd, just_monitor
+    logger         = gVars["logger"]
+    systemd        = gVars["systemd"]
+    topic_list     = gVars["topic_list"]
+    CLEAR_RETAINED = gVars["clear_retained"]
+    just_monitor   = gVars["monitor"]
 
-    publish_timer=LnTimer(name='ping publish', default_time=100, start=False, logger=logger)
-    publish_timer.start()
+
+
+
+    client = connect_mqtt()
+
+    publish_timer=LnTimer(name='ping publish', default_time=100, start=True, logger=logger)
+    publish_timer.start(100)
 
     # myself_timer=LnTimer(name='ping mySelf', default_time=6, start=False, logger=logger)
     # myself_timer.start()
@@ -224,17 +234,11 @@ def run(my_logger, topic_list: list=['+/#'], clear_retained: bool=False):
         # topic_list.append('+/#')
     subscribe(client, topic_list)
 
-    '''
-    fFOREVER=False
-    if fFOREVER:
+
+    if just_monitor:
         client.loop_forever()
-    '''
 
 
-    """ ho notato che dopo un pò il client va in hang e non cattura più
-        i messaggi. Il codice che segue serve a monitorare lo status
-        dell'applicazione e farla ripartire se necessario.
-    """
     client.loop_start()
     telegramSend(group_name='Ln_MqttMonitor', message="application has been started!", logger=logger)
     time.sleep(4) # Wait for connection setup to complete
@@ -243,15 +247,19 @@ def run(my_logger, topic_list: list=['+/#'], clear_retained: bool=False):
     print('Started...')
 
     while True:
-        """ publish_timer if exausted means that the application is responding """
+        """ ho notato che dopo un pò il client va in hang e non cattura più
+            i messaggi. Il codice che segue serve a monitorare lo status
+            dell'applicazione e farla ripartire se necessario.
+            publish_timer if exausted means that the application is NOT responding """
+
         if publish_timer.is_exausted(logger=logger.debug):
             logger.error('publish_timer - exausted')
             logger.error('restarting application')
             telegramSend(group_name='Ln_MqttMonitor', message="publish_timer - exausted - application is restarting!", logger=logger)
-            os.kill(int(os.getpid()), signal.SIGINT)
+            os.kill(int(os.getpid()), signal.SIGTERM)
 
 
-        time.sleep(60)
+        time.sleep(1)
         logger.info('send publih check message')
         result=client.publish(topic='LnCmnd/mqtt_monitor_application/query', payload='publish timer', qos=0, retain=False)
 
@@ -269,12 +277,14 @@ def signal_handler_Mqtt(signalLevel, frame):
     client.loop_stop()
     pid=os.getpid()
 
-    # if systemd:
-    #     logger.warning("MQTT server - Terminating on SIGTERM signalLevel [%s] under systemd control ", signalLevel)
-    #     # threading.Thread(target=shutdown).start()
-    #     sys.exit(1)
+    if systemd:
+        print('sono qui')
+        logger.warning("MQTT server - Terminating on SIGTERM signalLevel [%s] under systemd control ", signalLevel)
+        # threading.Thread(target=shutdown).start()
+        os.kill(int(os.getpid()), signal.SIGTERM)
+        sys.exit(1)
 
-    if int(signalLevel)==2:
+    elif int(signalLevel)==2:
         print('\n'*5)
         logger.warning("MQTT server - Restarting on SIGINT [ctrl-c] signalLevel [%s]", signalLevel)
         command=f'ps -p {pid} -o args'
@@ -285,7 +295,7 @@ def signal_handler_Mqtt(signalLevel, frame):
         logger.warning('restarting: %s', splitted_cmd)
         print('\n'*5)
         # time.sleep(2)
-        # input('Press enter to continue...')
+        input('Press enter to continue...')
         os.execv(sys.executable, splitted_cmd)
     else:
         logger.warning("MQTT server - Terminating on SIGTERM signalLevel [%s]", signalLevel)

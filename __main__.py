@@ -16,7 +16,15 @@ import mqttClientMonitor
 
 if __name__ == '__main__':
     args=ParseInput()
-    logger=setColoredLogger(logger_name='mqtt_monitor', console_logger_level=args.console_logger_level, file_logger_level='debug', logging_file='/tmp/mqttmonitor.log')
+    logger=setColoredLogger(logger_name='mqtt_monitor', console_logger_level=args.console_logger_level, file_logger_level='debug', logging_file='/tmp/mqttmonitor/mqttmonitor.log')
     testLogger(logger)
 
-    mqttClientMonitor.run(topic_list=args.topics, my_logger=logger)
+    gVars={
+        "systemd": args.systemd,
+        "logger": logger,
+        "topic_list": args.topics,
+        "clear_retained": False,
+        "monitor": args.monitor,
+    }
+    # mqttClientMonitor.run(topic_list=args.topics, my_logger=logger, systemd=args.systemd)
+    mqttClientMonitor.run(gVars)

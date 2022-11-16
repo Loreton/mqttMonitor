@@ -5,7 +5,7 @@
 # Date .........: 2021-09-17
 #
 # updated by ...: Loreto Notarantonio
-# Date .........: 10-11-2022 15.44.36
+# Date .........: 16-11-2022 21.23.48
 #
 
 import  sys; sys.dont_write_bytecode = True
@@ -33,20 +33,22 @@ def ParseInput():
                                         \n\n""".replace('  ', '')
                             )
 
-        # _parser.add_argument( "--file-logger-level",   ##  MI DA ERRORE
-        #                         metavar='<file_logger>',
-        #                         type=str.upper,
-        #                         required=False,
-        #                         default=['info'],
-        #                         choices=[logger_levels],
-        #                         nargs="?", # just one entry
-        #                         help=f"""set file logger level:
-        #                                 {logger_levels}
-        #                                 \n\n""".replace('  ', '')
-        #                     )
+
+        _parser.add_argument( "--file-logger-level",   ##  MI DA ERRORE
+                                metavar='<file_logger>',
+                                type=str.lower,
+                                required=False,
+                                default='warning',
+                                choices=logger_levels,
+                                nargs="?", # just one entry
+                                help=f"""set file logger level:
+                                        {logger_levels}
+                                        \n\n""".replace('  ', '')
+                            )
 
         _parser.add_argument('--go', help='specify if command must be executed. (dry-run is default)', action='store_true')
         _parser.add_argument('--display-args', action='store_true', help='''Display arguments\n\n''' )
+        _parser.add_argument('--systemd', action='store_true', help='''It's a systemd process\n\n''' )
 
 
 
@@ -75,8 +77,9 @@ def ParseInput():
         Es: --topics vescovi-Power Vescovi-Control
             default: +/#
     """)
-    parser.add_argument('--clear-retained', action='store_true', help='''clear retained messages (topic + far all)\n\n''')
-    parser.add_argument('--retained', action='store_true', help='''display retaied messages (topic + far all)\n\n''')
+    parser.add_argument('--clear-retained', action='store_true', help='''clear retained messages (topic +/# far all)\n\n''')
+    parser.add_argument('--retained', action='store_true', help='''display retaied messages (topic +/# far all)\n\n''')
+    parser.add_argument('--monitor', action='store_true', help='''just monitoring mqtt broker messages (topic +/# far all)\n\n''')
 
 
 
