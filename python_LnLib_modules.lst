@@ -1,4 +1,4 @@
-"${LNLIB_DIR}/Logger/ColoredLogger_202211b.py"     ColoredLogger.py
+"${LNLIB_DIR}/Logger/ColoredLogger_202211.py"     ColoredLogger.py
 # "${LNLIB_DIR}/Files/readFile.py"          =
 # "${LNLIB_DIR}/Files/writeFile.py"          =
 # "${LNLIB_DIR}/Utils/keyboard_prompt.py"    =
@@ -6,6 +6,7 @@
 # "${LNLIB_DIR}/System/subprocessPopen.py"   =
 # "${LNLIB_DIR}/System/subprocessRun.py"     =
 "${LNLIB_DIR}/Dictionary/LoretoDict_202211.py"      LnDict.py
+"${LNLIB_DIR}/telegram/SendTelegramMessage.py"      =
 
 ${LNLIB_DIR}/Time/Time_LN.py                       LnTime.py
 ${LNLIB_DIR}/Time/Timer_LN.py                       LnTimer.py

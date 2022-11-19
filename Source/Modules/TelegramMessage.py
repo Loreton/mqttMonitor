@@ -1,30 +1,47 @@
 #!/usr/bin/python
 #
 # updated by ...: Loreto Notarantonio
-# Date .........: 15-11-2022 08.50.31
+# Date .........: 18-11-2022 16.37.18
 #
 
-import sys; sys.dont_write_bytecode = True
-import os
+import  sys; sys.dont_write_bytecode = True
+import  os
+# import logging; logger=logging.getLogger(__name__)
+
 import requests
 import yaml, json
 from LnDict import LoretoDict
 
 
 ###############################################
-#
+# keypath is string whith keys separated by dot
+#       key1.key2.....keyn
+# cast is the returned dictionary type (lortodict, OrderedDict, ...)
 ###############################################
-def loadYamlFile(filename):
+def loadYamlFile(filename, cast: dict=dict, keypath: str=None):
     if os.path.exists(filename):
         with open(filename, 'r') as f:
             content=f.read() # single string
     else:
-        self.logger.error('File: %s not found', filename)
+        logger.error('File: %s not found', filename)
         sys.exit(1)
 
-    my_dict=yaml.load(content, Loader=yaml.SafeLoader)
+    my_data=yaml.load(content, Loader=yaml.SafeLoader)
 
-    return my_dict
+    if keypath:
+        ptr=my_data
+        keypath=keypath.split('.')
+        for key in keypath:
+            ptr=ptr[key]
+
+        my_data=ptr
+
+    if 'loretodict' in str(cast).lower():  #  by Loreto:  18-11-2022 12.02.54
+        return cast(my_data)
+    else:
+        return my_data
+
+
 
 ###############################################
 #
@@ -49,9 +66,10 @@ def get_bot_name(d, group_name):
 
 
 
-def telegramSend(group_name: str, message: dict, logger):
-    yaml_file="${ln_ENVARS_DIR}/yaml/telegrambot.yaml"
-    yaml_file=os.path.expandvars(yaml_file)
+def telegramSend(group_name: str, message: dict, my_logger):
+    global logger
+    logger=my_logger
+    yaml_file=os.path.expandvars("${ln_ENVARS_DIR}/yaml/telegramGroups.yaml")
     my_dict=loadYamlFile(yaml_file)
     my_bots=LoretoDict(my_dict['telegrambot'])
 

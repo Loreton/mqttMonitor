@@ -5,22 +5,28 @@
 # Date .........: 2021-09-17
 #
 # updated by ...: Loreto Notarantonio
-# Date .........: 16-11-2022 21.23.48
+# Date .........: 19-11-2022 09.31.30
 #
 
 import  sys; sys.dont_write_bytecode = True
 import  os
 
+import argparse
 
 ##############################################################
 # - Parse Input
 ##############################################################
 def ParseInput():
-    import argparse
     logger_levels=['trace', 'debug', 'notify', 'info', 'function', 'warning', 'error', 'critical']
 
     # -- add common options to all subparsers
     def single_parser_common_options(_parser):
+
+        # _parser.add_argument('--go', help='specify if command must be executed. (dry-run is default)', action='store_true')
+        _parser.add_argument('--display-args', action='store_true', help='''Display arguments\n\n''' )
+        _parser.add_argument('--systemd', action='store_true', help='''It's a systemd process\n\n''' )
+        _parser.add_argument('--pid-file', type=str, required=False, default='/tmp/mqttmonitor/mqttmonitor.pid', help='''pid file\n\n''' )
+
         _parser.add_argument( "--console-logger-level",
                                 metavar='<optional>',
                                 type=str.lower,
@@ -46,9 +52,6 @@ def ParseInput():
                                         \n\n""".replace('  ', '')
                             )
 
-        _parser.add_argument('--go', help='specify if command must be executed. (dry-run is default)', action='store_true')
-        _parser.add_argument('--display-args', action='store_true', help='''Display arguments\n\n''' )
-        _parser.add_argument('--systemd', action='store_true', help='''It's a systemd process\n\n''' )
 
 
 
@@ -68,7 +71,7 @@ def ParseInput():
     parser=argparse.ArgumentParser(description='mqtt monitoring', formatter_class=argparse.RawTextHelpFormatter)
 
     parser.add_argument('--topics',
-                                metavar='',
+                                metavar='topics',
                                 required=True,
                                 default=['+/#'],
                                 # nargs='*',

@@ -9,11 +9,13 @@
 
 import  sys; sys.dont_write_bytecode = True
 import  os
+# import logging; logger=logging.getLogger(__name__)
+
 import threading
 from queue import Queue
 import time
 import json
-
+import signal
 
 from LnDict import LoretoDict
 from TelegramMessage import telegramSend
@@ -36,8 +38,11 @@ def setup(my_logger):
 
 
 
-
-
+def sendStatus():
+    logger.notify("Sending summary to Telegram")
+    for topic_name in devices.keys():
+        logger.notify("Sending summary for %s to Telegram", topic_name)
+        telegram_notify(topic=f'LnCmnd/{topic_name}/summary', payload=None)
 
 
 
@@ -103,20 +108,23 @@ def getRelayNames(device: dict) -> list:
 ######################################################
 # process topic name and paylod data to findout query,
 #
-# topic='LnCmnd/telegram/query' (comando esterno)
+# topic='LnCmnd/topic_name/query' (comando esterno)
 #      payload="summary"
 #      payload="timers"
 #
-# topic='LnCmnd/telegram/power_update' (interno all'applicazione)
-#      payload={"POWER1":"OFF"}
+# topic='LnCmnd/topic_name/summary'
 #
 ######################################################
-def telegram_notify(topic: str, payload: (dict, str), device: dict):
+def telegram_notify(topic: str, payload: (dict, str)=None, device: dict=None):
     logger.info('processing topic %s for telegram message', topic)
     _,  topic_name, suffix=topic.split('/')
 
     _dict=LoretoDict()
 
+    if not device and topic_name in devices:
+        device=devices[topic_name]
+
+    # import pdb; pdb.set_trace(); pass # by Loreto
     if 'STATE' in device and 'sensors' in device:
         relayNames=getRelayNames(device)
 
@@ -146,7 +154,7 @@ def telegram_notify(topic: str, payload: (dict, str), device: dict):
 
         elif suffix=='pulsetime_in_payload':     # payload dovrebbe contenere qualcosa tipo: {"POWER1":"OFF"}
             for index, name in enumerate(relayNames):
-                pt_value, pt_remaining=tasmotaFormatter.getPulseTime(data=payload, relanNr=index)
+                pt_value, pt_remaining=tasmotaFormatter.getPulseTime(data=payload, relayNr=index)
                 _dict.setkp(f"RL_{name}.Pulsetime", value=pt_value, create=True)
                 _dict.setkp(f"RL_{name}.Remaining", value=pt_remaining, create=True)
 
@@ -162,7 +170,7 @@ def telegram_notify(topic: str, payload: (dict, str), device: dict):
     if _dict and fSLEEP:
         tg_msg=LoretoDict({topic_name: _dict })
         logger.warning('sending telegram message: %s', tg_msg)
-        telegramSend(group_name=topic_name, message=tg_msg.to_yaml(sort_keys=False), logger=logger)
+        telegramSend(group_name=topic_name, message=tg_msg.to_yaml(sort_keys=False), my_logger=logger)
 
 
 
@@ -197,8 +205,11 @@ def createDeviceEntry(topic_name):
         with open(filename, 'r') as fin:
             device=json.load(fin)
     else:
-        device=LoretoDict()
-        device.setkp(keypath="Loreto.file_out", value=filename, create=True)
+        # device=LoretoDict()
+        # device.setkp(keypath="Loreto.file_out", value=filename, create=True)
+        device={"Loreto": {"file_out": filename}}
+        # device["Loreto"]={}
+        # device["Loreto"]["file_out"]=filename
 
     return device
 
@@ -211,8 +222,16 @@ def updateDevice(topic: str, payload: dict, writeFile=True):
     prefix, topic_name, suffix, *rest=topic.split('/')
     device=devices[topic_name]
 
-    if suffix in device and isinstance(payload, dict):
-        device[suffix].update(payload)
+    if suffix in device and isinstance(payload, dict) and isinstance(device[suffix], dict):
+        try:
+            device[suffix].update(payload)
+        except (AttributeError) as exc:
+            print(str(exc))
+            print("topic:        ",  topic)
+            print("payload:      ",  payload)
+            print("suffix:       ",  suffix)
+            print("device[suffix]:", device[suffix])
+            os.kill(int(os.getpid()), signal.SIGTERM)
     else:
         device[suffix]=payload
 
@@ -251,8 +270,8 @@ def process(topic, payload, mqttClient_CB):
 
     ### create device dictionary entry if not exists
     if not topic_name in devices:
-        device=createDeviceEntry(topic_name)
-        devices[topic_name]=LoretoDict(device)
+        # device=createDeviceEntry(topic_name)
+        devices[topic_name]=LoretoDict(createDeviceEntry(topic_name))
         refreshData(topic_name, mqttClient_CB)
 
 

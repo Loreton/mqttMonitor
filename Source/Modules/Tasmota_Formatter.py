@@ -4,9 +4,10 @@
 # updated by ...: Loreto Notarantonio
 # Date .........: 2021-09-17
 
-
 import  sys; sys.dont_write_bytecode = True
 import  os
+# import logging; logger=logging.getLogger(__name__)
+
 from LnDict import LoretoDict
 from LnTime import millisecs_to_HMS_ms
 from datetime import timedelta, datetime
@@ -189,7 +190,7 @@ def retrieveRelayStatus(data: dict, relayNr: int, new_data: dict={}) -> str:
 #           After this amount of time, the power will be turned OFF.
 #
 ####################################################################
-def getPulseTime(data: dict, relanNr: int):
+def getPulseTime(data: dict, relayNr: int):
     # if 'RESULT' in data:
         # data=data['RESULT']
 
@@ -208,14 +209,14 @@ def getPulseTime(data: dict, relanNr: int):
 
     SET=data['PulseTime.Set']
     REMAINING=data['PulseTime.Remaining']
-    pulsetime_value=pulseTimeToSeconds(SET[relanNr]) if SET else None
-    pulsetime_remaining=pulseTimeToSeconds(REMAINING[relanNr]) if REMAINING else None
+    pulsetime_value=pulseTimeToSeconds(SET[relayNr]) if SET else None
+    pulsetime_remaining=pulseTimeToSeconds(REMAINING[relayNr]) if REMAINING else None
 
     return pulsetime_value, pulsetime_remaining
 
 
 
-def setPulseTime(data, relanNr):
+def setPulseTime(data, relayNr):
     """da sviluppare"""
 
     def secondsToPulseTime(seconds: float) -> int:
@@ -230,8 +231,8 @@ def setPulseTime(data, relanNr):
 
     SET=data['RESULT.PulseTime.Set']
     REMAINING=data['RESULT.PulseTime.Remaining']
-    pulsetime_value=pulseTimeToSeconds(SET[relanNr]) if SET else None
-    pulsetime_remaining=pulseTimeToSeconds(REMAINING[relanNr]) if REMAINING else None
+    pulsetime_value=pulseTimeToSeconds(SET[relayNr]) if SET else None
+    pulsetime_remaining=pulseTimeToSeconds(REMAINING[relayNr]) if REMAINING else None
 
     return pulsetime_value, pulsetime_remaining
 
@@ -306,15 +307,25 @@ def timers(data: dict, outputRelay: int=0) -> dict:
 
 
     myTimers={}
-    basePtr='timers.' if 'timers' in data else ''
-    areEnabled=(data[f'{basePtr}Timers']=="ON")
+    # print(data.to_json())
+    if 'timers' in data:
+        basePtr=data['timers']
+        # areEnabled=(data['timers']['Timers']=="ON")
+    elif 'RESULT' in data:
+        basePtr=data['RESULT']
+        # areEnabled=(data['RESULE']['Timers']=="ON")
+    else:
+        basePtr=data
+        # areEnabled=(data['Timers']=="ON")
+
+    areEnabled=(basePtr['Timers']=="ON")
 
     if areEnabled:
         # if myTimers['Enabled']=='ON':
         # myTimers['Enabled']=data[f'{basePtr}Timers']
 
         for i in range(1, 17):
-            timerx=data[f'{basePtr}Timer{i}']
+            timerx=basePtr[f'Timer{i}']
             if timerx['Enable']==0:
                 continue
 
