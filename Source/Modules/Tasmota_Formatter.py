@@ -20,6 +20,8 @@ def setup(my_logger):
     global logger
     logger=my_logger
 
+def getBasePointer(d: dict, key_list: list):
+    keys=d.keySearch(d=d,  key_patterns=key_list)
 
 
 ####################################################################
@@ -56,119 +58,29 @@ def deviceInfo(data: dict):
 
 
 
-####################################################################
-### preparazione stato dei relè
-# new_value potrebbe contenere:  {"POWER1":"OFF"}
-# e quindi va in override su quanto letto da device
-####################################################################
-def relayStatus___(device: dict, new_value: dict={}) -> dict:
-
-    # -------------------------------------------------
-    # def getPowerStatus(relayNr: int, device: dict) -> str:
-    def retrieveRelayStatus__(relayNr):
-
-        # verifica dello status più aggiornato
-        stateTime=datetime.strptime(device['STATE.Time'], '%Y-%m-%dT%H:%M:%S')
-        stsTime=datetime.strptime(device['STATUS11.StatusSTS.Time'], '%Y-%m-%dT%H:%M:%S')
-
-        if stsTime.timestamp() > stateTime.timestamp():
-            kp='STATUS11.StatusSTS.POWER'
-        else:
-            kp='STATE.POWER'
-
-        status=device[kp]
-        if not status:
-            status=device[f'{kp}{relayNr}']
-
-        return status
-    # -------------------------------------------------
-
-
-    if not 'STATE' in device and not 'sensors' in device:
-        return "N/A"
-
-    ### capture relay friendlyNames
-    fn=device.getkp('sensors.fn')
-    friendlyNames=[x for x in fn if (x != '' and x != None)]
-    device['Loreto']['nRelays']=len(friendlyNames)
-    _dict=LoretoDict()
-
-    '''prendiamo in considerazione  new_value
-        se viene passato come argomento'''
-    key=None
-    if new_value and isinstance(new_value, dict):
-        key=next(k for k in new_value.keys() if 'POWER' in k) # get first POWERx key
-
-
-    ### inseriamo comunque tutti i relays
-    for index, name in enumerate(friendlyNames):
-        power_status=retrieveRelayStatus(relayNr=index+1)
-        if key:
-            if index==0 and key in ['POWER', 'POWER1']:
-                power_status=new_value[key] ### lo specifio lo cambiamo se necessario
-            elif key in ['POWER{index+1}']:
-                power_status=new_value[key] ### lo specifio lo cambiamo se necessario
-
-        _dict.set_keypath(f"{name}.Power", value=power_status, create=True)
-
-
-        ### Pulsetime
-        pt_value, pt_remaining=getPulseTime(device, index)
-        _dict.set_keypath(f"{name}.Pulsetime", value=pt_value, create=True)
-        _dict.set_keypath(f"{name}.Remaining", value=pt_remaining, create=True)
-
-        ### Timers
-        # timers()
-
-    return _dict
-
 
 ############################################################################
 # new_data --> {"POWER1":"OFF"}
 ############################################################################
 def retrieveRelayStatus(data: dict, relayNr: int, new_data: dict={}) -> str:
-    # if 'RESULT' in data:
-    #     data=LoretoDict(data['RESULT'])
 
-    power_status='N/A'
-    # logger.notify(data)
-    # verifica dello status più aggiornato
-    if 'STATE' in data:
-        stateTime=datetime.strptime(data['STATE.Time'], '%Y-%m-%dT%H:%M:%S')
-        kp='STATE.POWER'
-
-        power_status=data[f'{kp}{relayNr}']
-        if not power_status and relayNr==1:
-            power_status=data[kp] # potrebbe essere POWER e non POWER1
+    pwr_key=f'POWER{relayNr}'
 
     '''prendiamo in considerazione  new_data se viene passato come argomento'''
     if new_data and isinstance(new_data, dict):
-        key=next(k for k in new_data.keys() if 'POWER' in k) # get first POWERx key
+        power_status=new_data.get(pwr_key, None)
 
-        if key:
-            if relayNr==1 and key in ['POWER', 'POWER1']:
-                power_status=new_data[key] ### lo specifio lo cambiamo se necessario
-            elif key in [f'POWER{relayNr}']:
-                power_status=new_data[key] ### lo specifio lo cambiamo se necessario
+    # verifica dello status più aggiornato
+    if not power_status:
+        STATE=data.get('STATE')
+        if 'STATE':
+            # stateTime=datetime.strptime(STATE['Time'], '%Y-%m-%dT%H:%M:%S')
+            power_status=data.get(pwr_key)
+        else:
+            power_status=data.get(f'RESULT.{pwr_key}')
 
-            # _dict.set_keypath(f"{name}.Power", value=power_status, create=True)
-
-
-    '''
-    stateTime=datetime.strptime(data['STATE.Time'], default=0), '%Y-%m-%dT%H:%M:%S')
-    stsTime=datetime.strptime(data['STATUS11.StatusSTS.Time'], '%Y-%m-%dT%H:%M:%S')
-
-    if stsTime.timestamp() > stateTime.timestamp():
-        kp='STATUS11.StatusSTS.POWER'
-    else:
-        kp='STATE.POWER'
-
-    power_status=data[f'{kp}{relayNr}']
-    if not power_status and relayNr==1:
-        power_status=data[kp] # potrebbe essere POWER e non POWER1
-    '''
-
-
+    if not power_status:
+        power_status='N/A'
 
     return power_status
 
@@ -207,8 +119,21 @@ def getPulseTime(data: dict, relayNr: int):
             milliseconds=(value-100)*1000
         return millisecs_to_HMS_ms(milliseconds=milliseconds, strip_leading=True)
 
-    SET=data['PulseTime.Set']
-    REMAINING=data['PulseTime.Remaining']
+    # keys=getBasePointer(d=data, key_list=['PulseTime', 'Set'])
+    # key=data.first_key('PulseTime.Set')
+    # SET=data[key]
+    # key=data.first_key('PulseTime.Remaining')
+    # REMAINING=data[key]
+
+
+    # key=data.first_key('PulseTime', cut=True)
+    # SET=data[f"{key}.Set"]
+    # REMAINING=data[f"{key}.Remaining"]
+
+    SET=data.first_key('PulseTime.Set', cut=True, return_value=True)
+    REMAINING=data.first_key('PulseTime.Remaining', cut=True, return_value=True)
+
+     # basePtr=keys[0].split('.')[0] # prende la main
     pulsetime_value=pulseTimeToSeconds(SET[relayNr]) if SET else None
     pulsetime_remaining=pulseTimeToSeconds(REMAINING[relayNr]) if REMAINING else None
 

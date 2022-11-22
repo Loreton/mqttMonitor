@@ -18,7 +18,7 @@ import json
 import signal
 
 from LnDict import LoretoDict
-from TelegramMessage import telegramSend
+import SendTelegramMessage as STM
 
 import Tasmota_Formatter as tasmotaFormatter
 
@@ -170,7 +170,7 @@ def telegram_notify(topic: str, payload: (dict, str)=None, device: dict=None):
     if _dict and fSLEEP:
         tg_msg=LoretoDict({topic_name: _dict })
         logger.warning('sending telegram message: %s', tg_msg)
-        telegramSend(group_name=topic_name, message=tg_msg.to_yaml(sort_keys=False), my_logger=logger)
+        STM.sendMsg(group_name=topic_name, message=tg_msg.to_yaml(sort_keys=False), my_logger=logger)
 
 
 
@@ -186,30 +186,30 @@ def telegram_notify(topic: str, payload: (dict, str)=None, device: dict=None):
 
 
 #----------------------------------------------
-def refreshData(topic_name: str, mqttClient_CB):
+def refreshDeviceData(topic_name: str, mqttClient_CB):
+    _commands='power; status 0; timers; pulsetime; topic; teleperiod 30; SetOption26 1'
+    result=mqttClient_CB.publish(f'cmnd/{topic_name}/backlog', _commands, qos=0, retain=False)
+    '''
     result=mqttClient_CB.publish(f'cmnd/{topic_name}/backlog', 'power', qos=0, retain=False)
     result=mqttClient_CB.publish(f'cmnd/{topic_name}/backlog', 'status 0', qos=0, retain=False)
     result=mqttClient_CB.publish(f'cmnd/{topic_name}/backlog', 'timers', qos=0, retain=False)
     result=mqttClient_CB.publish(f'cmnd/{topic_name}/backlog', 'pulsetime', qos=0, retain=False)
     result=mqttClient_CB.publish(f'cmnd/{topic_name}/backlog', 'topic', qos=0, retain=False)
     result=mqttClient_CB.publish(f'cmnd/{topic_name}/backlog', 'teleperiod 30', qos=0, retain=False)
+    result=mqttClient_CB.publish(f'cmnd/{topic_name}/backlog', 'SetOption26 1', qos=0, retain=False) # set power1 instead of power
+    '''
 #----------------------------------------------
-
 
 
 ### create entry for device name
 def createDeviceEntry(topic_name):
-    filename=os.path.expandvars(f"$ln_RUNTIME_DIR/mqtt_monitor/{topic_name}.json")
-
-    if os.path.exists(filename):
+    runtime_dir=os.environ.get('ln_RUNTIME_DIR')
+    filename=f"{runtime_dir}/mqtt_monitor/{topic_name}.json"
+    if os.path.exists(filename) and os.stat(filename).st_size>0:
         with open(filename, 'r') as fin:
             device=json.load(fin)
     else:
-        # device=LoretoDict()
-        # device.setkp(keypath="Loreto.file_out", value=filename, create=True)
         device={"Loreto": {"file_out": filename}}
-        # device["Loreto"]={}
-        # device["Loreto"]["file_out"]=filename
 
     return device
 
@@ -238,7 +238,13 @@ def updateDevice(topic: str, payload: dict, writeFile=True):
     fileout=device['Loreto.file_out']
     if writeFile and fileout:
         logger.info('updating file: %s', fileout)
-        device.toJsonFile(file_out=fileout, replace=True)
+        device.toJsonFile(filename=fileout, replace=True)
+
+
+
+
+
+
 
 
 #########################################################
@@ -254,36 +260,39 @@ def process(topic, payload, mqttClient_CB):
     """ topic='tasmota/discovery/DC4F22D3B32F/sensors'
         cambiare il topic attraverso il MAC
     """
-    if topic.startswith("tasmota/discovery"):
+    if topic.startswith("tasmota/discovery"): ### viene rilasciato automaticamente da tasmota
         topic=tasmota_discovery_modify_topic(topic, macTable, payload)
 
     prefix, topic_name, suffix, *rest=topic.split('/')
     if prefix == 'cmnd':
-        logger.warning('skipping topic: %s', topic)
+        logger.warning('skipping topic: %s [in attesa di capire meglio come sfruttarlo]', topic)
         return
-        ### messo qui piuttosto che prima per permettere la creare
 
+    ### comando per tutti, catturiamo solo i risultati
     if topic_name in ['tasmotas']:
-        logger.warning('skipping topic: %s', topic)
-        """comando per tutti, catturiamo solo i risultati"""
+        logger.warning('skipping topic: %s [in attesa di capire meglio come sfruttarlo]', topic)
         return
 
     ### create device dictionary entry if not exists
     if not topic_name in devices:
-        # device=createDeviceEntry(topic_name)
         devices[topic_name]=LoretoDict(createDeviceEntry(topic_name))
-        refreshData(topic_name, mqttClient_CB)
+        refreshDeviceData(topic_name, mqttClient_CB)
 
 
+    ### dictionary del device
     device=devices[topic_name]
     if isinstance(payload, dict):
         payload=LoretoDict(payload)
 
     _topic=f'{prefix}.{suffix}'
 
-    ### Proces topic
-    fUPDATE_device=False
 
+
+
+    ### --------------------------
+    ### Process topic
+    ### --------------------------
+    fUPDATE_device=False # default
 
     if prefix=='LnCmnd':
         telegram_notify(topic=topic, payload=payload, device=device)

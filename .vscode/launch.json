@@ -14,7 +14,8 @@
             "args": [
                 "--topics=+/VescoviNew/#",
                 // "--topics=+/TavoloLavoro/#",
-            ]
+            ],
+            "env": {"ln_RUNTIME_DIR": "/home/loreto/ln_runtime"},
         }
     ]
 }

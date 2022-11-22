@@ -232,7 +232,6 @@ def payload_worker(topic, payload, device, fUPDATE_file: bool=False):
         if payload.key_startswith('POWER'):
             time.sleep(5)
             topic=f'LnCmnd/{topic_name}/query'
-            import pdb; pdb.set_trace(); pass # by Loreto
             from_telegram_command(topic=topic, payload='power', device=device)
 
     elif prefix == 'shellies' and suffix=='ext_temperatures':

@@ -18,8 +18,9 @@ import  uuid
 import  time
 import  subprocess, shlex
 
-import Topic_noThreads as Topic
-from TelegramMessage import telegramSend
+import Topic_Process as Topic
+# from TelegramMessage import telegramSend
+import SendTelegramMessage as STM
 from LnTimer import TimerLN as LnTimer
 from savePidFile import savePidFile
 
@@ -224,7 +225,7 @@ def run(gVars: dict):
 
 
     client.loop_start()
-    telegramSend(group_name='Ln_MqttMonitor', message="application has been started!", my_logger=logger)
+    STM.sendMsg(group_name='Ln_MqttMonitor', message="application has been started!", my_logger=logger, caller=True)
     time.sleep(4) # Wait for connection setup to complete
 
 
@@ -249,7 +250,7 @@ def run(gVars: dict):
         if publish_timer.is_exausted(logger=logger.debug):
             logger.error('publish_timer - exausted')
             logger.error('restarting application')
-            telegramSend(group_name='Ln_MqttMonitor', message="publish_timer - exausted - application is restarting!", my_logger=logger)
+            STM.sendMsg(group_name='Ln_MqttMonitor', message="publish_timer - exausted - application is restarting!", my_logger=logger)
             os.kill(int(os.getpid()), signal.SIGTERM)
 
 

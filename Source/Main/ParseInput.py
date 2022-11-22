@@ -5,7 +5,7 @@
 # Date .........: 2021-09-17
 #
 # updated by ...: Loreto Notarantonio
-# Date .........: 19-11-2022 09.31.30
+# Date .........: 22-11-2022 17.02.46
 #
 
 import  sys; sys.dont_write_bytecode = True
@@ -40,8 +40,8 @@ def ParseInput():
                             )
 
 
-        _parser.add_argument( "--file-logger-level",   ##  MI DA ERRORE
-                                metavar='<file_logger>',
+        _parser.add_argument( "--file-logger-level",
+                                metavar='<optionalr>',
                                 type=str.lower,
                                 required=False,
                                 default='warning',
@@ -50,6 +50,16 @@ def ParseInput():
                                 help=f"""set file logger level:
                                         {logger_levels}
                                         \n\n""".replace('  ', '')
+                            )
+
+
+
+        _parser.add_argument( "--logging-file",
+                                metavar='<file_logger>',
+                                type=str.lower,
+                                required=True,
+                                default=None,
+                                help=f"""full path of logger file: \n\n""".replace('  ', '')
                             )
 
 

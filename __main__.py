@@ -13,17 +13,21 @@ from ColoredLogger import setColoredLogger, testLogger
 from ParseInput import ParseInput
 import mqttClientMonitor
 from savePidFile import savePidFile
+import LnDict
 
 
 
 if __name__ == '__main__':
+
     args=ParseInput()
     logger=setColoredLogger(logger_name='mqtt_monitor',
                             console_logger_level=args.console_logger_level,
-                            file_logger_level='debug',
-                            logging_file='/tmp/mqttmonitor/mqttmonitor.log',
+                            file_logger_level=args.file_logger_level,
+                            logging_file=args.logging_file,
                             threads=False)
     testLogger(logger)
+    LnDict.setLogger(mylogger=logger)
+    os.environ["ln_RUNTIME_DIR"]="/home/loreto/ln_runtime"
 
     gVars={
         "systemd": args.systemd,
