@@ -28,7 +28,7 @@ def getBasePointer(d: dict, key_list: list):
 ### preparazione stato WiFi
 ####################################################################
 def wifi(data: dict):
-    wifi=data.getkp(keypaths=['STATE.Wifi', 'STATUS11.StatusSTS.Wifi'], default={})
+    wifi=data.get_keypaths(keypaths=['STATE.Wifi', 'STATUS11.StatusSTS.Wifi'], default={})
     if wifi:
         wifi.pop('AP', None)
         wifi.pop('Mode', None)
@@ -43,11 +43,11 @@ def wifi(data: dict):
 ####################################################################
 def deviceInfo(data: dict):
     infodata=LoretoDict()
-    infodata['device_name']      = data.getkp('sensors.dn')
-    infodata['ip_address']       = data.getkp('sensors.ip')
-    infodata['firmware']         = data.getkp('sensors.sw')
-    infodata['modello']          = data.getkp('sensors.md')
-    infodata['host_name']        = data.getkp('sensors.hn')
+    infodata['device_name']      = data['sensors.dn']
+    infodata['ip_address']       = data['sensors.ip']
+    infodata['firmware']         = data['sensors.sw']
+    infodata['modello']          = data['sensors.md']
+    infodata['host_name']        = data['sensors.hn']
     infodata['status']           = data.get('LWT')
 
     return infodata
@@ -65,19 +65,17 @@ def deviceInfo(data: dict):
 def retrieveRelayStatus(data: dict, relayNr: int, new_data: dict={}) -> str:
 
     pwr_key=f'POWER{relayNr}'
+    power_status=None
 
     '''prendiamo in considerazione  new_data se viene passato come argomento'''
     if new_data and isinstance(new_data, dict):
         power_status=new_data.get(pwr_key, None)
 
-    # verifica dello status più aggiornato
+
+    # verifica dello status più aggiornato (nell'ordine)
     if not power_status:
-        STATE=data.get('STATE')
-        if 'STATE':
-            # stateTime=datetime.strptime(STATE['Time'], '%Y-%m-%dT%H:%M:%S')
-            power_status=data.get(pwr_key)
-        else:
-            power_status=data.get(f'RESULT.{pwr_key}')
+        power_status=data.get_keypaths(keypaths=[f'STATE.{pwr_key}', f'STATUS11.{pwr_key}', f'RESULT.{pwr_key}'])
+
 
     if not power_status:
         power_status='N/A'
@@ -119,21 +117,11 @@ def getPulseTime(data: dict, relayNr: int):
             milliseconds=(value-100)*1000
         return millisecs_to_HMS_ms(milliseconds=milliseconds, strip_leading=True)
 
-    # keys=getBasePointer(d=data, key_list=['PulseTime', 'Set'])
-    # key=data.first_key('PulseTime.Set')
-    # SET=data[key]
-    # key=data.first_key('PulseTime.Remaining')
-    # REMAINING=data[key]
 
-
-    # key=data.first_key('PulseTime', cut=True)
-    # SET=data[f"{key}.Set"]
-    # REMAINING=data[f"{key}.Remaining"]
 
     SET=data.first_key('PulseTime.Set', cut=True, return_value=True)
     REMAINING=data.first_key('PulseTime.Remaining', cut=True, return_value=True)
 
-     # basePtr=keys[0].split('.')[0] # prende la main
     pulsetime_value=pulseTimeToSeconds(SET[relayNr]) if SET else None
     pulsetime_remaining=pulseTimeToSeconds(REMAINING[relayNr]) if REMAINING else None
 
@@ -232,6 +220,63 @@ def timers(data: dict, outputRelay: int=0) -> dict:
 
 
     myTimers={}
+    _key=data.first_key('Timers', cut=True)
+    # logger.notify('_key: %s', _key)
+    if _key:
+        areEnabled=(data[_key]=="ON")
+        # logger.notify('areEnabled: %s', areEnabled)
+        tk=_key.split('.')
+        # logger.notify('tk: %s', tk)
+        if len(tk) == 1:
+            base_ptr=data
+        else:
+            base_key='.'.join(tk[:-1]) ### upper level key
+            base_ptr=data[base_key]
+        # logger.notify('base_ptr: %s', base_ptr)
+
+        if areEnabled:
+
+            for i in range(1, 17):
+                # logger.notify('i: %s [%s]', i, type(i))
+                timerx=base_ptr[f'Timer{i}']
+                if timerx['Enable']==0:
+                    continue
+
+                if int(timerx['Output']) not in outputRelay:
+                    continue
+
+                MODE=_mode[int(timerx['Mode'])]
+                ACTION=_action[int(timerx['Action'])]
+                REPEAT='YES' if timerx['Repeat']=='1' else 'NO'
+                offset=timerx["Time"]
+                DAYS=_convertWeekDays(timerx['Days'])
+                RELAY=timerx['Output']
+
+                if MODE == 'sunset':
+                    onTime=' sS'
+                    offset=timerx["Time"]
+                    _time=sum_offset(t0_time=sunset_time,offset=offset)
+
+                elif MODE == 'sunrise':
+                    onTime=' sR'
+                    _time=sum_offset(t0_time=sunrise_time,offset=offset)
+
+                else:
+                    onTime=''
+                    _time=timerx["Time"]
+
+                myTimers[f'T{i}']=f'{_time} {RELAY}.{ACTION} {DAYS}{onTime}'
+        else:
+            myTimers='Disabled'
+
+    return myTimers
+
+
+
+    #### TO BE DELETED
+
+    '''
+    myTimers={}
     # print(data.to_json())
     if 'timers' in data:
         basePtr=data['timers']
@@ -282,3 +327,4 @@ def timers(data: dict, outputRelay: int=0) -> dict:
         myTimers='Disabled'
 
     return myTimers
+    '''

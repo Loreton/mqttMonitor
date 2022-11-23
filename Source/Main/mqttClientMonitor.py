@@ -18,11 +18,10 @@ import  uuid
 import  time
 import  subprocess, shlex
 
-import Topic_Process as Topic
-# from TelegramMessage import telegramSend
-import SendTelegramMessage as STM
-from LnTimer import TimerLN as LnTimer
-from savePidFile import savePidFile
+import  Topic_Process as Topic
+import  SendTelegramMessage as STM
+from    LnTimer import TimerLN as LnTimer
+from    savePidFile import savePidFile
 
 
 
@@ -121,12 +120,16 @@ def connect_mqtt() -> mqtt_client:
 ####################################################################
 #
 ####################################################################
-def checkPayload(payload):
+def checkPayload(message):
+    payload=message.payload
     try:
         payload=payload.decode("utf-8")
     except (Exception) as e:
+        logger.error('-'*30)
+        logger.error('topic:         %s', message.topic)
         logger.error('payload error: %s', payload)
         logger.error('    exception: %s', e)
+        logger.error('-'*30)
         return None
 
     try:
@@ -143,7 +146,8 @@ def checkPayload(payload):
 def on_message(client, userdata, message):
     publish_timer.restart(seconds=100) # if message has been received means application is alive.
 
-    payload=checkPayload(message.payload)
+    # payload=checkPayload(message.payload)
+    payload=checkPayload(message)
 
     if message.topic=='LnCmnd/mqtt_monitor_application/query':
         logger.notify('%s keepalive message has been received', message.topic)
@@ -198,6 +202,7 @@ def run(gVars: dict):
     topic_list     = gv["topic_list"]
     CLEAR_RETAINED = gv["clear_retained"]
     just_monitor   = gv["monitor"]
+    tgGroupName    = gv["tgGroupName"]
 
 
 
@@ -225,7 +230,7 @@ def run(gVars: dict):
 
 
     client.loop_start()
-    STM.sendMsg(group_name='Ln_MqttMonitor', message="application has been started!", my_logger=logger, caller=True)
+    STM.sendMsg(group_name=tgGroupName, message="application has been started!", my_logger=logger, caller=True, parse_mode='markdown')
     time.sleep(4) # Wait for connection setup to complete
 
 
@@ -250,7 +255,7 @@ def run(gVars: dict):
         if publish_timer.is_exausted(logger=logger.debug):
             logger.error('publish_timer - exausted')
             logger.error('restarting application')
-            STM.sendMsg(group_name='Ln_MqttMonitor', message="publish_timer - exausted - application is restarting!", my_logger=logger)
+            STM.sendMsg(group_name='Ln_MqttMonitor', message="publish_timer - exausted - application is restarting!", my_logger=logger, caller=True, parse_mode='markdown')
             os.kill(int(os.getpid()), signal.SIGTERM)
 
 

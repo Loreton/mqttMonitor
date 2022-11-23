@@ -18,16 +18,17 @@ import LnDict
 
 
 if __name__ == '__main__':
-
+    prj_name='mqttmonitor'
     args=ParseInput()
-    logger=setColoredLogger(logger_name='mqtt_monitor',
+    logger=setColoredLogger(logger_name=prj_name,
                             console_logger_level=args.console_logger_level,
                             file_logger_level=args.file_logger_level,
-                            logging_file=args.logging_file,
+                            logging_dir=args.logging_dir, # logging file--> logging_dir + logger_name
                             threads=False)
     testLogger(logger)
     LnDict.setLogger(mylogger=logger)
-    os.environ["ln_RUNTIME_DIR"]="/home/loreto/ln_runtime"
+    user=os.environ.get('USER')
+    os.environ["ln_RUNTIME_DIR"]=f"/home/{user}/ln_runtime"
 
     gVars={
         "systemd": args.systemd,
@@ -36,6 +37,7 @@ if __name__ == '__main__':
         "clear_retained": False,
         "monitor": args.monitor,
         "pid_file": args.pid_file,
+        "tgGroupName": args.telegram_group_name,
     }
     savePidFile(gVars['pid_file'])
 

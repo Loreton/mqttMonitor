@@ -26,11 +26,13 @@ import Tasmota_Formatter as tasmotaFormatter
 
 
 def setup(my_logger):
-    global logger, devices, macTable, startTime
+    global logger, devices, macTable,  notification_timer
     logger=my_logger
     devices=LoretoDict()
     macTable=LoretoDict()
-    startTime=time.time()
+    # startTime=time.time()
+    notification_timer=time.time()
+
     tasmotaFormatter.setup(my_logger=logger)
 
 
@@ -94,7 +96,7 @@ def tasmota_discovery_modify_topic(topic, mac_table, payload):
 
 def getRelayNames(device: dict) -> list:
     ### capture relay friendlyNames
-    fn=device.getkp('sensors.fn')
+    fn=device['sensors.fn']
     if fn:
         friendlyNames=[x for x in fn if (x != '' and x != None)]
         return friendlyNames
@@ -124,11 +126,10 @@ def telegram_notify(topic: str, payload: (dict, str)=None, device: dict=None):
     if not device and topic_name in devices:
         device=devices[topic_name]
 
-    # import pdb; pdb.set_trace(); pass # by Loreto
     if 'STATE' in device and 'sensors' in device:
         relayNames=getRelayNames(device)
 
-        if suffix=='summary':
+        if suffix=='summary':  ### LnCmnd/topic_name/summary
             _dict.update(tasmotaFormatter.deviceInfo(data=device))
             _dict['Wifi']=tasmotaFormatter.wifi(data=device)
 
@@ -137,10 +138,10 @@ def telegram_notify(topic: str, payload: (dict, str)=None, device: dict=None):
                 relay_status=tasmotaFormatter.retrieveRelayStatus(data=device, relayNr=index+1)
                 timers_status=tasmotaFormatter.timers(data=device, outputRelay=index+1)
 
-                _dict.setkp(f"RL_{name}.Pulsetime", value=pt_value, create=True)
-                _dict.setkp(f"RL_{name}.Remaining", value=pt_remaining, create=True)
-                _dict.setkp(f"RL_{name}.Status", value=relay_status, create=True)
-                _dict.setkp(f"RL_{name}.Timers", value=timers_status, create=True)
+                _dict.set_keypath(f"RL_{name}.Pulsetime", value=pt_value, create=True)
+                _dict.set_keypath(f"RL_{name}.Remaining", value=pt_remaining, create=True)
+                _dict.set_keypath(f"RL_{name}.Status", value=relay_status, create=True)
+                _dict.set_keypath(f"RL_{name}.Timers", value=timers_status, create=True)
 
         elif suffix=='timers_in_payload':
             _dict['Timers']=tasmotaFormatter.timers(data=payload, outputRelay=0)
@@ -150,13 +151,13 @@ def telegram_notify(topic: str, payload: (dict, str)=None, device: dict=None):
             # import pdb; pdb.set_trace(); pass # by Loreto
             for index, name in enumerate(relayNames):
                 relay_status=tasmotaFormatter.retrieveRelayStatus(data=device, new_data=payload, relayNr=index+1)
-                _dict.setkp(f"RL_{name}.Status", value=relay_status, create=True)
+                _dict.set_keypath(f"RL_{name}.Status", value=relay_status, create=True)
 
         elif suffix=='pulsetime_in_payload':     # payload dovrebbe contenere qualcosa tipo: {"POWER1":"OFF"}
             for index, name in enumerate(relayNames):
                 pt_value, pt_remaining=tasmotaFormatter.getPulseTime(data=payload, relayNr=index)
-                _dict.setkp(f"RL_{name}.Pulsetime", value=pt_value, create=True)
-                _dict.setkp(f"RL_{name}.Remaining", value=pt_remaining, create=True)
+                _dict.set_keypath(f"RL_{name}.Pulsetime", value=pt_value, create=True)
+                _dict.set_keypath(f"RL_{name}.Remaining", value=pt_remaining, create=True)
 
         else:
             return
@@ -165,12 +166,16 @@ def telegram_notify(topic: str, payload: (dict, str)=None, device: dict=None):
         logger.warning('%s - non discovered too', topic_name)
         # _dict['relays']="N/A"
 
-    fSLEEP=(time.time()-startTime)>10 # ignore first messages during progrram startup
-
-    if _dict and fSLEEP:
+    # fSLEEP=(time.time()-startTime)>10 # ignore first messages during program startup
+    fTELEGRAM_NOTIFICATION=(time.time()-notification_timer)>10 # ignore messages when notification_timer is running
+    if _dict and fTELEGRAM_NOTIFICATION:
         tg_msg=LoretoDict({topic_name: _dict })
         logger.warning('sending telegram message: %s', tg_msg)
-        STM.sendMsg(group_name=topic_name, message=tg_msg.to_yaml(sort_keys=False), my_logger=logger)
+
+        ### parse_mode=None altrimenti mi da errore :
+        ### response: {'ok': False, 'error_code': 400, 'description': "Bad Request: can't parse entities: Can't find end of the entity starting at byte offset 493"}
+        STM.sendMsg(group_name=topic_name, message=tg_msg.to_yaml(sort_keys=False), my_logger=logger, caller=True, parse_mode=None, notify=True)
+        # STM.sendMsg(group_name=topic_name, message=tg_msg, my_logger=logger, caller=True, parse_mode='markdown')
 
 
 
@@ -187,6 +192,8 @@ def telegram_notify(topic: str, payload: (dict, str)=None, device: dict=None):
 
 #----------------------------------------------
 def refreshDeviceData(topic_name: str, mqttClient_CB):
+    global notification_timer
+    notification_timer=time.time()
     _commands='power; status 0; timers; pulsetime; topic; teleperiod 30; SetOption26 1'
     result=mqttClient_CB.publish(f'cmnd/{topic_name}/backlog', _commands, qos=0, retain=False)
     '''
