@@ -65,7 +65,6 @@ signal.signal(signal.SIGINT, signal_handler_Mqtt)
 
 
 
-
 ####################################################################
 #  This function clears the retained flag by publishing
 #  a empty message (msg=””) with the retained flag set.

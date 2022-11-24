@@ -28,12 +28,12 @@ def getBasePointer(d: dict, key_list: list):
 ### preparazione stato WiFi
 ####################################################################
 def wifi(data: dict):
-    wifi={}
-    wifi["SSId"]=data['SSId']
-    wifi["BSSId"]=data['BSSId']
-    wifi["RSSI"]=data['RSSI']
-    wifi["Signal"]=data['Signal']
-
+    wifi=data.get_keypaths(keypaths=['STATE.Wifi', 'STATUS11.StatusSTS.Wifi'], default={})
+    if wifi:
+        wifi.pop('AP', None)
+        wifi.pop('Mode', None)
+        wifi.pop('LinkCount', None)
+        wifi.pop('Downtime', None)
 
     return wifi
 
@@ -42,13 +42,13 @@ def wifi(data: dict):
 ### info varie
 ####################################################################
 def deviceInfo(data: dict):
-    infodata=dict()
-    infodata['device_name']      = data['device_name']
-    # infodata['ip_address']       = data['ip_address']
-    infodata['firmware']         = data['firmware']
-    infodata['modello']          = data['modello']
-    # infodata['host_name']        = data['sensors.hn']
-    # infodata['status']           = data['LWT']
+    infodata=LoretoDict()
+    infodata['device_name']      = data['sensors.dn']
+    infodata['ip_address']       = data['sensors.ip']
+    infodata['firmware']         = data['sensors.sw']
+    infodata['modello']          = data['sensors.md']
+    infodata['host_name']        = data['sensors.hn']
+    infodata['status']           = data.get('LWT')
 
     return infodata
 
@@ -100,8 +100,9 @@ def retrieveRelayStatus(data: dict, relayNr: int, new_data: dict={}) -> str:
 #
 ####################################################################
 def getPulseTime(data: dict, relayNr: int):
+    # if 'RESULT' in data:
+        # data=data['RESULT']
 
-    #----------------------------------------------
     def pulseTimeToSeconds(value: int) -> int:
         """Errori strani:
             remaining 1886060 invece di 132 - 1886192
@@ -114,11 +115,11 @@ def getPulseTime(data: dict, relayNr: int):
             seconds=int(value-100)
             milliseconds=(value-100)*1000
         return millisecs_to_HMS_ms(milliseconds=milliseconds, strip_leading=True)
-    #----------------------------------------------
 
 
-    SET=data['PulseTime.Set']
-    REMAINING=data['PulseTime.Remaining']
+
+    SET=data.first_key('PulseTime.Set', cut=True, return_value=True)
+    REMAINING=data.first_key('PulseTime.Remaining', cut=True, return_value=True)
 
     pulsetime_value=pulseTimeToSeconds(SET[relayNr]) if SET else None
     pulsetime_remaining=pulseTimeToSeconds(REMAINING[relayNr]) if REMAINING else None
@@ -218,57 +219,54 @@ def timers(data: dict, outputRelay: int=0) -> dict:
 
 
     myTimers={}
-
-
-    areEnabled=(data['Timers']=="ON")
+    _key=data.first_key('Timers', cut=True)
     # logger.notify('_key: %s', _key)
+    if _key:
+        areEnabled=(data[_key]=="ON")
+        # logger.notify('areEnabled: %s', areEnabled)
+        tk=_key.split('.')
+        # logger.notify('tk: %s', tk)
+        if len(tk) == 1:
+            base_ptr=data
+        else:
+            base_key='.'.join(tk[:-1]) ### upper level key
+            base_ptr=data[base_key]
+        # logger.notify('base_ptr: %s', base_ptr)
 
-    # areEnabled=(data[_key]=="ON")
-    # logger.notify('areEnabled: %s', areEnabled)
-    # tk=_key.split('.')
-    # # logger.notify('tk: %s', tk)
-    # if len(tk) == 1:
-    #     base_ptr=data
-    # else:
-    #     base_key='.'.join(tk[:-1]) ### upper level key
-    #     base_ptr=data[base_key]
-    # logger.notify('base_ptr: %s', base_ptr)
+        if areEnabled:
 
-    if areEnabled:
+            for i in range(1, 17):
+                # logger.notify('i: %s [%s]', i, type(i))
+                timerx=base_ptr[f'Timer{i}']
+                if timerx['Enable']==0:
+                    continue
 
-        for i in range(1, 17):
-            # logger.notify('i: %s [%s]', i, type(i))
-            timerx=data[f'Timer{i}']
-            if timerx['Enable']==0:
-                continue
+                if int(timerx['Output']) not in outputRelay:
+                    continue
 
-            if int(timerx['Output']) not in outputRelay:
-                continue
-
-            MODE=_mode[int(timerx['Mode'])]
-            ACTION=_action[int(timerx['Action'])]
-            REPEAT='YES' if timerx['Repeat']=='1' else 'NO'
-            offset=timerx["Time"]
-            DAYS=_convertWeekDays(timerx['Days'])
-            RELAY=timerx['Output']
-
-            if MODE == 'sunset':
-                onTime=' sS'
+                MODE=_mode[int(timerx['Mode'])]
+                ACTION=_action[int(timerx['Action'])]
+                REPEAT='YES' if timerx['Repeat']=='1' else 'NO'
                 offset=timerx["Time"]
-                _time=sum_offset(t0_time=sunset_time,offset=offset)
+                DAYS=_convertWeekDays(timerx['Days'])
+                RELAY=timerx['Output']
 
-            elif MODE == 'sunrise':
-                onTime=' sR'
-                _time=sum_offset(t0_time=sunrise_time,offset=offset)
+                if MODE == 'sunset':
+                    onTime=' sS'
+                    offset=timerx["Time"]
+                    _time=sum_offset(t0_time=sunset_time,offset=offset)
 
-            else:
-                onTime=''
-                _time=timerx["Time"]
+                elif MODE == 'sunrise':
+                    onTime=' sR'
+                    _time=sum_offset(t0_time=sunrise_time,offset=offset)
 
-            myTimers[f'T{i}']=f'{_time} {ACTION} {DAYS}{onTime} [{RELAY}]'
-            myTimers[f'T{i}']=f'{_time} {ACTION} {DAYS}{onTime}'
-    else:
-        myTimers='Disabled'
+                else:
+                    onTime=''
+                    _time=timerx["Time"]
+
+                myTimers[f'T{i}']=f'{_time} {RELAY}.{ACTION} {DAYS}{onTime}'
+        else:
+            myTimers='Disabled'
 
     return myTimers
 
