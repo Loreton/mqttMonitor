@@ -21,6 +21,7 @@ from LnDict import LoretoDict
 import SendTelegramMessage as STM
 
 import Tasmota_Formatter as tasmotaFormatter
+import Telegram_Notification as tgNotify
 
 
 
@@ -35,6 +36,7 @@ def setup(my_logger):
     # notification_timer_OLD={}
 
     tasmotaFormatter.setup(my_logger=logger)
+    tgNotify.setup(my_logger=logger)
 
 
 
@@ -99,103 +101,6 @@ def getRelayNames(device: dict) -> list:
 
 
 
-######################################################
-# process topic name and paylod data to findout query,
-#
-# topic='LnCmnd/topic_name/query' (comando esterno)
-#      payload="summary"
-#      payload="timers"
-#
-# topic='LnCmnd/topic_name/summary'
-#
-######################################################
-def telegram_notify(topic: str, payload: (dict, str)=None, device: dict=None):
-    logger.info('processing topic %s for telegram message', topic)
-    _,  topic_name, suffix=topic.split('/')
-
-
-    if not device and topic_name in devices:
-        device=devices[topic_name]
-
-    if 'STATE' not in device or 'sensors' not in device:
-        logger.warning('%s - non discovered too', topic_name)
-        return
-
-
-
-
-    _dict=LoretoDict()
-    _loreto=LoretoDict(device['Loreto'])
-    relayNames=_loreto['friendly_names']
-
-    if suffix=='summary':  ### LnCmnd/topic_name/summary
-        _dict.update(tasmotaFormatter.deviceInfo(data=_loreto))
-        _dict['Wifi']=tasmotaFormatter.wifi(data=_loreto["Wifi"])
-        _dict['Wifi']['Mac']=_loreto["Mac"]
-        _dict['Wifi']['IPAddress']=_loreto["IPAddress"]
-
-        for index, name in enumerate(relayNames):
-            pt_value, pt_remaining=tasmotaFormatter.getPulseTime(data=_loreto, relayNr=index)
-            timers_status=tasmotaFormatter.timers(data=device['RESULT'], outputRelay=index+1)
-
-            _dict[name]={}
-            _dict[name]["Pulsetime"]=pt_value
-            _dict[name]["Remaining"]=pt_remaining
-            _dict[name]["Status"]=_loreto[name]
-            _dict[name]["Timers"]=timers_status
-
-
-
-    elif suffix=='timers_in_payload':
-        for index, name in enumerate(relayNames):
-            _dict[name]={}
-            _dict[name]['Timers']=tasmotaFormatter.timers(data=payload, outputRelay=index+1)
-
-
-
-
-    ### Tested
-    elif suffix=='power_in_payload':     # payload dovrebbe contenere qualcosa tipo: {"POWER1":"OFF"}
-        for index, name in enumerate(relayNames):
-            _dict[name]={}
-            _dict[name]['Status']=tasmotaFormatter.timers(data=payload, outputRelay=index+1)
-
-        # for relay, relay_name in enumerate(relayNames):
-        #     _dict.set_keypath(f"{relay_name}.Status", value=_loreto[relay_name], create=True)
-
-
-
-
-    elif suffix=='pulsetime_in_payload':     # payload dovrebbe contenere qualcosa tipo: {"POWER1":"OFF"}
-        for index, name in enumerate(relayNames):
-            pt_value, pt_remaining=tasmotaFormatter.getPulseTime(data=payload, relayNr=index)
-            _dict[name]={}
-            _dict[name]["Pulsetime"]=pt_value
-            _dict[name]["Remaining"]=pt_remaining
-
-    else:
-        return
-
-
-
-
-
-    # fTELEGRAM_NOTIFICATION=(time.time()-notification_timer_OLD[topic_name])>5 # ignore topic messages when notification_timer_OLD is running
-    fTELEGRAM_NOTIFICATION=(time.time()-device["notification_timer"])>5 # ignore topic messages when notification_timer_OLD is running
-
-
-    if _dict and fTELEGRAM_NOTIFICATION:
-        tg_msg=LoretoDict({topic_name: _dict })
-        logger.warning('sending telegram message: %s', tg_msg)
-
-        ### parse_mode=None altrimenti mi da errore :
-        ### response: {'ok': False, 'error_code': 400, 'description': "Bad Request: can't parse entities: Can't find end of the entity starting at byte offset 493"}
-        STM.sendMsg(group_name=topic_name, message=tg_msg.to_yaml(sort_keys=False), my_logger=logger, caller=True, parse_mode=None, notify=True)
-        # STM.sendMsg(group_name=topic_name, message=tg_msg, my_logger=logger, caller=True, parse_mode='markdown')
-
-
-
-
 
 
 
@@ -205,7 +110,7 @@ def sendStatus():
     logger.notify("Sending summary to Telegram")
     for topic_name in devices.keys():
         logger.notify("Sending summary for %s to Telegram", topic_name)
-        telegram_notify(topic=f'LnCmnd/{topic_name}/summary', payload=None)
+        tgNotify.telegram_notify(topic=f'LnCmnd/{topic_name}/summary', payload=None, devices=devices)
 
 
 
@@ -261,7 +166,8 @@ def createDeviceEntry(topic_name):
         """
 
         device=yaml.load(base_device, Loader=yaml.SafeLoader)
-        device['notification_timer']=time.time()
+
+    device['notification_timer']=time.time() # azzeriamo comuqnue il timer
 
 
     return device
@@ -295,78 +201,6 @@ def updateDevice(topic: str, payload: dict, writeFile=True):
 
 
 
-
-
-
-'''
- "STATUS10": {
-        "StatusSNS": {
-            "Time": "2022-11-23T18:22:37"
-        }
-    },
-
-"STATUS11": {
-    "StatusSTS": {
-        "Time": "2022-11-23T18:22:37",
-        }
-    }
-
-"STATE": {"Time": "2022-11-23T18:24:08",}
-
-"RESULT": {
-    "POWER1": "ON",
-        }
-
-"STATUS11": {
-    "StatusSTS": {
-        "Time": "2022-11-23T18:22:37",
-        "Uptime": "2T10:22:26",
-        "UptimeSec": 210146,
-        "Heap": 22,
-        "SleepMode": "Dynamic",
-        "Sleep": 50,
-        "LoadAvg": 19,
-        "MqttCount": 113,
-        "POWER1": "ON",
-        "POWER2": "ON",
-        "Wifi": {
-            "AP": 1,
-            "SSId": "WPA4220_DF06",
-            "BSSId": "0C:80:63:D5:DF:06",
-            "Channel": 1,
-            "Mode": "11n",
-            "RSSI": 100,
-            "Signal": -27,
-            "LinkCount": 8,
-            "Downtime": "0T15:00:30"
-        }
-    }
-
-
- "STATE": {
-        "Time": "2022-11-23T18:24:08",
-        "Uptime": "2T10:23:57",
-        "UptimeSec": 210237,
-        "Heap": 24,
-        "SleepMode": "Dynamic",
-        "Sleep": 50,
-        "LoadAvg": 19,
-        "MqttCount": 113,
-        "POWER1": "ON",
-        "POWER2": "ON",
-        "Wifi": {
-            "AP": 1,
-            "SSId": "WPA4220_DF06",
-            "BSSId": "0C:80:63:D5:DF:06",
-            "Channel": 1,
-            "Mode": "11n",
-            "RSSI": 100,
-            "Signal": -27,
-            "LinkCount": 8,
-            "Downtime": "0T15:00:30"
-        }
-    }
-'''
 
 #########################################################
 # In tasmota abbiamo:
@@ -405,7 +239,9 @@ def process(topic, payload, mqttClient_CB):
     _nRelays=len( [x for x in _loreto['relays'] if x == 1] )
     friendlyNames=[x for x in _loreto['friendly_names'] if (x != '' and x != None)]
 
-    if isinstance(payload, dict):
+    if not payload:
+        return
+    elif isinstance(payload, dict):
         payload=LoretoDict(payload)
 
     _topic=f'{prefix}.{suffix}'
@@ -418,7 +254,8 @@ def process(topic, payload, mqttClient_CB):
     fUPDATE_device=True # default
 
     if prefix=='LnCmnd':
-        telegram_notify(topic=topic, payload=payload, device=device)
+        # telegram_notify(topic=topic, payload=payload, device=device)
+        tgNotify.telegram_notify(topic=topic, payload=payload, devices=devices)
 
     elif prefix == 'stat':
 
@@ -433,7 +270,7 @@ def process(topic, payload, mqttClient_CB):
 
         ### Tested
         elif suffix=='STATUS10':
-            _loreto['last_update']=payload['StatusSNS']['Time']
+            _loreto['last_update']=payload['StatusSNS.Time']
 
         ### Tested
         elif suffix=='STATUS11':
@@ -477,9 +314,16 @@ def process(topic, payload, mqttClient_CB):
                 work_topic=f'LnCmnd/{topic_name}/pulsetime_in_payload'
                 _loreto['PulseTime'].update(payload['PulseTime'])
 
+            ### Tested
+            elif 'SSId1' in payload:
+                import pdb; pdb.set_trace(); pass # by Loreto
+                work_topic=f'LnCmnd/{topic_name}/ssid_in_payload'
+                _loreto['SSID']=payload
+
             ### process data
             if work_topic:
-                telegram_notify(topic=work_topic, payload=payload, device=device)
+                # telegram_notify(topic=work_topic, payload=payload, device=device)
+                tgNotify.telegram_notify(topic=work_topic, payload=payload, devices=devices)
                 fUPDATE_device=True
 
     ### Tested
@@ -514,8 +358,7 @@ def process(topic, payload, mqttClient_CB):
         pass
 
     else:
-        logger.warning("topic: %s not managed", topic)
-        logger.warning(payload)
+        logger.warning("topic: %s not managed - payload: %s", topic, payload)
         fUPDATE_device=True
 
 

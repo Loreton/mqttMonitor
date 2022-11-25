@@ -17,8 +17,9 @@ from LnSuntimes import sunTime_casetta
 
 
 def setup(my_logger):
-    global logger
+    global logger, italicB, italicE
     logger=my_logger
+    italicB='<i>'; italicE='</i>'
 
 def getBasePointer(d: dict, key_list: list):
     keys=d.keySearch(d=d,  key_patterns=key_list)
@@ -29,10 +30,15 @@ def getBasePointer(d: dict, key_list: list):
 ####################################################################
 def wifi(data: dict):
     wifi={}
-    wifi["SSId"]=data['SSId']
-    wifi["BSSId"]=data['BSSId']
-    wifi["RSSI"]=data['RSSI']
-    wifi["Signal"]=data['Signal']
+    # wifi["SSId"]=italicB +  data['SSId'] + italicE
+    # wifi["BSSId"]=italicB +  data['BSSId'] + italicE
+    # wifi["RSSI"]=italicB +  data['RSSI'] + italicE
+    # wifi["Signal"]=italicB +  data['Signal'] + italicE
+
+    wifi["SSId"]=f"{italicB}{data['SSId']}{italicE}"
+    wifi["BSSId"]=f"{italicB}{data['BSSId']}{italicE}"
+    wifi["RSSI"]=f"{italicB}{data['RSSI']}{italicE}"
+    wifi["Signal"]=f"{italicB}{data['Signal']}{italicE}"
 
 
     return wifi
@@ -42,15 +48,21 @@ def wifi(data: dict):
 ### info varie
 ####################################################################
 def deviceInfo(data: dict):
-    infodata=dict()
-    infodata['device_name']      = data['device_name']
-    # infodata['ip_address']       = data['ip_address']
-    infodata['firmware']         = data['firmware']
-    infodata['modello']          = data['modello']
-    # infodata['host_name']        = data['sensors.hn']
-    # infodata['status']           = data['LWT']
+    d=dict()
+    iS='<i>'; iE='</i>'
+    _date, _time=data['last_update'].split('T')
 
-    return infodata
+    d['device_name'] = italicB + data['device_name'] + italicE
+    d['Last Update']= {
+                "date": italicB + _date + italicE,
+                "time": italicB + _time + italicE
+                }
+    d['firmware'] = italicB + data['firmware'] + italicE
+    d['modello'] = italicB + data['modello']  + italicE
+
+    # for key, value in d.items():
+    #     d[key]=f"{iS}{value}{iE}"
+    return d
 
 
 
@@ -124,6 +136,7 @@ def getPulseTime(data: dict, relayNr: int):
     pulsetime_remaining=pulseTimeToSeconds(REMAINING[relayNr]) if REMAINING else None
 
     return pulsetime_value, pulsetime_remaining
+    # return f"{italicB}{pulsetime_value}{italicE}", f"{italicB}{pulsetime_remaining}{italicE}"
 
 
 
@@ -219,20 +232,8 @@ def timers(data: dict, outputRelay: int=0) -> dict:
 
     myTimers={}
 
-
     areEnabled=(data['Timers']=="ON")
-    # logger.notify('_key: %s', _key)
 
-    # areEnabled=(data[_key]=="ON")
-    # logger.notify('areEnabled: %s', areEnabled)
-    # tk=_key.split('.')
-    # # logger.notify('tk: %s', tk)
-    # if len(tk) == 1:
-    #     base_ptr=data
-    # else:
-    #     base_key='.'.join(tk[:-1]) ### upper level key
-    #     base_ptr=data[base_key]
-    # logger.notify('base_ptr: %s', base_ptr)
 
     if areEnabled:
 
@@ -265,8 +266,9 @@ def timers(data: dict, outputRelay: int=0) -> dict:
                 onTime=''
                 _time=timerx["Time"]
 
-            myTimers[f'T{i}']=f'{_time} {ACTION} {DAYS}{onTime} [{RELAY}]'
+            # myTimers[f'T{i}']=f'{_time} {ACTION} {DAYS}{onTime} [{RELAY}]'
             myTimers[f'T{i}']=f'{_time} {ACTION} {DAYS}{onTime}'
+            # myTimers[f'T{i}']=f'{italicB}{_time} {ACTION} {DAYS}{onTime}{italicE}' # italic
     else:
         myTimers='Disabled'
 
