@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 2021-09-17
+# Date .........: 28-11-2022 17.10.30
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -21,6 +21,7 @@ from LnDict import LoretoDict
 import SendTelegramMessage as STM
 
 import Tasmota_Formatter as tasmotaFormatter
+# import Tasmota_Formatter_V1_1 as tasmotaFormatter
 
 
 
@@ -28,25 +29,95 @@ import Tasmota_Formatter as tasmotaFormatter
 def setup(my_logger):
     global logger
     logger=my_logger
-    # devices=LoretoDict()
-    # macTable=LoretoDict()
-    # startTime=time.time()
-    # notification_timer_OLD=time.time()
-    # notification_timer_OLD={}
-
-    # tasmotaFormatter.setup(my_logger=logger)
+    italicB='<i>'; italicE='</i>'
 
 
+def from_telegram(topic: str, payload: (dict, str)=None, devices: dict=None):
+    _dict=LoretoDict()
+    _loreto=LoretoDict(device['Loreto'])
+    relayNames=_loreto['friendly_names']
+
+    command=payload.get('command')
+    if command=='summary'
+        _dict.update(tasmotaFormatter.deviceInfo(data=_loreto))
+        _dict['Wifi']=tasmotaFormatter.wifi(data=_loreto["Wifi"])
+        _dict['Wifi']['Mac']=f"{italicB}{_loreto['Mac']}{italicE}"
+        _dict['Wifi']['IPAddress']=f"{italicB}{_loreto['IPAddress']}{italicE}"
+
+        for index, name in enumerate(relayNames):
+            pt_value, pt_remaining=tasmotaFormatter.getPulseTime(data=_loreto, relayNr=index)
+            timers_status=tasmotaFormatter.timers(data=device['RESULT'], outputRelay=index+1, italic=True)
+
+            _dict[name]={}
+            _dict[name]["Pulsetime"]=f"{italicB}{pt_value}{italicE}"
+            _dict[name]["Remaining"]=f"{italicB}{pt_remaining}{italicE}"
+            _dict[name]["Status"]=f"{italicB}{_loreto[name]}{italicE}"
+            _dict[name]["Timers"]=f"{italicB}{timers_status}{italicE}"
+
+
+    elif command=="mqtt":
+        _dict.update(tasmotaFormatter.deviceInfo(data=_loreto))
+        _data=device["STATUS6.StatusMQT"]
+
+        _mqtt=f'''MQTT:
+                Host:   {italicB}{_data['MqttHost']}{italicE}
+                Port:   {italicB}{_data['MqttPort']}{italicE}
+                User:   {italicB}{_data['MqttUser']}{italicE}
+                Client: {italicB}{_data['MqttClient']}{italicE}
+                '''
+        _dict=yaml.load(_mqtt , Loader=yaml.SafeLoader)
+
+
+    else:
+        _dict={"Response": f"command: {command} not implemented"}
+
+        # _dict={"MQTT": {
+        #                     'Host': f"{italicB}{_data['MqttHost']}{italicE}",
+        #                     'Port': f"{italicB}{_data['MqttPort']}{italicE}",
+        #                     'User': f"{italicB}{_data['MqttUser']}{italicE}",
+        #                     'Client': f"{italicB}{_data['MqttClient']}{italicE}",
+        #                 }
+        #         }
+
+    ### Power ON
+    # elif command in ["on1", "on2"]:
+    #     index=int(command[-1])
+
+    #     topic=f'cmnd/{topic_name}/backlog'
+    #     _payload=f'power{index} on'
+    #     result=mqttClient_CB.publish(topic=topic, payload=_payload, qos=0, retain=False)
+    #     _dict={"command": _payload,
+    #             "topic": topic,
+    #             "action": "executed",
+    #     }
+
+    # ### Power OFF
+    # elif command in ["off1", "off2"]:
+    #     index=int(command[-1])
+
+    #     topic=f'cmnd/{topic_name}/backlog'
+    #     _payload=f'power{index} off'
+    #     result=mqttClient_CB.publish(topic=topic, payload=_payload, qos=0, retain=False)
+    #     _dict={"command": _payload,
+    #             "topic": topic,
+    #             "action": "executed",
+    #     }
+
+
+
+    return _dict
 
 
 ######################################################
 # process topic name and paylod data to findout query,
 #
-# topic='LnCmnd/topic_name/query' (comando esterno)
-#      payload="summary"
-#      payload="timers"
+# LnCmnd/topic/tg_command
+#    payload={'command': backlog}
+#    payload={'command': summary}
+#    payload={'command': pulsetime}
 #
-# topic='LnCmnd/topic_name/summary'
+# LnCmnd/topic/tg_response
+#    payload={'result': data}
 #
 ######################################################
 def telegram_notify(topic: str, payload: (dict, str)=None, devices: dict=None):
@@ -70,42 +141,12 @@ def telegram_notify(topic: str, payload: (dict, str)=None, devices: dict=None):
     _dict=LoretoDict()
     _loreto=LoretoDict(device['Loreto'])
     relayNames=_loreto['friendly_names']
-    italicB='<i>'; italicE='</i>'
-
-    if suffix=='summary':  ### LnCmnd/topic_name/summary
-        _dict.update(tasmotaFormatter.deviceInfo(data=_loreto))
-        _dict['Wifi']=tasmotaFormatter.wifi(data=_loreto["Wifi"])
-        _dict['Wifi']['Mac']=f"{italicB}{_loreto['Mac']}{italicE}"
-        _dict['Wifi']['IPAddress']=f"{italicB}{_loreto['IPAddress']}{italicE}"
-
-        for index, name in enumerate(relayNames):
-            pt_value, pt_remaining=tasmotaFormatter.getPulseTime(data=_loreto, relayNr=index)
-            timers_status=tasmotaFormatter.timers(data=device['RESULT'], outputRelay=index+1)
-
-            _dict[name]={}
-            _dict[name]["Pulsetime"]=f"{italicB}{pt_value}{italicE}"
-            _dict[name]["Remaining"]=f"{italicB}{pt_remaining}{italicE}"
-            _dict[name]["Status"]=f"{italicB}{_loreto[name]}{italicE}"
-            _dict[name]["Timers"]=f"{italicB}{timers_status}{italicE}"
 
 
-    elif suffix=="mqtt":  ### LnCmnd/topic_name/mqtt
-        _dict.update(tasmotaFormatter.deviceInfo(data=_loreto))
-        _data=device["STATUS6.StatusMQT"]
-        # _dict={'MQTT': {}}
-        # _dict['MQTT']['MqttHost']=_data['MqttHost']
-        # _dict['MQTT']['MqttPort']=_data['MqttPort']
-        # _dict['MQTT']['MqttUser']=_data['MqttUser']
-        # _dict['MQTT']['MqttUser']=_data['MqttUser']
+    ### LnCmnd/topic_name/tg_command
+    if suffix=='tg_command':
+        _dict=from_telegram(topic=topic, payload=payload, devices=devices)
 
-
-        _dict={"MQTT": {
-                            'Host': f"{italicB}{_data['MqttHost']}{italicE}",
-                            'Port': f"{italicB}{_data['MqttPort']}{italicE}",
-                            'User': f"{italicB}{_data['MqttUser']}{italicE}",
-                            'Client': f"{italicB}{_data['MqttClient']}{italicE}",
-                        }
-                }
 
     elif suffix=='timers_in_payload':
         for index, name in enumerate(relayNames):

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 2021-09-17
+# Date .........: 28-11-2022 17.10.42
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -21,7 +21,7 @@ from LnDict import LoretoDict
 import SendTelegramMessage as STM
 
 import Tasmota_Formatter as tasmotaFormatter
-import Telegram_Notification as tgNotify
+import Telegram_Notification_V1_0 as tgNotify
 
 
 
@@ -229,20 +229,29 @@ def process(topic, payload, mqttClient_CB):
 
     ### create device dictionary entry if not exists
     if not topic_name in devices:
+        logger.info('creating device: %s', topic_name)
         devices[topic_name]=LoretoDict(createDeviceEntry(topic_name))
         refreshDeviceData(topic_name, mqttClient_CB)
 
+    if not payload:
+        logger.warning('%s: no payload', topic_name)
+        return
+
+    elif isinstance(payload, dict):
+        payload=LoretoDict(payload)
 
     ### dictionary del device
     device=devices[topic_name]
     _loreto=device['Loreto']
-    _nRelays=len( [x for x in _loreto['relays'] if x == 1] )
-    friendlyNames=[x for x in _loreto['friendly_names'] if (x != '' and x != None)]
 
-    if not payload:
+
+    if 'friendly_names' in _loreto and 'relays' in _loreto:
+        _nRelays=len( [x for x in _loreto['relays'] if x == 1] )
+        friendlyNames=[x for x in _loreto['friendly_names'] if (x != '' and x != None)]
+    else:
+        logger.warning('%s: no friendly_names or relays found', topic_name)
         return
-    elif isinstance(payload, dict):
-        payload=LoretoDict(payload)
+
 
     _topic=f'{prefix}.{suffix}'
 
@@ -253,8 +262,8 @@ def process(topic, payload, mqttClient_CB):
     ### --------------------------
     fUPDATE_device=True # default
 
+    logger.info('%s: processing', topic)
     if prefix=='LnCmnd':
-        # telegram_notify(topic=topic, payload=payload, device=device)
         tgNotify.telegram_notify(topic=topic, payload=payload, devices=devices)
 
     elif prefix == 'stat':
@@ -316,7 +325,6 @@ def process(topic, payload, mqttClient_CB):
 
             ### Tested
             elif 'SSId1' in payload:
-                import pdb; pdb.set_trace(); pass # by Loreto
                 work_topic=f'LnCmnd/{topic_name}/ssid_in_payload'
                 _loreto['SSID']=payload
 
@@ -364,5 +372,6 @@ def process(topic, payload, mqttClient_CB):
 
 
     if fUPDATE_device:
+        logger.notify("updating device file: %s", topic_name)
         updateDevice(topic=topic, payload=payload, writeFile=True)
 

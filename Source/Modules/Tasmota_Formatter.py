@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 2021-09-17
+# Date .........: 28-11-2022 17.10.44
 
 import  sys; sys.dont_write_bytecode = True
 import  os
@@ -185,7 +185,7 @@ def setPulseTime(data, relayNr):
 #       T1: 17:21 on LMMGVSD sS
 #       T2: 22:30 off LMMGVSD
 ####################################################################
-def timers(data: dict, outputRelay: int=0) -> dict:
+def timers(data: dict, outputRelay: int=0, italic=False) -> dict:
     # if 'RESULT' in data:
         # data=data['RESULT']
 
@@ -267,8 +267,10 @@ def timers(data: dict, outputRelay: int=0) -> dict:
                 _time=timerx["Time"]
 
             # myTimers[f'T{i}']=f'{_time} {ACTION} {DAYS}{onTime} [{RELAY}]'
-            myTimers[f'T{i}']=f'{_time} {ACTION} {DAYS}{onTime}'
-            # myTimers[f'T{i}']=f'{italicB}{_time} {ACTION} {DAYS}{onTime}{italicE}' # italic
+            if italic:
+                myTimers[f'T{i}']=f'{italicB}{_time} {ACTION} {DAYS}{onTime}{italicE}' # italic
+            else:
+                myTimers[f'T{i}']=f'{_time} {ACTION} {DAYS}{onTime}'
     else:
         myTimers='Disabled'
 

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 2021-09-17
+# Date .........: 28-11-2022 17.10.27
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
