@@ -1,1 +1,1 @@
-/media/loreto/LnDataDisk/Filu/LnDisk/GIT-REPO/Python/LnPyLib/Time/Timer_LN.py
+/media/loreto/LnDataDisk/Filu/LnDisk/GIT-REPO/Python/LnPyLib/Time/LnTimer.py

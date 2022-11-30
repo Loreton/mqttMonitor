@@ -1,14 +1,8 @@
-# "${LNLIB_DIR}/Logger/ColoredLogger_202211.py"     ColoredLogger.py
 "${LNLIB_DIR}/Logger/ColoredLogger_V1.3.py"     ColoredLogger.py
-# "${LNLIB_DIR}/Files/readFile.py"          =
-# "${LNLIB_DIR}/Files/writeFile.py"          =
-# "${LNLIB_DIR}/Utils/keyboard_prompt.py"    =
-# "${LNLIB_DIR}/Dictionary/read_ini_file.py" =
-# "${LNLIB_DIR}/System/subprocessPopen.py"   =
-# "${LNLIB_DIR}/System/subprocessRun.py"     =
-"${LNLIB_DIR}/Dictionary/LoretoDict_202211.py"      LnDict.py
+"${LNLIB_DIR}/Dictionary/LoretoDict_202211.py"      LoretoDict.py
 "${LNLIB_DIR}/telegram/SendTelegramMessage.py"      =
+"${LNLIB_DIR}/tasmota/Human_Tasmota_Converter.py"   =
 
-${LNLIB_DIR}/Time/Time_LN.py                       LnTime.py
-${LNLIB_DIR}/Time/Timer_LN.py                       LnTimer.py
-${LNLIB_DIR}/Time/suntimes_LN.py                       LnSuntimes.py
+${LNLIB_DIR}/Time/LnTime.py                       =
+${LNLIB_DIR}/Time/LnTimer.py                      =
+${LNLIB_DIR}/Time/LnSunTimes.py                   =

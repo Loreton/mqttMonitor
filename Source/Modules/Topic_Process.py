@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 28-11-2022 17.10.42
+# Date .........: 30-11-2022 18.12.20
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -17,7 +17,7 @@ import time
 import json, yaml
 import signal
 
-from LnDict import LoretoDict
+from LoretoDict import LnDict
 import SendTelegramMessage as STM
 
 import Tasmota_Formatter as tasmotaFormatter
