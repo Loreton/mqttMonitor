@@ -13,7 +13,7 @@ from ColoredLogger import setColoredLogger, testLogger
 from ParseInput import ParseInput
 import mqttClientMonitor
 from savePidFile import savePidFile
-import LnDict
+import LoretoDict
 
 
 
@@ -26,7 +26,7 @@ if __name__ == '__main__':
                             logging_dir=args.logging_dir, # logging file--> logging_dir + logger_name
                             threads=False)
     testLogger(logger)
-    LnDict.setLogger(mylogger=logger)
+    LoretoDict.setLogger(mylogger=logger)
     user=os.environ.get('USER')
     os.environ["ln_RUNTIME_DIR"]=f"/home/{user}/ln_runtime"
 

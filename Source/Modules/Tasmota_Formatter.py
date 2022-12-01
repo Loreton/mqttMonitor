@@ -2,17 +2,17 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 28-11-2022 17.10.44
+# Date .........: 01-12-2022 08.44.42
 
 import  sys; sys.dont_write_bytecode = True
 import  os
 # import logging; logger=logging.getLogger(__name__)
 
-from LnDict import LoretoDict
+from LoretoDict import LnDict
 from LnTime import millisecs_to_HMS_ms
 from datetime import timedelta, datetime
 import time
-from LnSuntimes import sunTime_casetta
+from LnSunTime import sunTime_casetta
 
 
 

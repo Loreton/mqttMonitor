@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 28-11-2022 17.25.52
+# Date .........: 01-12-2022 08.39.36
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -17,7 +17,7 @@ import time
 import json, yaml
 import signal
 
-from LnDict import LoretoDict
+from LoretoDict import LnDict
 import SendTelegramMessage as STM
 
 import Tasmota_Formatter as tasmotaFormatter
@@ -61,8 +61,8 @@ def telegram_notify(topic: str, payload: (dict, str)=None, devices: dict=None):
 
 
 
-    _dict=LoretoDict()
-    _loreto=LoretoDict(device['Loreto'])
+    _dict=LnDict()
+    _loreto=LnDict(device['Loreto'])
     relayNames=_loreto['friendly_names']
     italicB='<i>'; italicE='</i>'
 
@@ -168,7 +168,7 @@ def telegram_notify(topic: str, payload: (dict, str)=None, devices: dict=None):
 
 
     if _dict and fTELEGRAM_NOTIFICATION:
-        tg_msg=LoretoDict({topic_name: _dict })
+        tg_msg=LnDict({topic_name: _dict })
         logger.notify('sending telegram message: %s', tg_msg)
 
         ### parse_mode=None altrimenti mi da errore oppure html ma con attenzione:

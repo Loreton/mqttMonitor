@@ -1,8 +1,8 @@
 "${LNLIB_DIR}/Logger/ColoredLogger_V1.3.py"     ColoredLogger.py
 "${LNLIB_DIR}/Dictionary/LoretoDict_202211.py"      LoretoDict.py
 "${LNLIB_DIR}/telegram/SendTelegramMessage.py"      =
-"${LNLIB_DIR}/tasmota/Human_Tasmota_Converter.py"   =
+"${LNLIB_DIR}/tasmota/Tasmota_Human_Converter.py"   =
 
 ${LNLIB_DIR}/Time/LnTime.py                       =
 ${LNLIB_DIR}/Time/LnTimer.py                      =
-${LNLIB_DIR}/Time/LnSunTimes.py                   =
+${LNLIB_DIR}/Time/LnSunTime.py                   =

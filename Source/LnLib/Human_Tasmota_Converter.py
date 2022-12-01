@@ -1,1 +1,0 @@
-/media/loreto/LnDataDisk/Filu/LnDisk/GIT-REPO/Python/LnPyLib/tasmota/Human_Tasmota_Converter.py

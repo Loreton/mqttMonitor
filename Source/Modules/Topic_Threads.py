@@ -2,14 +2,14 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 28-11-2022 17.10.27
+# Date .........: 01-12-2022 08.40.16
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
 
 import  sys; sys.dont_write_bytecode = True
 import  os
-from LnDict import LoretoDict
+from LoretoDict import LnDict
 from TelegramMessage import telegramSend
 
 
@@ -84,8 +84,8 @@ class myThread(threading.Thread):
 def setup(my_logger):
     global logger, devices, myThreads, inputQ, resultQ, macTable
     logger=my_logger
-    devices=LoretoDict()
-    macTable=LoretoDict()
+    devices=LnDict()
+    macTable=LnDict()
     myThreads = []
 
     # -------------------------------------------------------
@@ -178,7 +178,7 @@ def from_telegram_command(topic: str, payload: dict, device: dict):
     else:
         query=payload.strip()
 
-    qdata=LoretoDict()
+    qdata=LnDict()
     if query=='status':
         qdata.update(tasmotaFmt.deviceInfo(device))
         qdata['Wifi']=tasmotaFmt.wifi(device)
@@ -190,7 +190,7 @@ def from_telegram_command(topic: str, payload: dict, device: dict):
         return
 
 
-    tg_msg=LoretoDict({topic_name: qdata })
+    tg_msg=LnDict({topic_name: qdata })
     telegramSend(group_name=topic_name, message=tg_msg.to_yaml(sort_keys=False), logger=logger)
 
 
@@ -284,7 +284,7 @@ def process(topic, payload, mqttClient_CB):
         result=mqttClient_CB.publish(f'cmnd/{topic_name}/backlog', 'teleperiod 30', qos=0, retain=False)
     #----------------------------------------------
     if isinstance(payload, dict):
-        payload=LoretoDict(payload)
+        payload=LnDict(payload)
 
     """ topic='tasmota/discovery/DC4F22D3B32F/sensors'
         cambiare il topic attraverso il MAC
@@ -323,8 +323,8 @@ def process(topic, payload, mqttClient_CB):
 
     else:
         ### create entry for device name
-        devices[topic_name]=LoretoDict()
-        devices[topic_name]['Loreto']=LoretoDict()
+        devices[topic_name]=LnDict()
+        devices[topic_name]['Loreto']=LnDict()
 
         devices[topic_name]['Loreto']['file_out']=os.path.expandvars(f"$ln_RUNTIME_DIR/mqtt_monitor/{topic_name}.json")
         if prefix in ['tele', 'stat', 'cmnd', 'LnCmnd']:

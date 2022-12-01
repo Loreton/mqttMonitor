@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 30-11-2022 18.12.20
+# Date .........: 01-12-2022 08.39.52
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -29,8 +29,8 @@ import Telegram_Notification_V1_0 as tgNotify
 def setup(my_logger):
     global logger, devices, macTable
     logger=my_logger
-    devices=LoretoDict()
-    macTable=LoretoDict()
+    devices=LnDict()
+    macTable=LnDict()
     # startTime=time.time()
     # notification_timer_OLD=time.time()
     # notification_timer_OLD={}
@@ -230,7 +230,7 @@ def process(topic, payload, mqttClient_CB):
     ### create device dictionary entry if not exists
     if not topic_name in devices:
         logger.info('creating device: %s', topic_name)
-        devices[topic_name]=LoretoDict(createDeviceEntry(topic_name))
+        devices[topic_name]=LnDict(createDeviceEntry(topic_name))
         refreshDeviceData(topic_name, mqttClient_CB)
 
     if not payload:
@@ -238,7 +238,7 @@ def process(topic, payload, mqttClient_CB):
         return
 
     elif isinstance(payload, dict):
-        payload=LoretoDict(payload)
+        payload=LnDict(payload)
 
     ### dictionary del device
     device=devices[topic_name]
