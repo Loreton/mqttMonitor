@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 03-12-2022 09.00.58
+# Date .........: 01-12-2022 10.42.02
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -46,56 +46,97 @@ def setup(my_logger):
 def telegram_notify(deviceObj, topic: str, payload: (dict, str)=None):
     logger.info('processing topic %s for telegram message', topic)
     _,  topic_name, suffix=topic.split('/')
-    if not deviceObj.telegramNotification():
+
+
+    if topic_name in devices:
+        device=devices[topic_name]
+    else:
+        logger.error("topic_name: %s not found in devives", topic_name)
+        return
+
+    if 'STATE' not in device or 'sensors' not in device:
+        logger.warning('%s - non discovered too', topic_name)
         return
 
 
-    _dict={}
-    # _loreto=LnDict(device['Loreto'])
-    relayNames=deviceObj.friendlyNames()
+
+
+    _dict=LnDict()
+    _loreto=LnDict(device['Loreto'])
+    relayNames=_loreto['friendly_names']
     italicB='<i>'; italicE='</i>'
 
     if suffix=='summary':  ### LnCmnd/topic_name/summary
         logger.notify("%s - I'm in 'summary' routine", topic_name)
-        _dict.update(deviceObj.Info(italic=True))
-        _dict['Wifi']=deviceObj.wifi(italic=True)
+        _dict.update(tasmotaFormatter.deviceInfo(data=_loreto))
+        _dict['Wifi']=tasmotaFormatter.wifi(data=_loreto["Wifi"])
+        _dict['Wifi']['Mac']=f"{italicB}{_loreto['Mac']}{italicE}"
+        _dict['Wifi']['IPAddress']=f"{italicB}{_loreto['IPAddress']}{italicE}"
 
         for index, name in enumerate(relayNames):
-            pt_value, pt_remaining=deviceObj.pulseTimeToHuman(relay_nr=index, italic=True)
+            pt_value, pt_remaining=tasmotaFormatter.getPulseTime(data=_loreto, relayNr=index)
+            timers_status=tasmotaFormatter.timers(data=device['RESULT'], outputRelay=index+1)
 
             _dict[name]={}
-            _dict[name]["Status"]=deviceObj.relayStatus(relay_nr=index+1, italic=True)
-            _dict[name]["Pulsetime"]=pt_value
-            _dict[name]["Remaining"]=pt_remaining
-            _dict[name]["Timers"]=deviceObj.timersToHuman(relay_nr=index+1, italic=True)
+            _dict[name]["Pulsetime"]=f"{italicB}{pt_value}{italicE}"
+            _dict[name]["Remaining"]=f"{italicB}{pt_remaining}{italicE}"
+            _dict[name]["Status"]=f"{italicB}{_loreto[name]}{italicE}"
+            _dict[name]["Timers"]=f"{italicB}{timers_status}{italicE}"
 
 
     elif suffix=="mqtt":  ### LnCmnd/topic_name/mqtt
         logger.notify("%s - I'm in 'mqtt' routine", topic_name)
-        _dict.update(deviceObj.Info(italic=True))
-        _dict=deviceObj.mqtt(italic=True)
+        _dict.update(tasmotaFormatter.deviceInfo(data=_loreto))
+        _data=device["STATUS6.StatusMQT"]
+
+        _dict={"MQTT": {
+                            'Host': f"{italicB}{_data['MqttHost']}{italicE}",
+                            'Port': f"{italicB}{_data['MqttPort']}{italicE}",
+                            'User': f"{italicB}{_data['MqttUser']}{italicE}",
+                            'Client': f"{italicB}{_data['MqttClient']}{italicE}",
+                        }
+                }
 
     elif suffix=='timers_in_payload':
         logger.notify("%s - I'm in 'timers_in_payload' routine", topic_name)
         for index, name in enumerate(relayNames):
             _dict[name]={}
-            _dict[name]["Timers"]=deviceObj.timersToHuman(relay_nr=index+1, italic=True)
+            _dict[name]['Timers']=tasmotaFormatter.timers(data=payload, outputRelay=index+1)
+
+
 
 
     ### Tested
+    elif suffix=='XXXpower_in_payload':     # payload dovrebbe contenere qualcosa tipo: {"POWER1":"OFF"}
+        logger.notify("%s - I'm in 'power_in_payload' routine", topic_name)
+        key=list(payload.keys())[0] # dovrebbe essere POWERx
+        index=int(key[-1])
+        name=relayNames[index-1]
+        _dict[name]=payload[key]
+
+
+
+    ### Tested {"POWER1":"OFF"}
     elif suffix=='power_in_payload':
         logger.notify("%s - I'm in 'power_in_payload' routine", topic_name)
 
+        ### catturiamo lo status
+        key=list(payload.keys())[0] # dovrebbe essere POWERx
+        new_status=payload[key]  # value ON, OFF
 
-        ### catturare solo  {"POWERx":"ON/OFF"}
-        keys=list(payload.keys())
-        if len(keys)==1:
-            if keys[0].startswith('POWER'):
-                ### scan friendly names
-                for index, name in enumerate(relayNames):
-                    name=relayNames[index]
-                    _dict[name]={}
-                    _dict[name]=deviceObj.relayStatus(relay_nr=index+1, italic=True)
+        ### catturiamo l'indice del relay
+        index=int(key[-1])   ### 1,2,...
+        friendly_name=relayNames[index-1] # friendly_name
+
+        ### scan friendly names
+        for index, name in enumerate(relayNames):
+            name=relayNames[index-1]
+            if name==friendly_name:
+                _dict[name]=f"{italicB}{new_status}{italicE}"
+            else:
+                _dict[name]=f"{italicB}{_loreto[name]}{italicE}"
+
+
 
 
 
@@ -103,7 +144,7 @@ def telegram_notify(deviceObj, topic: str, payload: (dict, str)=None):
     elif suffix=='pulsetime_in_payload':     # payload dovrebbe contenere qualcosa tipo: {"POWER1":"OFF"}
         logger.notify("%s - I'm in 'pulsetime_in_payload' routine", topic_name)
         for index, name in enumerate(relayNames):
-            pt_value, pt_remaining=deviceObj.pulseTimeToHuman(relay_nr=index, italic=True)
+            pt_value, pt_remaining=tasmotaFormatter.getPulseTime(data=payload, relayNr=index)
             _dict[name]={}
             _dict[name]["Pulsetime"]=pt_value
             _dict[name]["Remaining"]=pt_remaining
@@ -123,11 +164,10 @@ def telegram_notify(deviceObj, topic: str, payload: (dict, str)=None):
 
 
     # fTELEGRAM_NOTIFICATION=(time.time()-notification_timer_OLD[topic_name])>5 # ignore topic messages when notification_timer_OLD is running
-    # fTELEGRAM_NOTIFICATION=(time.time()-deviceObj.notificationTimer())>10 # ignore topic messages when notification_timer_OLD is running
+    fTELEGRAM_NOTIFICATION=(time.time()-device["notification_timer"])>10 # ignore topic messages when notification_timer_OLD is running
 
 
-    # if _dict and fTELEGRAM_NOTIFICATION:
-    if _dict:
+    if _dict and fTELEGRAM_NOTIFICATION:
         tg_msg=LnDict({topic_name: _dict })
         logger.notify('sending telegram message: %s', tg_msg)
 

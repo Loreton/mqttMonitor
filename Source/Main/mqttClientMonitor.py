@@ -240,7 +240,8 @@ def run(gVars: dict):
         hh=time.strftime("%H")
         ss=time.strftime("%S")
 
-        if int(mm)==0 and int(hh)>6 and int(hh)<22:
+        # if int(mm)==0 and int(hh)>6 and int(hh)<22:
+        if int(mm)==0 and int(hh)%4: # ogni 4 ore...
             Topic.sendStatus()
 
 
