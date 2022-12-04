@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 03-12-2022 09.00.20
+# Date .........: 04-12-2022 15.02.37
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -10,7 +10,7 @@
 import  sys; sys.dont_write_bytecode = True
 import  os
 # import logging; logger=logging.getLogger(__name__)
-
+from types import SimpleNamespace
 import threading
 from queue import Queue
 import time
@@ -29,13 +29,13 @@ from Tasmota_Class import TasmotaClass
 
 
 
-def setup(my_logger):
-    global logger, devices, macTable
-    logger=my_logger
-    devices=LnDict()
-    macTable=LnDict()
+def setup(gVars: SimpleNamespace):
+    global gv, logger, devices, macTable
+    gv=gVars
+    logger=gv.logger
+    devices=dict()
+    macTable=dict()
 
-    # tasmotaFormatter.setup(my_logger=logger)
     tgNotify.setup(my_logger=logger)
 
 
@@ -126,7 +126,7 @@ def refreshDeviceData(topic_name: str, deviceObj, mqttClient_CB):
 #########################################################
 def process(topic, payload, mqttClient_CB):
     logger.info('processing topic: %s', topic)
-    runtime_dir=os.environ.get('ln_RUNTIME_DIR')
+    # runtime_dir=os.environ.get('ln_RUNTIME_DIR')
 
 
 
@@ -148,7 +148,7 @@ def process(topic, payload, mqttClient_CB):
     ### create device dictionary entry if not exists
     if not topic_name in devices:
         logger.info('creating device: %s', topic_name)
-        devices[topic_name]=TasmotaClass(device_name=topic_name, runtime_dir=runtime_dir, logger=logger)
+        devices[topic_name]=TasmotaClass(device_name=topic_name, runtime_dir=gv.mqttmonitor_runtime_dir, logger=logger)
         refreshDeviceData(topic_name=topic_name, deviceObj=devices[topic_name], mqttClient_CB=mqttClient_CB)
 
     if not payload:
@@ -200,7 +200,7 @@ def process(topic, payload, mqttClient_CB):
             if isinstance(payload, dict): # a volte arriva sbagliato come nell'AreazioneSuperiore
                 deviceObj.updateSTATUS11(data=payload)
             else:
-                self.logger.error("%s - ERRORE nello STATUS11: %s", topic_name, payload)
+                logger.error("%s - ERRORE nello STATUS11: %s", topic_name, payload)
 
 
         elif suffix=='RESULT' and payload:

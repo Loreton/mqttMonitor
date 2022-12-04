@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 03-12-2022 09.00.58
+# Date .........: 04-12-2022 16.14.01
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -46,6 +46,7 @@ def setup(my_logger):
 def telegram_notify(deviceObj, topic: str, payload: (dict, str)=None):
     logger.info('processing topic %s for telegram message', topic)
     _,  topic_name, suffix=topic.split('/')
+
     if not deviceObj.telegramNotification():
         return
 
@@ -79,7 +80,11 @@ def telegram_notify(deviceObj, topic: str, payload: (dict, str)=None):
         logger.notify("%s - I'm in 'timers_in_payload' routine", topic_name)
         for index, name in enumerate(relayNames):
             _dict[name]={}
+            _dict[name]['Status']=deviceObj.relayStatus(relay_nr=index+1, italic=True)
             _dict[name]["Timers"]=deviceObj.timersToHuman(relay_nr=index+1, italic=True)
+            # _dict[name]=[]
+            # _dict[name].append(deviceObj.relayStatus(relay_nr=index+1, italic=True))
+            # _dict[name].append(deviceObj.timersToHuman(relay_nr=index+1, italic=True))
 
 
     ### Tested
@@ -93,7 +98,6 @@ def telegram_notify(deviceObj, topic: str, payload: (dict, str)=None):
             if keys[0].startswith('POWER'):
                 ### scan friendly names
                 for index, name in enumerate(relayNames):
-                    name=relayNames[index]
                     _dict[name]={}
                     _dict[name]=deviceObj.relayStatus(relay_nr=index+1, italic=True)
 
@@ -105,8 +109,9 @@ def telegram_notify(deviceObj, topic: str, payload: (dict, str)=None):
         for index, name in enumerate(relayNames):
             pt_value, pt_remaining=deviceObj.pulseTimeToHuman(relay_nr=index, italic=True)
             _dict[name]={}
-            _dict[name]["Pulsetime"]=pt_value
-            _dict[name]["Remaining"]=pt_remaining
+            _dict[name]["Pulsetime"]=f"{pt_value} ({pt_remaining})"
+            # _dict[name]["Pulsetime"]=pt_value
+            # _dict[name]["Remaining"]=pt_remaining
 
 
 
@@ -120,13 +125,6 @@ def telegram_notify(deviceObj, topic: str, payload: (dict, str)=None):
 
 
 
-
-
-    # fTELEGRAM_NOTIFICATION=(time.time()-notification_timer_OLD[topic_name])>5 # ignore topic messages when notification_timer_OLD is running
-    # fTELEGRAM_NOTIFICATION=(time.time()-deviceObj.notificationTimer())>10 # ignore topic messages when notification_timer_OLD is running
-
-
-    # if _dict and fTELEGRAM_NOTIFICATION:
     if _dict:
         tg_msg=LnDict({topic_name: _dict })
         logger.notify('sending telegram message: %s', tg_msg)

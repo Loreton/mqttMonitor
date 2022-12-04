@@ -9,7 +9,7 @@
 
 import  sys; sys.dont_write_bytecode = True
 import  os
-# import logging; logger=logging.getLogger(__name__)
+from types import SimpleNamespace
 
 import  signal
 import  yaml, json
@@ -32,10 +32,10 @@ def signal_handler_Mqtt(signalLevel, frame):
     logger.warning("signalLevel: %s", signalLevel)
 
     # client.Stop(termination_code=0, msg="signal_handler_Mqtt function") # stop mqtt and return
-    client.loop_stop()
+    gv.client.loop_stop()
     pid=os.getpid()
 
-    if systemd:
+    if gv.systemd:
         print('sono qui')
         logger.warning("MQTT server - Terminating on SIGTERM signalLevel [%s] under systemd control ", signalLevel)
         # threading.Thread(target=shutdown).start()
@@ -143,7 +143,7 @@ def checkPayload(message):
 #
 ####################################################################
 def on_message(client, userdata, message):
-    publish_timer.restart(seconds=100) # if message has been received means application is alive.
+    gv.publish_timer.restart(seconds=100) # if message has been received means application is alive.
 
     # payload=checkPayload(message.payload)
     payload=checkPayload(message)
@@ -166,10 +166,10 @@ def on_message(client, userdata, message):
         logger.debug("   payload: %s", payload)
 
 
-    if CLEAR_RETAINED and message.retain:
+    if gv.clear_retained and message.retain:
         clear_retained_topic(client, message)
 
-    if not just_monitor:
+    if not gv.just_monitor:
         Topic.process(topic=message.topic, payload=payload, mqttClient_CB=client)
 
 
@@ -191,45 +191,36 @@ def subscribe(client: mqtt_client, topics: list):
 ####################################################################
 #
 ####################################################################
-# def run(my_logger, topic_list: list=['+/#'], clear_retained: bool=False):
-    # logger=my_logger
-def run(gVars: dict):
-    global gv, CLEAR_RETAINED, logger,  myself_timer, publish_timer, client, systemd, just_monitor
-    gv             = gVars
-    logger         = gv["logger"]
-    systemd        = gv["systemd"]
-    topic_list     = gv["topic_list"]
-    CLEAR_RETAINED = gv["clear_retained"]
-    just_monitor   = gv["monitor"]
-    tgGroupName    = gv["tgGroupName"]
+def run(gVars: SimpleNamespace):
+    global gv, logger
+    gv     = gVars
+    logger = gv.logger
 
 
 
 
-    client = connect_mqtt()
 
-    publish_timer=LnTimer(name='ping publish', default_time=100, start=True, logger=logger)
-    publish_timer.start(seconds=100)
+    client=connect_mqtt()
+    gv.client=client
 
-    # myself_timer=LnTimer(name='ping mySelf', default_time=6, start=False, logger=logger)
-    # myself_timer.start()
+    gv.publish_timer=LnTimer(name='ping publish', default_time=100, start=True, logger=logger)
+    gv.publish_timer.start(seconds=100)
 
+    Topic.setup(gVars=gv)
+    gv.topic_list.append('LnCmnd/#')
 
-    Topic.setup(my_logger=logger)
-    topic_list.append('LnCmnd/#')
-
-    if not '+/#' in topic_list:
-        topic_list.append('tasmota/discovery/#')
+    if not '+/#' in gv.topic_list:
+        gv.topic_list.append('tasmota/discovery/#')
         # topic_list.append('+/#')
-    subscribe(client, topic_list)
+    subscribe(client, gv.topic_list)
 
 
-    if just_monitor:
+    if gv.just_monitor:
         client.loop_forever()
 
 
     client.loop_start()
-    STM.sendMsg(group_name=tgGroupName, message="application has been started!", my_logger=logger, caller=True, parse_mode='markdown')
+    STM.sendMsg(group_name=gv.tgGroupName, message="application has been started!", my_logger=logger, caller=True, parse_mode='markdown')
     time.sleep(4) # Wait for connection setup to complete
 
 
@@ -246,16 +237,16 @@ def run(gVars: dict):
 
 
         if int(mm) in [0, 15, 30, 45]:
-            savePidFile(gv['pid_file'])
+            savePidFile(gv.pid_file)
 
         """ ho notato che dopo un pò il client va in hang e non cattura più
             i messaggi. Il codice che segue serve a monitorare lo status
             dell'applicazione e farla ripartire se necessario.
             publish_timer if exausted means that the application is NOT responding """
-        if publish_timer.is_exausted(logger=logger.debug):
+        if gv.publish_timer.is_exausted(logger=logger.debug):
             logger.error('publish_timer - exausted')
             logger.error('restarting application')
-            STM.sendMsg(group_name='Ln_MqttMonitor', message="publish_timer - exausted - application is restarting!", my_logger=logger, caller=True, parse_mode='markdown')
+            STM.sendMsg(group_name=gv.tgGroupName, message="publish_timer - exausted - application is restarting!", my_logger=logger, caller=True, parse_mode='markdown')
             os.kill(int(os.getpid()), signal.SIGTERM)
 
 

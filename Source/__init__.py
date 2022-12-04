@@ -3,15 +3,12 @@
 # -*- coding: iso-8859-1 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 18-11-2022 12.22.24
+# Date .........: 04-12-2022 14.56.40
 
 
-import  sys; sys.dont_write_bytecode = True
-import  os
-import logging; logger=logging.getLogger(__name__)
 
+import sys
 from pathlib import Path
-
 
 
 # -------------------------
@@ -21,11 +18,6 @@ from pathlib import Path
 # -------------------------
 _my_path=[]
 def set_path():
-
-    def _include_path(path):
-        if os.path.exists(path):
-            _my_path.append(path)
-
     script_name=Path(sys.argv[0]).resolve()
 
     if script_name.suffix == '.zip': # sono all'interno dello zip
@@ -36,18 +28,15 @@ def set_path():
         prj_dir=script_name.parent # nome della prj directory
         _my_path.append(script_name.parent)
 
-    _include_path(prj_dir)
-    _include_path(f'{prj_dir}/Source')
-    _include_path(f'{prj_dir}/Source/Main')
-    _include_path(f'{prj_dir}/Source/LnLib')
-    _include_path(f'{prj_dir}/Source/Modules')
-    _include_path(f'{prj_dir}/Source/Mqtt')
-    _include_path(f'{prj_dir}/Source/LnLib.zip')
+    _my_path.append(prj_dir)
+    _my_path.append(f'{prj_dir}/Source')
+    _my_path.append(f'{prj_dir}/Source/Main')
+    _my_path.append(f'{prj_dir}/Source/Modules')
+    _my_path.append(f'{prj_dir}/Source/LnLib')
+    # _my_path.append(f'{prj_dir}/Source/LnLib.zip')
 
-    for path in reversed(_my_path):
-        # print(str(path))
+    for path in _my_path:
         sys.path.insert(0, str(path))
-
 
 if not _my_path: set_path()
 
