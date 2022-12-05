@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 04-12-2022 16.14.01
+# Date .........: 05-12-2022 16.22.02
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -114,6 +114,9 @@ def telegram_notify(deviceObj, topic: str, payload: (dict, str)=None):
             # _dict[name]["Remaining"]=pt_remaining
 
 
+    elif suffix=='poweronstate_in_payload':     # payload dovrebbe contenere qualcosa tipo: {"POWER1":"OFF"}
+        logger.notify("%s - I'm in 'poweronstate_in_payload' routine", topic_name)
+        _dict=payload
 
 
     elif suffix=='ssid_in_payload':     # payload dovrebbe contenere qualcosa tipo: {"POWER1":"OFF"}

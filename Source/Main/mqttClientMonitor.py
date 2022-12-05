@@ -89,22 +89,25 @@ def connect_mqtt() -> mqtt_client:
             logger.info("Failed to connect, return code %d\n", rc)
 
     def on_disconnect(client, userdata, rc):
-        logging.info("disconnecting reason  "  +str(rc))
+        logging.info("disconnecting reason: %s", rc)
+        client.loop_stop()
         client.connected_flag=False
         client.disconnect_flag=True
 
 
-    filename=os.path.expandvars("${ln_ENVARS_DIR}/yaml/Mqtt_Brokers.yaml")
-    with open(filename, 'r') as f:
-        content=f.read() # single string
-    my_brokers=yaml.load(content, Loader=yaml.SafeLoader)
+    # filename=os.path.expandvars("${ln_ENVARS_DIR}/yaml/Mqtt_Brokers.yaml")
+    # with open(filename, 'r') as f:
+    #     content=f.read() # single string
+    # my_brokers=yaml.load(content, Loader=yaml.SafeLoader)
+
 
     HIVE_MQ=False
     if HIVE_MQ:
         print('da implemetare')
         sys.exit(1)
     else:
-        broker=my_brokers['brokers']['lnpi22']
+        # broker=my_brokers['brokers']['lnpi22']
+        broker=mqttBroker(broker_name="LnMqtt")
         url=broker['url']
         port=broker['port']
         auth=broker['auth']

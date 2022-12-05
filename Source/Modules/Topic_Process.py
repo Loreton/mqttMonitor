@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 04-12-2022 15.02.37
+# Date .........: 05-12-2022 16.20.37
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -210,6 +210,9 @@ def process(topic, payload, mqttClient_CB):
             if payload.key_startswith('POWER'):
                 deviceObj.updatePOWER(data=payload)
                 lncmnd_topic=f'LnCmnd/{topic_name}/power_in_payload'
+
+            elif payload.key_startswith('PowerOnState'):
+                lncmnd_topic=f'LnCmnd/{topic_name}/poweronstate_in_payload'
 
             ### Tested
             elif 'Timers' in payload:

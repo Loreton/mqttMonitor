@@ -33,20 +33,7 @@ if __name__ == '__main__':
     LoretoDict.setLogger(mylogger=logger)
     user=os.environ.get('USER')
     mqttmonitor_runtime_dir=f"/home/{user}/ln_runtime/mqtt_monitor"
-    # os.environ["ln_RUNTIME_DIR"]=f"/home/{user}/ln_runtime"
-    '''
-    gVars={
-        "clean": args.clean,
-        "clear_retained": False,
-        "logger": logger,
-        "monitor": args.monitor,
-        "pid_file": args.pid_file,
-        "systemd": args.systemd,
-        "tgGroupName": args.telegram_group_name,
-        "topic_list": args.topics,
-    }
-    savePidFile(gVars['pid_file'])
-    '''
+
 
     if args.clean_files:
         files = glob.glob(f"{mqttmonitor_runtime_dir}/*.json")
