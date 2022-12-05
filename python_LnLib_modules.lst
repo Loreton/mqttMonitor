@@ -15,3 +15,7 @@
 ${LNLIB_DIR}/Time/LnTime.py                       =
 ${LNLIB_DIR}/Time/LnTimer.py                      =
 ${LNLIB_DIR}/Time/LnSunTime.py                   =
+
+
+### - Yaml
+${LNLIB_DIR}/Yaml/envarsYamlLoader.py               =

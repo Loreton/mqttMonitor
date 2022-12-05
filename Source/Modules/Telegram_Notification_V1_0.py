@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 05-12-2022 16.22.02
+# Date .........: 05-12-2022 17.11.12
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -48,6 +48,7 @@ def telegram_notify(deviceObj, topic: str, payload: (dict, str)=None):
     _,  topic_name, suffix=topic.split('/')
 
     if not deviceObj.telegramNotification():
+        logger.warning("%s - %s skipping due to telegramNotification timer", topic, payload)
         return
 
 
@@ -116,7 +117,9 @@ def telegram_notify(deviceObj, topic: str, payload: (dict, str)=None):
 
     elif suffix=='poweronstate_in_payload':     # payload dovrebbe contenere qualcosa tipo: {"POWER1":"OFF"}
         logger.notify("%s - I'm in 'poweronstate_in_payload' routine", topic_name)
-        _dict=payload
+        value=payload['PowerOnState']
+        _values=["OFF", "ON", "TOGGLE", "Last State", "ON + disable power control", "Inverted PulseTime"]
+        _dict["PowerOnState"]=_values[int(value)]
 
 
     elif suffix=='ssid_in_payload':     # payload dovrebbe contenere qualcosa tipo: {"POWER1":"OFF"}

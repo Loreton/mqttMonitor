@@ -22,6 +22,7 @@ import  Topic_Process as Topic
 import  SendTelegramMessage as STM
 from    LnTimer import TimerLN as LnTimer
 from    savePidFile import savePidFile
+from envarsYamlLoader import mqttBroker
 
 
 
@@ -235,7 +236,8 @@ def run(gVars: SimpleNamespace):
         ss=time.strftime("%S")
 
         # if int(mm)==0 and int(hh)>6 and int(hh)<22:
-        if int(mm)==0 and int(hh)%4: # ogni 4 ore...
+        # if int(mm)==0 and int(hh)%12: # ogni 12 ore...
+        if int(mm)==0 and int(hh) in [6, 12, 18, 22]: # ogni 12 ore...
             Topic.sendStatus()
 
 

@@ -30,9 +30,13 @@ if __name__ == '__main__':
                             logging_dir=args.logging_dir, # logging file--> logging_dir + logger_name
                             threads=False)
     testLogger(logger)
-    LoretoDict.setLogger(mylogger=logger)
+
+
+
+
     user=os.environ.get('USER')
-    mqttmonitor_runtime_dir=f"/home/{user}/ln_runtime/mqtt_monitor"
+    # mqttmonitor_runtime_dir=f"/home/{user}/ln_runtime/mqtt_monitor"
+    mqttmonitor_runtime_dir=os.path.expandvars("${ln_RUNTIME_DIR}/mqtt_monitor")
 
 
     if args.clean_files:
@@ -53,7 +57,10 @@ if __name__ == '__main__':
     gv.tgGroupName             = args.telegram_group_name
     gv.topic_list              = args.topics
     gv.mqttmonitor_runtime_dir = mqttmonitor_runtime_dir
+    gv.envars_dir              = os.environ.get("ln_ENVARS_DIR")
     savePidFile(gv.pid_file)
+
+    import InitializeModules; InitializeModules.Main(gVars=gv)
 
     # mqttClientMonitor.run(topic_list=args.topics, my_logger=logger, systemd=args.systemd)
     mqttClientMonitor.run(gVars=gv)
