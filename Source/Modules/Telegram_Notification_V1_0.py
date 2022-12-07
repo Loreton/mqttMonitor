@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 05-12-2022 17.11.12
+# Date .........: 07-12-2022 17.46.32
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -122,9 +122,26 @@ def telegram_notify(deviceObj, topic: str, payload: (dict, str)=None):
         _dict["PowerOnState"]=_values[int(value)]
 
 
-    elif suffix=='ssid_in_payload':     # payload dovrebbe contenere qualcosa tipo: {"POWER1":"OFF"}
-        logger.notify("%s - I'm in 'ssid_in_payload' routine", topic_name)
+    elif suffix in ['ssid_in_payload']:     # payload dovrebbe contenere qualcosa tipo: {"POWER1":"OFF"}
+        logger.notify("%s - I'm in '%s' routine", topic_name, suffix)
         _dict=payload
+
+    elif suffix in ["ipaddress_in_payload"]:     # payload dovrebbe contenere qualcosa tipo: {"POWER1":"OFF"}
+        logger.notify("%s - I'm in '%s' routine", topic_name, suffix)
+        ip=payload['IPAddress1']
+        ip_key='ip'
+        if '(' in ip: ### 0.0.0.0 (192.168.1.103)
+            ip=ip.split('(')[1]
+            ip=ip.split(')')[0]
+            ip_key='ip dhcp'
+
+        _dict={
+            ip_key: ip,
+            "gw": payload['IPAddress2'],
+            "mask": payload['IPAddress3'],
+            "dns1": payload['IPAddress4'],
+            "dns2": payload['IPAddress5'],
+        }
 
     else:
         return

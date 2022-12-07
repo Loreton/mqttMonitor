@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 05-12-2022 17.15.37
+# Date .........: 07-12-2022 17.20.24
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -228,6 +228,9 @@ def process(topic, payload, mqttClient_CB):
             elif 'SSId1' in payload:
                 deviceObj.updateSSID(data=payload)
                 lncmnd_topic=f'LnCmnd/{topic_name}/ssid_in_payload'
+
+            elif 'IPAddress1' in payload:
+                lncmnd_topic=f'LnCmnd/{topic_name}/ipaddress_in_payload'
 
             ### process data
             if lncmnd_topic:
