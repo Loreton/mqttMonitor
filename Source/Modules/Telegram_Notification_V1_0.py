@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 07-12-2022 17.46.32
+# Date .........: 08-12-2022 17.19.58
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -20,7 +20,7 @@ import signal
 from LoretoDict import LnDict
 import SendTelegramMessage as STM
 
-import Tasmota_Formatter as tasmotaFormatter
+# import Tasmota_Formatter as tasmotaFormatter
 
 
 
@@ -128,6 +128,11 @@ def telegram_notify(deviceObj, topic: str, payload: (dict, str)=None):
 
     elif suffix in ["ipaddress_in_payload"]:     # payload dovrebbe contenere qualcosa tipo: {"POWER1":"OFF"}
         logger.notify("%s - I'm in '%s' routine", topic_name, suffix)
+        _dict=deviceObj.net(data=payload)
+
+
+
+        '''
         ip=payload['IPAddress1']
         ip_key='ip'
         if '(' in ip: ### 0.0.0.0 (192.168.1.103)
@@ -142,6 +147,7 @@ def telegram_notify(deviceObj, topic: str, payload: (dict, str)=None):
             "dns1": payload['IPAddress4'],
             "dns2": payload['IPAddress5'],
         }
+        '''
 
     else:
         return

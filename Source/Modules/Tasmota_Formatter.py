@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 01-12-2022 08.44.42
+# Date .........: 08-12-2022 17.17.49
 
 import  sys; sys.dont_write_bytecode = True
 import  os
@@ -30,18 +30,14 @@ def getBasePointer(d: dict, key_list: list):
 ####################################################################
 def wifi(data: dict):
     wifi={}
-    # wifi["SSId"]=italicB +  data['SSId'] + italicE
-    # wifi["BSSId"]=italicB +  data['BSSId'] + italicE
-    # wifi["RSSI"]=italicB +  data['RSSI'] + italicE
-    # wifi["Signal"]=italicB +  data['Signal'] + italicE
-
     wifi["SSId"]=f"{italicB}{data['SSId']}{italicE}"
     wifi["BSSId"]=f"{italicB}{data['BSSId']}{italicE}"
     wifi["RSSI"]=f"{italicB}{data['RSSI']}{italicE}"
     wifi["Signal"]=f"{italicB}{data['Signal']}{italicE}"
 
-
     return wifi
+
+
 
 
 ####################################################################

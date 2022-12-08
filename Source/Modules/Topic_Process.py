@@ -186,21 +186,30 @@ def process(topic, payload, mqttClient_CB):
         if suffix=='POWER':
             fUPDATE_device_file=False
             ''' skip perchè prendiamo il topic con json payload 'stat/xxxx/RESULT {"POWER": "OFF"}' '''
+            # _payload={}
 
         ### Tested
-        elif suffix=='STATUS5':
-            deviceObj.updateSTATUS5(data=payload)
+        elif suffix.startswith('STATUS'):
+            deviceObj.updateGeneric2(main_key_path=f"{topic_name}", data=payload, writeFile=True)
+
+        # elif suffix=='STATUS5':
+        #     # deviceObj.updateSTATUS5(data=payload)
+        #     deviceObj.updateGeneric2(main_key='STATUS5', data=payload, writeFile=True)
+        #     # _payload=payload['STATUS5']
+        #     pass
+
+        # ### Tested
+        # elif suffix=='STATUS10':
+        #     deviceObj.updateGeneric2(main_key='STATUS10', data=payload, writeFile=True)
+        #     # deviceObj.updateSTATUS10(data=payload)
 
         ### Tested
-        elif suffix=='STATUS10':
-            deviceObj.updateSTATUS10(data=payload)
-
-        ### Tested
-        elif suffix=='STATUS11':
-            if isinstance(payload, dict): # a volte arriva sbagliato come nell'AreazioneSuperiore
-                deviceObj.updateSTATUS11(data=payload)
-            else:
-                logger.error("%s - ERRORE nello STATUS11: %s", topic_name, payload)
+        # elif suffix=='STATUS11':
+        #     if isinstance(payload, dict): # a volte arriva sbagliato come nell'AreazioneSuperiore
+        #         # deviceObj.updateSTATUS11(data=payload)
+        #         deviceObj.updateGeneric2(main_key='STATUS11', data=payload, writeFile=True)
+        #     else:
+        #         logger.error("%s - ERRORE nello STATUS11: %s", topic_name, payload)
 
 
         elif suffix=='RESULT' and payload:
@@ -208,7 +217,8 @@ def process(topic, payload, mqttClient_CB):
 
             ### Tested
             if payload.key_startswith('POWER'):
-                deviceObj.updatePOWER(data=payload)
+                # deviceObj.updatePOWER(data=payload)
+                deviceObj.updateGeneric2(main_key_path=f"Loreto", data=payload, writeFile=True)
                 lncmnd_topic=f'LnCmnd/{topic_name}/power_in_payload'
 
             elif 'PowerOnState' in payload:
@@ -216,7 +226,8 @@ def process(topic, payload, mqttClient_CB):
 
             ### Tested
             elif 'Timers' in payload:
-                deviceObj.updateTIMERS(data=payload)
+                deviceObj.updateGeneric2(main_key_path=f"{topic_name}.TIMERS", data=payload, writeFile=True)
+                # deviceObj.updateTIMERS(data=payload)
                 lncmnd_topic=f'LnCmnd/{topic_name}/timers_in_payload'
 
             ### Tested
