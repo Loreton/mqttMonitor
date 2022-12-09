@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 08-12-2022 17.19.58
+# Date .........: 08-12-2022 19.24.30
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -26,8 +26,10 @@ import SendTelegramMessage as STM
 
 
 def setup(my_logger):
-    global logger
+    global gv, logger
     logger=my_logger
+    # gv=SimpleNamespace()
+    # gv.italicB='<i>'; gv.italicE='</i>'
 
 
 
@@ -43,9 +45,9 @@ def setup(my_logger):
 # topic='LnCmnd/topic_name/summary'
 #
 ######################################################
-def telegram_notify(deviceObj, topic: str, payload: (dict, str)=None):
-    logger.info('processing topic %s for telegram message', topic)
-    _,  topic_name, suffix=topic.split('/')
+def telegram_notify(deviceObj, topic_name: str, action: str, payload: (dict, str)=None):
+    logger.info('processing topic name %s - %s for telegram message', topic_name, action)
+    # _,  topic_name, suffix=topic.split('/')
 
     if not deviceObj.telegramNotification():
         logger.warning("%s - %s skipping due to telegramNotification timer", topic, payload)
@@ -55,7 +57,6 @@ def telegram_notify(deviceObj, topic: str, payload: (dict, str)=None):
     _dict={}
     # _loreto=LnDict(device['Loreto'])
     relayNames=deviceObj.friendlyNames()
-    italicB='<i>'; italicE='</i>'
 
     if suffix=='summary':  ### LnCmnd/topic_name/summary
         logger.notify("%s - I'm in 'summary' routine", topic_name)

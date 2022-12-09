@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 07-12-2022 17.20.24
+# Date .........: 09-12-2022 18.19.05
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -21,7 +21,7 @@ from LoretoDict import LnDict
 import SendTelegramMessage as STM
 
 # import Tasmota_Formatter as tasmotaFormatter
-import Telegram_Notification_V1_0 as tgNotify
+import Telegram_Notification as tgNotify
 
 from Tasmota_Class import TasmotaClass
 
@@ -94,7 +94,8 @@ def sendStatus():
     logger.notify("Sending summary to Telegram")
     for topic_name in devices.keys():
         logger.notify("Sending summary for %s to Telegram", topic_name)
-        tgNotify.telegram_notify(deviceObj=devices[topic_name], topic=f'LnCmnd/{topic_name}/summary', payload=None)
+        # tgNotify.telegram_notify(deviceObj=devices[topic_name], topic=f'LnCmnd/{topic_name}/summary', payload=None)
+         # tgNotify.telegram_notify(deviceObj=deviceObj, topic_name=topic_name, action=action, payload=payload)
 
 
 
@@ -102,7 +103,7 @@ def sendStatus():
 
 
 ################################################
-#----------------------------------------------
+#-
 ################################################
 def refreshDeviceData(topic_name: str, deviceObj, mqttClient_CB):
     deviceObj.telegramNotification(seconds=20) # temoporary stop to telegram notification
@@ -118,22 +119,20 @@ def refreshDeviceData(topic_name: str, deviceObj, mqttClient_CB):
 #########################################################
 
 #########################################################
-# In tasmota abbiamo:
-#  Device name:     Configuration->Other  nome del device che compare sulla home
-#  Friendly name:   Configuration->Other  nome del/dei realys contenuti nel dispositivo
-#  Topic name:      Configuration->MQTT   nome del topic con cui si presenta nel Broker MQTT
 #  Per comodità cerco di utilizzare il topic_name==Device_name
 #########################################################
 def process(topic, payload, mqttClient_CB):
     logger.info('processing topic: %s', topic)
-    # runtime_dir=os.environ.get('ln_RUNTIME_DIR')
 
 
+    #--------------------------------------
+    # analisi del topic_name, del device e del payload
+    #--------------------------------------
 
-    """ topic='tasmota/discovery/DC4F22D3B32F/sensors'
-        cambiare il topic attraverso il MAC
-    """
-    if topic.startswith("tasmota/discovery"): ### viene rilasciato automaticamente da tasmota
+    ### viene rilasciato automaticamente da tasmota
+    if topic.startswith("tasmota/discovery"):
+        """ topic='tasmota/discovery/DC4F22D3B32F/sensors'
+            cambiare il topic attraverso il MAC """
         topic=tasmota_discovery_modify_topic(topic, macTable, payload)
 
 
@@ -148,6 +147,7 @@ def process(topic, payload, mqttClient_CB):
     ### create device dictionary entry if not exists
     if not topic_name in devices:
         logger.info('creating device: %s', topic_name)
+        import pdb; pdb.set_trace(); pass # by Loreto
         devices[topic_name]=TasmotaClass(device_name=topic_name, runtime_dir=gv.mqttmonitor_runtime_dir, logger=logger)
         refreshDeviceData(topic_name=topic_name, deviceObj=devices[topic_name], mqttClient_CB=mqttClient_CB)
 
@@ -157,104 +157,103 @@ def process(topic, payload, mqttClient_CB):
 
     elif isinstance(payload, dict):
         payload=LnDict(payload)
+
+    logger.info('%s: processing', topic)
     logger.info('   payload: %s', payload)
+
+
 
 
     ### device object
     deviceObj=devices[topic_name]
-    friendlyNames=deviceObj.friendlyNames()
     _topic=f'{prefix}.{suffix}'
 
     prefix_suffix=f'{prefix}.{suffix}'
 
+    #--------------------------------------
+    # analisi dei dati ricevuti
+    #--------------------------------------
 
-    deviceObj.updateGeneric(suffix=suffix, data=payload, writeFile=False)
+    # deviceObj.updateGeneric(suffix=suffix, data=payload, writeFile=False)
 
     ### --------------------------
     ### Process topic
     ### --------------------------
     fUPDATE_device_file=True # default
 
-    logger.info('%s: processing', topic)
 
 
+    ### comandi derivanti da applicazioni per ottenere un mix di dati
     if prefix=='LnCmnd':
-        tgNotify.telegram_notify(deviceObj=deviceObj, topic=topic, payload=payload)
+        pass
+        # tgNotify.telegram_notify(deviceObj=deviceObj, topic=topic, payload=payload)
+         # tgNotify.telegram_notify(deviceObj=deviceObj, topic_name=topic_name, action=action, payload=payload)
 
 
+    ### dati che arrivano direttamente da tasmota
     elif prefix=='stat':
         if suffix=='POWER':
             fUPDATE_device_file=False
             ''' skip perchè prendiamo il topic con json payload 'stat/xxxx/RESULT {"POWER": "OFF"}' '''
-            # _payload={}
+            _payload={}
 
         ### Tested
         elif suffix.startswith('STATUS'):
-            deviceObj.updateGeneric2(main_key_path=f"{topic_name}", data=payload, writeFile=True)
-
-        # elif suffix=='STATUS5':
-        #     # deviceObj.updateSTATUS5(data=payload)
-        #     deviceObj.updateGeneric2(main_key='STATUS5', data=payload, writeFile=True)
-        #     # _payload=payload['STATUS5']
-        #     pass
-
-        # ### Tested
-        # elif suffix=='STATUS10':
-        #     deviceObj.updateGeneric2(main_key='STATUS10', data=payload, writeFile=True)
-        #     # deviceObj.updateSTATUS10(data=payload)
-
-        ### Tested
-        # elif suffix=='STATUS11':
-        #     if isinstance(payload, dict): # a volte arriva sbagliato come nell'AreazioneSuperiore
-        #         # deviceObj.updateSTATUS11(data=payload)
-        #         deviceObj.updateGeneric2(main_key='STATUS11', data=payload, writeFile=True)
-        #     else:
-        #         logger.error("%s - ERRORE nello STATUS11: %s", topic_name, payload)
+            ''' incude tutti gli STATUSx '''
+            deviceObj.updateDevice(main_key_path=f"{topic_name}", data=payload, writeFile=True)
 
 
-        elif suffix=='RESULT' and payload:
+        ### in caso di RESULT dobbiamo analizzare il payload
+        elif suffix=='RESULTx' and payload:
             lncmnd_topic=None
 
             ### Tested
             if payload.key_startswith('POWER'):
-                # deviceObj.updatePOWER(data=payload)
-                deviceObj.updateGeneric2(main_key_path=f"Loreto", data=payload, writeFile=True)
-                lncmnd_topic=f'LnCmnd/{topic_name}/power_in_payload'
+                deviceObj.updateLoreto_POWER(data=payload)
+                deviceObj.updateDevice(main_key_path=f"Loreto", data=payload, writeFile=True)
+                action='power_in_payload'
 
             elif 'PowerOnState' in payload:
-                lncmnd_topic=f'LnCmnd/{topic_name}/poweronstate_in_payload'
+                action='poweronstate_in_payload'
 
             ### Tested
             elif 'Timers' in payload:
-                deviceObj.updateGeneric2(main_key_path=f"{topic_name}.TIMERS", data=payload, writeFile=True)
-                # deviceObj.updateTIMERS(data=payload)
-                lncmnd_topic=f'LnCmnd/{topic_name}/timers_in_payload'
+                deviceObj.updateDevice(main_key_path=f"{topic_name}.TIMERS", data=payload, writeFile=True)
+                action='timers_in_payload'
 
             ### Tested
             elif 'PulseTime' in payload:
-                deviceObj.updatePulseTime(data=payload)
-                lncmnd_topic=f'LnCmnd/{topic_name}/pulsetime_in_payload'
+                deviceObj.updateLoreto_PulseTime(data=payload)
+                action='pulsetime_in_payload'
 
             ### Tested
             elif 'SSId1' in payload:
-                deviceObj.updateSSID(data=payload)
-                lncmnd_topic=f'LnCmnd/{topic_name}/ssid_in_payload'
+                deviceObj.updateLoreto_SSID(data=payload)
+                action='ssid_in_payload'
 
             elif 'IPAddress1' in payload:
-                lncmnd_topic=f'LnCmnd/{topic_name}/ipaddress_in_payload'
+                action='ipaddress_in_payload'
 
             ### process data
-            if lncmnd_topic:
-                tgNotify.telegram_notify(deviceObj=deviceObj, topic=lncmnd_topic, payload=payload)
+            if action:
+                pass
+                # tgNotify.telegram_notify(deviceObj=deviceObj, topic_name=topic_name, action=action, payload=payload)
 
     ### Tested
     elif prefix=='tele':
 
         if suffix=='STATE':
-            deviceObj.updateSTATE(data=payload)
+            deviceObj.updateLoreto_STATE(data=payload)
+            deviceObj.updateLoreto_POWER(data=payload)
+            deviceObj.updateDevice(main_key_path=f"{topic_name}.STATE", data=payload, writeFile=True)
 
+        elif suffix=='LWT':
+            deviceObj.updateDevice(main_key_path=f"{topic_name}.LWT", data=payload, writeFile=True)
 
-    elif prefix=='shellies':
+        elif suffix=='HASS_STATE':
+            pass
+
+    elif prefix=='shelliesx':
         if suffix=='ext_temperatures':
             pass
 
@@ -262,20 +261,15 @@ def process(topic, payload, mqttClient_CB):
     elif prefix=='tasmota' and suffix=='sensors':
         ### Tested
         if 'sn' in payload:
-            deviceObj.updateSensorsSN(data=payload)
+            deviceObj.updateLoreto_SensorsSN(data=payload)
+            deviceObj.updateDevice(main_key_path=f"{topic_name}.Sensors", data=payload, writeFile=True)
 
         ### Tested
         elif 'rl' in payload:
-            deviceObj.updateSensorsRL(data=payload)
+            deviceObj.updateLoreto_SensorsRL(data=payload)
+            deviceObj.updateDevice(main_key_path=f"{topic_name}.Sensors", data=payload, writeFile=True)
 
-    elif _topic in ['tele.LWT', 'tele.HASS_STATE', 'shellies.ext_temperatures', 'tasmota.sensors']:
-        pass
 
     else:
         logger.warning("topic: %s not managed - payload: %s", topic, payload)
-
-
-
-    if fUPDATE_device_file:
-        deviceObj.updateGeneric(suffix=suffix, data=payload, writeFile=True)
 
