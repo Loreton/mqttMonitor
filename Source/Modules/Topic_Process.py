@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 09-12-2022 18.19.05
+# Date .........: 10-12-2022 08.47.12
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -94,8 +94,7 @@ def sendStatus():
     logger.notify("Sending summary to Telegram")
     for topic_name in devices.keys():
         logger.notify("Sending summary for %s to Telegram", topic_name)
-        # tgNotify.telegram_notify(deviceObj=devices[topic_name], topic=f'LnCmnd/{topic_name}/summary', payload=None)
-         # tgNotify.telegram_notify(deviceObj=deviceObj, topic_name=topic_name, action=action, payload=payload)
+        tgNotify.telegram_notify(deviceObj=deviceObj, topic_name=topic_name, action=action, payload=payload)
 
 
 
@@ -147,7 +146,6 @@ def process(topic, payload, mqttClient_CB):
     ### create device dictionary entry if not exists
     if not topic_name in devices:
         logger.info('creating device: %s', topic_name)
-        import pdb; pdb.set_trace(); pass # by Loreto
         devices[topic_name]=TasmotaClass(device_name=topic_name, runtime_dir=gv.mqttmonitor_runtime_dir, logger=logger)
         refreshDeviceData(topic_name=topic_name, deviceObj=devices[topic_name], mqttClient_CB=mqttClient_CB)
 
@@ -170,11 +168,7 @@ def process(topic, payload, mqttClient_CB):
 
     prefix_suffix=f'{prefix}.{suffix}'
 
-    #--------------------------------------
-    # analisi dei dati ricevuti
-    #--------------------------------------
 
-    # deviceObj.updateGeneric(suffix=suffix, data=payload, writeFile=False)
 
     ### --------------------------
     ### Process topic
@@ -185,9 +179,7 @@ def process(topic, payload, mqttClient_CB):
 
     ### comandi derivanti da applicazioni per ottenere un mix di dati
     if prefix=='LnCmnd':
-        pass
-        # tgNotify.telegram_notify(deviceObj=deviceObj, topic=topic, payload=payload)
-         # tgNotify.telegram_notify(deviceObj=deviceObj, topic_name=topic_name, action=action, payload=payload)
+        tgNotify.telegram_notify(deviceObj=deviceObj, topic_name=topic_name, action=suffix, payload=payload)
 
 
     ### dati che arrivano direttamente da tasmota
@@ -204,8 +196,8 @@ def process(topic, payload, mqttClient_CB):
 
 
         ### in caso di RESULT dobbiamo analizzare il payload
-        elif suffix=='RESULTx' and payload:
-            lncmnd_topic=None
+        elif suffix=='RESULT' and payload:
+            action=None
 
             ### Tested
             if payload.key_startswith('POWER'):
@@ -236,8 +228,7 @@ def process(topic, payload, mqttClient_CB):
 
             ### process data
             if action:
-                pass
-                # tgNotify.telegram_notify(deviceObj=deviceObj, topic_name=topic_name, action=action, payload=payload)
+                tgNotify.telegram_notify(deviceObj=deviceObj, topic_name=topic_name, action=action, payload=payload)
 
     ### Tested
     elif prefix=='tele':
@@ -273,3 +264,5 @@ def process(topic, payload, mqttClient_CB):
     else:
         logger.warning("topic: %s not managed - payload: %s", topic, payload)
 
+
+    deviceObj.savingDataOnFile()
