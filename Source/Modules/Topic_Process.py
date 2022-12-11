@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 10-12-2022 08.47.12
+# Date .........: 11-12-2022 15.00.56
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -36,7 +36,7 @@ def setup(gVars: SimpleNamespace):
     devices=dict()
     macTable=dict()
 
-    tgNotify.setup(my_logger=logger)
+    # tgNotify.setup(my_logger=logger)
 
 
 
@@ -88,13 +88,13 @@ def tasmota_discovery_modify_topic(topic, mac_table, payload):
 
 
 ##########################################################
-# Invia un summary status per tutti i deivce
+# Invia un summary status per tutti i device
 ##########################################################
 def sendStatus():
     logger.notify("Sending summary to Telegram")
     for topic_name in devices.keys():
         logger.notify("Sending summary for %s to Telegram", topic_name)
-        tgNotify.telegram_notify(deviceObj=deviceObj, topic_name=topic_name, action=action, payload=payload)
+        tgNotify.telegram_notify(deviceObj=devices[topic_name], topic_name=topic_name, action='summary', payload=None)
 
 
 
@@ -122,6 +122,7 @@ def refreshDeviceData(topic_name: str, deviceObj, mqttClient_CB):
 #########################################################
 def process(topic, payload, mqttClient_CB):
     logger.info('processing topic: %s', topic)
+    logger.info('   payload: %s - %s', type(payload), payload)
 
 
     #--------------------------------------
@@ -137,88 +138,87 @@ def process(topic, payload, mqttClient_CB):
 
     prefix, topic_name, suffix, *rest=topic.split('/')
 
+
+
+    ### -----------------------------------------------
     ### skip some topics
+    ### -----------------------------------------------
     if prefix == 'cmnd' or topic_name in ['tasmotas']:
         logger.warning('skipping topic: %s [in attesa di capire meglio come sfruttarlo]', topic)
         return
 
 
+    ### -----------------------------------------------
     ### create device dictionary entry if not exists
+    ### -----------------------------------------------
     if not topic_name in devices:
         logger.info('creating device: %s', topic_name)
         devices[topic_name]=TasmotaClass(device_name=topic_name, runtime_dir=gv.mqttmonitor_runtime_dir, logger=logger)
         refreshDeviceData(topic_name=topic_name, deviceObj=devices[topic_name], mqttClient_CB=mqttClient_CB)
 
-    if not payload:
-        logger.warning('%s: no payload', topic_name)
+
+    ### -----------------------------------------------
+    ### device object
+    ### -----------------------------------------------
+    deviceObj=devices[topic_name]
+
+    ### -----------------------------------------------
+    ### comandi derivanti da applicazioni per ottenere un mix di dati
+    ### -----------------------------------------------
+    if prefix=='LnCmnd':
+        tgNotify.telegram_notify(deviceObj=deviceObj, topic_name=topic_name, action=suffix, payload=payload)
         return
 
-    elif isinstance(payload, dict):
+
+
+    if isinstance(payload, dict):
         payload=LnDict(payload)
-
-    logger.info('%s: processing', topic)
-    logger.info('   payload: %s', payload)
-
-
-
-
-    ### device object
-    deviceObj=devices[topic_name]
-    _topic=f'{prefix}.{suffix}'
-
-    prefix_suffix=f'{prefix}.{suffix}'
-
+    else:
+        logger.warning('%s: skipping payload: %s - %s', topic_name, type(payload), payload)
+        return
 
 
     ### --------------------------
     ### Process topic
+    ### payload must be LnDict()
     ### --------------------------
-    fUPDATE_device_file=True # default
-
-
-
-    ### comandi derivanti da applicazioni per ottenere un mix di dati
-    if prefix=='LnCmnd':
-        tgNotify.telegram_notify(deviceObj=deviceObj, topic_name=topic_name, action=suffix, payload=payload)
-
 
     ### dati che arrivano direttamente da tasmota
-    elif prefix=='stat':
+    if prefix=='stat':
         if suffix=='POWER':
-            fUPDATE_device_file=False
             ''' skip perchè prendiamo il topic con json payload 'stat/xxxx/RESULT {"POWER": "OFF"}' '''
-            _payload={}
+            pass
 
-        ### Tested
+        ### incude tutti gli STATUSx
         elif suffix.startswith('STATUS'):
-            ''' incude tutti gli STATUSx '''
             deviceObj.updateDevice(main_key_path=f"{topic_name}", data=payload, writeFile=True)
 
 
+
         ### in caso di RESULT dobbiamo analizzare il payload
-        elif suffix=='RESULT' and payload:
+        elif suffix=='RESULT':
+            power_key=payload.in_key('POWER')
+            pulsetime_key=payload.in_key('PulseTime')
+
             action=None
 
-            ### Tested
-            if payload.key_startswith('POWER'):
+            if power_key:
                 deviceObj.updateLoreto_POWER(data=payload)
                 deviceObj.updateDevice(main_key_path=f"Loreto", data=payload, writeFile=True)
                 action='power_in_payload'
 
+            elif pulsetime_key:
+                deviceObj.updateLoreto_PulseTime(pt_key=pulsetime_key, data=payload)
+                action='pulsetime_in_payload'
+
             elif 'PowerOnState' in payload:
                 action='poweronstate_in_payload'
 
-            ### Tested
             elif 'Timers' in payload:
                 deviceObj.updateDevice(main_key_path=f"{topic_name}.TIMERS", data=payload, writeFile=True)
                 action='timers_in_payload'
 
-            ### Tested
-            elif 'PulseTime' in payload:
-                deviceObj.updateLoreto_PulseTime(data=payload)
-                action='pulsetime_in_payload'
 
-            ### Tested
             elif 'SSId1' in payload:
                 deviceObj.updateLoreto_SSID(data=payload)
                 action='ssid_in_payload'
@@ -234,7 +234,7 @@ def process(topic, payload, mqttClient_CB):
     elif prefix=='tele':
 
         if suffix=='STATE':
-            deviceObj.updateLoreto_STATE(data=payload)
+            deviceObj.updateLoreto_STATE(data=payload) # update also Wifi
             deviceObj.updateLoreto_POWER(data=payload)
             deviceObj.updateDevice(main_key_path=f"{topic_name}.STATE", data=payload, writeFile=True)
 

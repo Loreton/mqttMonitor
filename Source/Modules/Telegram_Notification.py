@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 10-12-2022 08.47.47
+# Date .........: 11-12-2022 12.10.36
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -25,11 +25,10 @@ import SendTelegramMessage as STM
 
 
 
-def setup(my_logger):
+def setup(*, gVars):
     global gv, logger
-    logger=my_logger
-    # gv=SimpleNamespace()
-    # gv.italicB='<i>'; gv.italicE='</i>'
+    gv=gVars
+    logger=gv.logger
 
 
 
@@ -46,42 +45,74 @@ def setup(my_logger):
 #
 ######################################################
 def telegram_notify(deviceObj, topic_name: str, action: str, payload: (dict, str)=None):
-    logger.info('processing topic name %s - %s for telegram message', topic_name, action)
+    logger.info('processing topic %s - %s ', topic_name, action)
 
-    if not deviceObj.telegramNotification():
-        logger.warning("%s - %s skipping due to telegramNotification timer", topic_name, payload)
-        return
 
+    ### per i soli comandi non provenienti da Telegram
+    tg_msg={
+        gv.prj_name: {
+            "command": action.replace('_in_payload', ''),
+            }
+        }
+
+    if '_in_payload' in action:
+        if not deviceObj.telegramNotification():
+            logger.warning("%s - %s skipping due to telegramNotification timer", topic_name, payload)
+            return
+        tg_msg[gv.prj_name]['msg']="captured"
+
+    else:
+        tg_msg[gv.prj_name]['msg']="has been received"
+
+    if 'debug' in payload and payload['debug'] is True:
+        STM.sendMsg(group_name=topic_name, message=tg_msg, my_logger=logger)
 
     _dict={}
     relayNames=deviceObj.friendlyNames
 
+    #=====================================================================
+    # actions from telegramBot
+    #=====================================================================
     if action=='summary':  ### LnCmnd/topic_name/summary
-        logger.notify("%s - I'm in 'summary' routine", topic_name)
         _dict.update(deviceObj.Info(italic=True))
         _dict['Wifi']=deviceObj.wifi(italic=True)
 
         for index, name in enumerate(relayNames):
-            pt_value, pt_remaining=deviceObj.pulseTimeToHuman(relay_nr=index, italic=True)
+            relay_nr=index+1
+            pt_value, pt_remaining=deviceObj.pulseTimeToHuman(index=index, italic=True)
 
             _dict[name]={}
-            _dict[name]["Status"]=deviceObj.relayStatus(relay_nr=index+1, italic=True)
+            _dict[name]["Status"]=deviceObj.relayStatus(relay_nr=relay_nr, italic=True)
             _dict[name]["Pulsetime"]=pt_value
             _dict[name]["Remaining"]=pt_remaining
-            _dict[name]["Timers"]=deviceObj.timersToHuman(relay_nr=index+1, italic=True)
+            _dict[name]["Timers"]=deviceObj.timersToHuman(relay_nr=relay_nr, italic=True)
 
 
     elif action=="mqtt":  ### LnCmnd/topic_name/mqtt
-        logger.notify("%s - I'm in 'mqtt' routine", topic_name)
         _dict.update(deviceObj.Info(italic=True))
         _dict=deviceObj.mqtt(italic=True)
 
+
+    elif action in ["version", "firmware"]:  ### LnCmnd/topic_name/version
+        _dict=deviceObj.firmware(italic=True)
+
+
+    elif action=="net_status":  ### LnCmnd/topic_name/mqtt
+        _dict=deviceObj.net_status(italic=True)
+
+
+
+
+
+    #=====================================================================
+    # actions from Topic_Process
+    #=====================================================================
     elif action=='timers_in_payload':
-        logger.notify("%s - I'm in 'timers_in_payload' routine", topic_name)
         for index, name in enumerate(relayNames):
+            relay_nr=index+1
             _dict[name]={}
-            _dict[name]['Status']=deviceObj.relayStatus(relay_nr=index+1, italic=True)
-            _dict[name]["Timers"]=deviceObj.timersToHuman(relay_nr=index+1, italic=True)
+            _dict[name]['Status']=deviceObj.relayStatus(relay_nr=relay_nr, italic=True)
+            _dict[name]["Timers"]=deviceObj.timersToHuman(relay_nr=relay_nr, italic=True)
             # _dict[name]=[]
             # _dict[name].append(deviceObj.relayStatus(relay_nr=index+1, italic=True))
             # _dict[name].append(deviceObj.timersToHuman(relay_nr=index+1, italic=True))
@@ -89,8 +120,6 @@ def telegram_notify(deviceObj, topic_name: str, action: str, payload: (dict, str
 
     ### Tested
     elif action=='power_in_payload':
-        logger.notify("%s - I'm in 'power_in_payload' routine", topic_name)
-
 
         ### catturare solo  {"POWERx":"ON/OFF"}
         keys=list(payload.keys())
@@ -98,34 +127,31 @@ def telegram_notify(deviceObj, topic_name: str, action: str, payload: (dict, str
             if keys[0].startswith('POWER'):
                 ### scan friendly names
                 for index, name in enumerate(relayNames):
+                    relay_nr=index+1
                     _dict[name]={}
-                    _dict[name]=deviceObj.relayStatus(relay_nr=index+1, italic=True)
+                    _dict[name]=deviceObj.relayStatus(relay_nr=relay_nr, italic=True)
 
 
 
-    ### Testedd
+    ### Tested
     elif action=='pulsetime_in_payload':     # payload dovrebbe contenere qualcosa tipo: {"POWER1":"OFF"}
-        logger.notify("%s - I'm in 'pulsetime_in_payload' routine", topic_name)
         for index, name in enumerate(relayNames):
-            pt_value, pt_remaining=deviceObj.pulseTimeToHuman(relay_nr=index, italic=True)
+            pt_value, pt_remaining=deviceObj.pulseTimeToHuman(index=index, italic=True)
             _dict[name]={}
             _dict[name]["Pulsetime"]=f"{pt_value} ({pt_remaining})"
 
 
     elif action=='poweronstate_in_payload':     # payload dovrebbe contenere qualcosa tipo: {"POWER1":"OFF"}
-        logger.notify("%s - I'm in 'poweronstate_in_payload' routine", topic_name)
         value=payload['PowerOnState']
         _values=["OFF", "ON", "TOGGLE", "Last State", "ON + disable power control", "Inverted PulseTime"]
         _dict["PowerOnState"]=_values[int(value)]
 
 
     elif action in ['ssid_in_payload']:     # payload dovrebbe contenere qualcosa tipo: {"POWER1":"OFF"}
-        logger.notify("%s - I'm in '%s' routine", topic_name, action)
         _dict=payload
 
     elif action in ["ipaddress_in_payload"]:     # payload dovrebbe contenere qualcosa tipo: {"POWER1":"OFF"}
-        logger.notify("%s - I'm in '%s' routine", topic_name, action)
-        _dict=deviceObj.net(data=payload)
+        _dict=deviceObj.net_status(payload=payload)
 
     else:
         return

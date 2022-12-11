@@ -22,9 +22,9 @@ from savePidFile import savePidFile
 
 
 if __name__ == '__main__':
-    prj_name='mqttmonitor'
+    prj_name='mqttMonitor'
     args=ParseInput()
-    logger=setColoredLogger(logger_name=prj_name,
+    logger=setColoredLogger(logger_name=prj_name.lower(),
                             console_logger_level=args.console_logger_level,
                             file_logger_level=args.file_logger_level,
                             logging_dir=args.logging_dir, # logging file--> logging_dir + logger_name
@@ -51,6 +51,7 @@ if __name__ == '__main__':
     gv=SimpleNamespace()
     gv.clear_retained          = False
     gv.logger                  = logger
+    gv.prj_name                = prj_name
     gv.just_monitor            = args.monitor
     gv.pid_file                = args.pid_file
     gv.systemd                 = args.systemd

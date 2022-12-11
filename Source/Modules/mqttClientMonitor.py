@@ -17,6 +17,7 @@ from    paho.mqtt import client as mqtt_client
 import  uuid
 import  time
 import  subprocess, shlex
+import socket; hostname=socket.gethostname()
 
 import  Topic_Process as Topic
 import  SendTelegramMessage as STM
@@ -224,11 +225,12 @@ def run(gVars: SimpleNamespace):
 
 
     client.loop_start()
-    STM.sendMsg(group_name=gv.tgGroupName, message="application has been started!", my_logger=logger, caller=True, parse_mode='markdown')
+    STM.sendMsg(group_name=gv.tgGroupName, message="application has been started!", my_logger=logger, caller=True, parse_mode='MarkDown')
     time.sleep(4) # Wait for connection setup to complete
 
 
     print('Started...')
+    systemChannelName=f"{hostname}"
 
     while True:
         mm=time.strftime("%M")
@@ -241,8 +243,16 @@ def run(gVars: SimpleNamespace):
             Topic.sendStatus()
 
 
+
         if int(mm) in [0, 15, 30, 45]:
             savePidFile(gv.pid_file)
+            STM.sendMsg(group_name=gv.tgGroupName, message="I'm still alive!", my_logger=logger, caller=True, parse_mode='html')
+            '''
+            tg_msg={"appl": gv.prj_name,
+                    "msg": "I'm still alive!",
+                    }
+            STM.sendMsg(group_name=systemChannelName, message=tg_msg, my_logger=logger, caller=True, parse_mode='markdown')
+            '''
 
         """ ho notato che dopo un pò il client va in hang e non cattura più
             i messaggi. Il codice che segue serve a monitorare lo status

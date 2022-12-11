@@ -2,7 +2,7 @@
 "${LNLIB_DIR}/Logger/ColoredLogger_V1.3.py"     ColoredLogger.py
 
 ### - Dictionary
-"${LNLIB_DIR}/Dictionary/LoretoDict_202211.py"      LoretoDict.py
+"${LNLIB_DIR}/Dictionary/LoretoDict.py"      LoretoDict.py
 
 ### - Telegram
 "${LNLIB_DIR}/telegram/SendTelegramMessage.py"      =
