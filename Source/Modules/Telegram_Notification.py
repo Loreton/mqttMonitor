@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 11-12-2022 12.10.36
+# Date .........: 11-12-2022 18.23.11
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -64,8 +64,12 @@ def telegram_notify(deviceObj, topic_name: str, action: str, payload: (dict, str
     else:
         tg_msg[gv.prj_name]['msg']="has been received"
 
-    if 'debug' in payload and payload['debug'] is True:
-        STM.sendMsg(group_name=topic_name, message=tg_msg, my_logger=logger)
+    if isinstance(payload, dict):
+        if 'debug' in payload and payload['debug'] is True:
+            STM.sendMsg(group_name=topic_name, message=tg_msg, my_logger=logger)
+    else:
+        logger.warning('%s - payload is not a dictionry: %s', topic_name, payload)
+        return
 
     _dict={}
     relayNames=deviceObj.friendlyNames

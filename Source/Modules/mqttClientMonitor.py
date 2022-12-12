@@ -258,7 +258,7 @@ def run(gVars: SimpleNamespace):
             i messaggi. Il codice che segue serve a monitorare lo status
             dell'applicazione e farla ripartire se necessario.
             publish_timer if exausted means that the application is NOT responding """
-        if gv.publish_timer.is_exausted(logger=logger.debug):
+        if gv.publish_timer.is_expired(logger=logger.debug):
             logger.error('publish_timer - exausted')
             logger.error('restarting application')
             STM.sendMsg(group_name=gv.tgGroupName, message="publish_timer - exausted - application is restarting!", my_logger=logger, caller=True, parse_mode='markdown')
