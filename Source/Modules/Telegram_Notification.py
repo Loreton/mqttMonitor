@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 11-12-2022 18.23.11
+# Date .........: 14-12-2022 11.25.42
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -17,7 +17,7 @@ import time
 import json, yaml
 import signal
 
-from LoretoDict import LnDict
+# from LoretoDict import LnDict
 import SendTelegramMessage as STM
 
 # import Tasmota_Formatter as tasmotaFormatter
@@ -163,7 +163,7 @@ def telegram_notify(deviceObj, topic_name: str, action: str, payload: (dict, str
 
 
     if _dict:
-        tg_msg=LnDict({topic_name: _dict })
+        tg_msg={topic_name: _dict }
         logger.notify('sending telegram message: %s', tg_msg)
 
         ### parse_mode=None altrimenti mi da errore oppure html ma con attenzione:

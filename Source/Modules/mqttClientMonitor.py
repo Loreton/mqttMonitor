@@ -23,7 +23,7 @@ import  Topic_Process as Topic
 import  SendTelegramMessage as STM
 from    LnTimer import TimerLN as LnTimer
 from    savePidFile import savePidFile
-from envarsYamlLoader import mqttBroker
+from LoadYamlFile_Class import mqttBroker
 
 
 
@@ -108,7 +108,6 @@ def connect_mqtt() -> mqtt_client:
         print('da implemetare')
         sys.exit(1)
     else:
-        # broker=my_brokers['brokers']['lnpi22']
         broker=mqttBroker(broker_name="LnMqtt")
         url=broker['url']
         port=broker['port']
@@ -200,7 +199,6 @@ def run(gVars: SimpleNamespace):
     global gv, logger
     gv     = gVars
     logger = gv.logger
-
 
 
 

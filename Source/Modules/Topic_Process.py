@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 11-12-2022 15.00.56
+# Date .........: 14-12-2022 17.53.00
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -17,8 +17,9 @@ import time
 import json, yaml
 import signal
 
-from LoretoDict import LnDict
+# from LoretoDict import LnDict
 import SendTelegramMessage as STM
+from benedict import benedict
 
 # import Tasmota_Formatter as tasmotaFormatter
 import Telegram_Notification as tgNotify
@@ -161,7 +162,9 @@ def process(topic, payload, mqttClient_CB):
     ### device object
     ### -----------------------------------------------
     deviceObj=devices[topic_name]
-
+    logger.notify('%s - %s', topic_name, type(deviceObj.full_device))
+    logger.notify('     %s', deviceObj.full_device['Loreto'] )
+    logger.notify('     %s', deviceObj.full_device['Loreto.relays'] )
     ### -----------------------------------------------
     ### comandi derivanti da applicazioni per ottenere un mix di dati
     ### -----------------------------------------------
@@ -172,7 +175,7 @@ def process(topic, payload, mqttClient_CB):
 
 
     if isinstance(payload, dict):
-        payload=LnDict(payload)
+        payload=benedict(payload)
     else:
         logger.warning('%s: skipping payload: %s - %s', topic_name, type(payload), payload)
         return
@@ -197,8 +200,8 @@ def process(topic, payload, mqttClient_CB):
 
         ### in caso di RESULT dobbiamo analizzare il payload
         elif suffix=='RESULT':
-            power_key=payload.in_key('POWER')
-            pulsetime_key=payload.in_key('PulseTime')
+            power_key=payload.in_key(in_str='POWER', return_first=True)
+            pulsetime_key=payload.in_key(in_str='PulseTime', return_first=True)
 
             action=None
 
