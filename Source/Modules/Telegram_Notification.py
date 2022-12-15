@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 14-12-2022 11.25.42
+# Date .........: 15-12-2022 12.09.42
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -21,6 +21,7 @@ import signal
 import SendTelegramMessage as STM
 
 # import Tasmota_Formatter as tasmotaFormatter
+from benedict import benedict
 
 
 
@@ -163,7 +164,9 @@ def telegram_notify(deviceObj, topic_name: str, action: str, payload: (dict, str
 
 
     if _dict:
-        tg_msg={topic_name: _dict }
+        # tg_msg=benedict({topic_name: _dict }, keypath_separator='/')
+        tg_msg=benedict(_dict, keypath_separator='/')
+
         logger.notify('sending telegram message: %s', tg_msg)
 
         ### parse_mode=None altrimenti mi da errore oppure html ma con attenzione:

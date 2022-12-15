@@ -13,23 +13,6 @@ from types import SimpleNamespace
 #     from envarsYamlLoader import setup; setup(gVars=gv)
 
 
-# def setup_MqttTxRx(*, gVars):
-#     gv=SimpleNamespace()
-#     gv.logger   = gVars.logger
-#     gv.prj_name = gVars.prj_name
-
-#     from MqttTxRx import setup; setup(gVars=gv)
-
-
-
-# def setup_LoretoDict(*, gVars):
-#     gv=SimpleNamespace()
-#     gv.logger   = gVars.logger
-#     gv.prj_name = gVars.prj_name
-
-#     from LoretoDict import setup; setup(gVars=gv)
-
-
 def setup_Telegram_Notification(*, gVars):
     gv=SimpleNamespace()
     gv.logger      = gVars.logger
@@ -40,10 +23,12 @@ def setup_Telegram_Notification(*, gVars):
 
 
 def setup_LoadYamlFile_Class(*, gVars):
-    # gv=SimpleNamespace()
-    # gv.logger=gVars.logger
-
     import LoadYamlFile_Class; LoadYamlFile_Class.setup(gVars=gVars)
+
+
+
+def setup_Topic_Process(*, gVars):
+    import Topic_Process; Topic_Process.setup(gVars=gVars)
 
 
 
@@ -56,9 +41,8 @@ def setup_LnUtils(*, gVars):
 
 
 def Main(*, gVars):
-    # setup_LoretoDict(gVars=gVars)
-    # setup_envarsYamlLoader(gVars=gVars)
     setup_Telegram_Notification(gVars=gVars)
     setup_LnUtils(gVars=gVars)
     setup_LoadYamlFile_Class(gVars=gVars)
+    setup_Topic_Process(gVars=gVars)
 

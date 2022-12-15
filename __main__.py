@@ -28,7 +28,7 @@ if __name__ == '__main__':
                             console_logger_level=args.console_logger_level,
                             file_logger_level=args.file_logger_level,
                             logging_dir=args.logging_dir, # logging file--> logging_dir + logger_name
-                            threads=False)
+                            threads=True)
     testLogger(logger)
 
 

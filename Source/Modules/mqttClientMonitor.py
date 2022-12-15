@@ -209,11 +209,28 @@ def run(gVars: SimpleNamespace):
     gv.publish_timer=LnTimer(name='ping publish', default_time=100, start=True, logger=logger)
     gv.publish_timer.start(seconds=100)
 
-    Topic.setup(gVars=gv)
-    gv.topic_list.append('LnCmnd/#')
+    # Topic.setup(gVars=gv)
+    ### per debug inseriamo un singolo device
+    if gv.topic_list[0] =='TavoloLavoro':
+        topic_name='TavoloLavoro'
+        mac='C82B964FD367'
+        gv.topic_list.append(f'+/{topic_name}/#')
+        gv.topic_list.append(f'LnCmnd/{topic_name}/#')
+        gv.topic_list.append(f'tasmota/discovery/{mac}/#') ### MAC di TavoloLavoro
 
-    if not '+/#' in gv.topic_list:
-        gv.topic_list.append('tasmota/discovery/#')
+    elif gv.topic_list[0] =='VescoviNew':
+        topic_name='VescoviNew'
+        mac='C44F33978EFA'
+        gv.topic_list.append(f'+/{topic_name}/#')
+        gv.topic_list.append(f'LnCmnd/{topic_name}/#')
+        gv.topic_list.append(f'tasmota/discovery/{mac}/#') ### MAC di TavoloLavoro
+
+    else:
+        gv.topic_list.append('LnCmnd/#')
+        if not '+/#' in gv.topic_list:
+            gv.topic_list.append('tasmota/discovery/#')
+
+
         # topic_list.append('+/#')
     subscribe(client, gv.topic_list)
 
@@ -223,7 +240,8 @@ def run(gVars: SimpleNamespace):
 
 
     client.loop_start()
-    STM.sendMsg(group_name=gv.tgGroupName, message="application has been started!", my_logger=logger, caller=True, parse_mode='MarkDown')
+    # STM.sendMsg(group_name=gv.tgGroupName, message="application has been started!", my_logger=logger, caller=True, parse_mode='MarkDown')
+    STM.sendMsg(group_name=gv.tgGroupName, message="application has been started!", my_logger=logger, caller=True, parse_mode='html') ### markdown dà errore
     time.sleep(4) # Wait for connection setup to complete
 
 

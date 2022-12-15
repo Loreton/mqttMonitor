@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 14-12-2022 17.53.00
+# Date .........: 15-12-2022 16.52.00
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -46,6 +46,7 @@ def setup(gVars: SimpleNamespace):
 #####################################################################
 # process topic name and paylod data to find_out topic_name,
 # topic='tasmota/discovery/DC4F22BE4445/sensors'
+# topic='tasmota/discovery/DC4F22BE4445/config'
 #
 #  payload: {'sn': {'Time': '2022-11-04T20:45:58'}, 'ver': 1}
 #
@@ -66,20 +67,18 @@ def setup(gVars: SimpleNamespace):
 #          "mac": "DC4F22BE4445"
 #####################################################################
 def tasmota_discovery_modify_topic(topic, mac_table, payload):
-    _tasmota, _discovery, _mac,  _sensors, *rest=topic.split('/')
+    _tasmota, _discovery, _mac,  suffix, *rest=topic.split('/')
 
-    topic=None
     if _mac in mac_table:
         topic_name=macTable[_mac]
-        topic=f'tasmota/{topic_name}/sensors'
 
+    else:
+        mac=payload.get('mac')
+        topic_name=payload.get('t')
+        if mac and topic_name:
+            mac_table[mac]=topic_name # add to table
 
-    mac=payload.get('mac')
-    topic_name=payload.get('t')
-
-    if mac and topic_name:
-        mac_table[mac]=topic_name # add to table
-        topic=f'tasmota/{topic_name}/sensors'
+    topic=f'tasmota/{topic_name}/{suffix}'
 
     return topic
 
@@ -133,6 +132,7 @@ def process(topic, payload, mqttClient_CB):
     ### viene rilasciato automaticamente da tasmota
     if topic.startswith("tasmota/discovery"):
         """ topic='tasmota/discovery/DC4F22D3B32F/sensors'
+            topic='tasmota/discovery/DC4F22D3B32F/config'
             cambiare il topic attraverso il MAC """
         topic=tasmota_discovery_modify_topic(topic, macTable, payload)
 
@@ -162,9 +162,9 @@ def process(topic, payload, mqttClient_CB):
     ### device object
     ### -----------------------------------------------
     deviceObj=devices[topic_name]
-    logger.notify('%s - %s', topic_name, type(deviceObj.full_device))
-    logger.notify('     %s', deviceObj.full_device['Loreto'] )
-    logger.notify('     %s', deviceObj.full_device['Loreto.relays'] )
+    # logger.notify('%s - %s', topic_name, deviceObj.full_device.to_json())
+    # logger.notify('     %s', deviceObj.loretoDB.to_json() )
+    # logger.notify('     %s', deviceObj.loretoDB['relays'] )
     ### -----------------------------------------------
     ### comandi derivanti da applicazioni per ottenere un mix di dati
     ### -----------------------------------------------
@@ -194,7 +194,7 @@ def process(topic, payload, mqttClient_CB):
 
         ### incude tutti gli STATUSx
         elif suffix.startswith('STATUS'):
-            deviceObj.updateDevice(main_key_path=f"{topic_name}", data=payload, writeFile=True)
+            deviceObj.updateDevice(key_path='STATUS', data=payload, writeFile=True)
 
 
 
@@ -207,18 +207,19 @@ def process(topic, payload, mqttClient_CB):
 
             if power_key:
                 deviceObj.updateLoreto_POWER(data=payload)
-                deviceObj.updateDevice(main_key_path=f"Loreto", data=payload, writeFile=True)
+                deviceObj.updateDevice(key_path=None, data=payload, writeFile=True)
                 action='power_in_payload'
 
+            ### Tested
             elif pulsetime_key:
-                deviceObj.updateLoreto_PulseTime(pt_key=pulsetime_key, data=payload)
+                deviceObj.updateLoreto_PulseTime(key_name=pulsetime_key, data=payload)
                 action='pulsetime_in_payload'
 
             elif 'PowerOnState' in payload:
                 action='poweronstate_in_payload'
 
             elif 'Timers' in payload:
-                deviceObj.updateDevice(main_key_path=f"{topic_name}.TIMERS", data=payload, writeFile=True)
+                deviceObj.updateDevice(key_path="TIMERS", data=payload, writeFile=True)
                 action='timers_in_payload'
 
 
@@ -237,12 +238,12 @@ def process(topic, payload, mqttClient_CB):
     elif prefix=='tele':
 
         if suffix=='STATE':
-            deviceObj.updateLoreto_STATE(data=payload) # update also Wifi
-            deviceObj.updateLoreto_POWER(data=payload)
-            deviceObj.updateDevice(main_key_path=f"{topic_name}.STATE", data=payload, writeFile=True)
+            # deviceObj.updateLoreto_STATE(data=payload) # update also Wifi
+            # deviceObj.updateLoreto_POWER(data=payload)
+            deviceObj.updateDevice(key_path="STATE", data=payload, writeFile=True)
 
         elif suffix=='LWT':
-            deviceObj.updateDevice(main_key_path=f"{topic_name}.LWT", data=payload, writeFile=True)
+            deviceObj.updateDevice(key_path="LWT", data=payload, writeFile=True)
 
         elif suffix=='HASS_STATE':
             pass
@@ -252,20 +253,33 @@ def process(topic, payload, mqttClient_CB):
             pass
 
 
-    elif prefix=='tasmota' and suffix=='sensors':
-        ### Tested
-        if 'sn' in payload:
-            deviceObj.updateLoreto_SensorsSN(data=payload)
-            deviceObj.updateDevice(main_key_path=f"{topic_name}.Sensors", data=payload, writeFile=True)
+    elif prefix=='tasmota':
+        if suffix in ['sensors', 'config']:
+            if suffix == 'sensors':
+                pass
+                # import pdb; pdb.set_trace(); pass # by Loreto
 
-        ### Tested
-        elif 'rl' in payload:
-            deviceObj.updateLoreto_SensorsRL(data=payload)
-            deviceObj.updateDevice(main_key_path=f"{topic_name}.Sensors", data=payload, writeFile=True)
+            deviceObj.updateDevice(key_path="Config", data=payload, writeFile=True)
+
+        '''
+        if suffix in ['sensors', 'config']:
+            ### Tested
+            if 'sn' in payload:
+                # deviceObj.updateLoreto_SensorsSN(data=payload)
+                deviceObj.updateDevice(key_path="Config.Sensors", data=payload, writeFile=True)
+
+            ### Tested
+            elif 'rl' in payload:
+                # deviceObj.updateLoreto_SensorsRL(data=payload)
+                deviceObj.updateDevice(key_path="Config.Sensors", data=payload, writeFile=True)
+
+        elif suffix=='config':
+            deviceObj.updateDevice(key_path="Config.Config", data=payload, writeFile=True)
+        '''
 
 
     else:
         logger.warning("topic: %s not managed - payload: %s", topic, payload)
 
 
-    deviceObj.savingDataOnFile()
+    # deviceObj.savingDataOnFile()
