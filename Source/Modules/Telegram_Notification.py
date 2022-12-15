@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 15-12-2022 12.09.42
+# Date .........: 15-12-2022 17.56.14
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -56,24 +56,25 @@ def telegram_notify(deviceObj, topic_name: str, action: str, payload: (dict, str
             }
         }
 
+    ### dobbiamo attendere che il timer sia expired
     if '_in_payload' in action:
         if not deviceObj.telegramNotification():
             logger.warning("%s - %s skipping due to telegramNotification timer", topic_name, payload)
             return
-        tg_msg[gv.prj_name]['msg']="captured"
+        # tg_msg[gv.prj_name]['msg']="captured"
 
-    else:
-        tg_msg[gv.prj_name]['msg']="has been received"
+    # else:
 
     if isinstance(payload, dict):
-        if 'debug' in payload and payload['debug'] is True:
+        if 'debug' in payload and payload['debug'] is True: ### in caso di debug da telegram
+            tg_msg[gv.prj_name]['msg']="has been received"
             STM.sendMsg(group_name=topic_name, message=tg_msg, my_logger=logger)
     else:
         logger.warning('%s - payload is not a dictionry: %s', topic_name, payload)
         return
 
     _dict={}
-    relayNames=deviceObj.friendlyNames
+    # relayNames=deviceObj.friendlyNames
 
     #=====================================================================
     # actions from telegramBot
@@ -82,15 +83,17 @@ def telegram_notify(deviceObj, topic_name: str, action: str, payload: (dict, str
         _dict.update(deviceObj.Info(italic=True))
         _dict['Wifi']=deviceObj.wifi(italic=True)
 
-        for index, name in enumerate(relayNames):
+        # for index, name in enumerate(relayNames):
+        for index in range(deviceObj.relays):
+            relay_name=deviceObj.friendlyNames(index)
             relay_nr=index+1
             pt_value, pt_remaining=deviceObj.pulseTimeToHuman(index=index, italic=True)
 
-            _dict[name]={}
-            _dict[name]["Status"]=deviceObj.relayStatus(relay_nr=relay_nr, italic=True)
-            _dict[name]["Pulsetime"]=pt_value
-            _dict[name]["Remaining"]=pt_remaining
-            _dict[name]["Timers"]=deviceObj.timersToHuman(relay_nr=relay_nr, italic=True)
+            _dict[relay_name]={}
+            _dict[relay_name]["Status"]=deviceObj.relayStatus(relay_nr=relay_nr, italic=True)
+            _dict[relay_name]["Pulsetime"]=pt_value
+            _dict[relay_name]["Remaining"]=pt_remaining
+            _dict[relay_name]["Timers"]=deviceObj.timersToHuman(relay_nr=relay_nr, italic=True)
 
 
     elif action=="mqtt":  ### LnCmnd/topic_name/mqtt
@@ -118,9 +121,6 @@ def telegram_notify(deviceObj, topic_name: str, action: str, payload: (dict, str
             _dict[name]={}
             _dict[name]['Status']=deviceObj.relayStatus(relay_nr=relay_nr, italic=True)
             _dict[name]["Timers"]=deviceObj.timersToHuman(relay_nr=relay_nr, italic=True)
-            # _dict[name]=[]
-            # _dict[name].append(deviceObj.relayStatus(relay_nr=index+1, italic=True))
-            # _dict[name].append(deviceObj.timersToHuman(relay_nr=index+1, italic=True))
 
 
     ### Tested

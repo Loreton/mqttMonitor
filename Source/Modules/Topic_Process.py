@@ -202,7 +202,8 @@ def process(topic, payload, mqttClient_CB):
         elif suffix=='RESULT':
             power_key=payload.in_key(in_str='POWER', return_first=True)
             pulsetime_key=payload.in_key(in_str='PulseTime', return_first=True)
-
+            
+            ### action indica se dobbiamo inviare un messaggio a telegram
             action=None
 
             if power_key:
@@ -238,8 +239,6 @@ def process(topic, payload, mqttClient_CB):
     elif prefix=='tele':
 
         if suffix=='STATE':
-            # deviceObj.updateLoreto_STATE(data=payload) # update also Wifi
-            # deviceObj.updateLoreto_POWER(data=payload)
             deviceObj.updateDevice(key_path="STATE", data=payload, writeFile=True)
 
         elif suffix=='LWT':
@@ -255,28 +254,7 @@ def process(topic, payload, mqttClient_CB):
 
     elif prefix=='tasmota':
         if suffix in ['sensors', 'config']:
-            if suffix == 'sensors':
-                pass
-                # import pdb; pdb.set_trace(); pass # by Loreto
-
             deviceObj.updateDevice(key_path="Config", data=payload, writeFile=True)
-
-        '''
-        if suffix in ['sensors', 'config']:
-            ### Tested
-            if 'sn' in payload:
-                # deviceObj.updateLoreto_SensorsSN(data=payload)
-                deviceObj.updateDevice(key_path="Config.Sensors", data=payload, writeFile=True)
-
-            ### Tested
-            elif 'rl' in payload:
-                # deviceObj.updateLoreto_SensorsRL(data=payload)
-                deviceObj.updateDevice(key_path="Config.Sensors", data=payload, writeFile=True)
-
-        elif suffix=='config':
-            deviceObj.updateDevice(key_path="Config.Config", data=payload, writeFile=True)
-        '''
-
 
     else:
         logger.warning("topic: %s not managed - payload: %s", topic, payload)
