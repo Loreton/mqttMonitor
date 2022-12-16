@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 15-12-2022 17.56.14
+# Date .........: 16-12-2022 15.16.18
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -74,7 +74,11 @@ def telegram_notify(deviceObj, topic_name: str, action: str, payload: (dict, str
         return
 
     _dict={}
-    # relayNames=deviceObj.friendlyNames
+
+    for index in range(deviceObj.relays):
+        relay_name=deviceObj.friendlyNames(index)
+
+    relayNames=deviceObj.friendlyNames()
 
     #=====================================================================
     # actions from telegramBot
@@ -83,12 +87,10 @@ def telegram_notify(deviceObj, topic_name: str, action: str, payload: (dict, str
         _dict.update(deviceObj.Info(italic=True))
         _dict['Wifi']=deviceObj.wifi(italic=True)
 
-        # for index, name in enumerate(relayNames):
-        for index in range(deviceObj.relays):
-            relay_name=deviceObj.friendlyNames(index)
+        for index, relay_name in enumerate(relayNames):
             relay_nr=index+1
             pt_value, pt_remaining=deviceObj.pulseTimeToHuman(index=index, italic=True)
-
+            relay_name=f'fn_{relay_name}'
             _dict[relay_name]={}
             _dict[relay_name]["Status"]=deviceObj.relayStatus(relay_nr=relay_nr, italic=True)
             _dict[relay_name]["Pulsetime"]=pt_value
@@ -116,11 +118,12 @@ def telegram_notify(deviceObj, topic_name: str, action: str, payload: (dict, str
     # actions from Topic_Process
     #=====================================================================
     elif action=='timers_in_payload':
-        for index, name in enumerate(relayNames):
+        for index, relay_name in enumerate(relayNames):
             relay_nr=index+1
-            _dict[name]={}
-            _dict[name]['Status']=deviceObj.relayStatus(relay_nr=relay_nr, italic=True)
-            _dict[name]["Timers"]=deviceObj.timersToHuman(relay_nr=relay_nr, italic=True)
+            relay_name=f'fn_{relay_name}'
+            _dict[relay_name]={}
+            _dict[relay_name]['Status']=deviceObj.relayStatus(relay_nr=relay_nr, italic=True)
+            _dict[relay_name]["Timers"]=deviceObj.timersToHuman(relay_nr=relay_nr, italic=True)
 
 
     ### Tested
@@ -132,6 +135,7 @@ def telegram_notify(deviceObj, topic_name: str, action: str, payload: (dict, str
             if keys[0].startswith('POWER'):
                 ### scan friendly names
                 for index, name in enumerate(relayNames):
+                    name=f'fn_{name}'
                     relay_nr=index+1
                     _dict[name]={}
                     _dict[name]=deviceObj.relayStatus(relay_nr=relay_nr, italic=True)
@@ -141,6 +145,7 @@ def telegram_notify(deviceObj, topic_name: str, action: str, payload: (dict, str
     ### Tested
     elif action=='pulsetime_in_payload':     # payload dovrebbe contenere qualcosa tipo: {"POWER1":"OFF"}
         for index, name in enumerate(relayNames):
+            name=f'fn_{name}'
             pt_value, pt_remaining=deviceObj.pulseTimeToHuman(index=index, italic=True)
             _dict[name]={}
             _dict[name]["Pulsetime"]=f"{pt_value} ({pt_remaining})"
@@ -173,7 +178,8 @@ def telegram_notify(deviceObj, topic_name: str, action: str, payload: (dict, str
         ### response: {'ok': False, 'error_code': 400, 'description': "Bad Request: can't parse entities: Can't find end of the entity starting at byte offset 493"}
         # STM.sendMsg(group_name=topic_name, message=tg_msg.to_yaml(sort_keys=False), my_logger=logger, caller=True, parse_mode=None, notify=True)
 
-        STM.sendMsg(group_name=topic_name, message=tg_msg.to_yaml(sort_keys=False), my_logger=logger, caller=True, parse_mode='html', notify=True)
+        # STM.sendMsg(group_name=topic_name, message=tg_msg.to_yaml(sort_keys=False), my_logger=logger, caller=True, parse_mode='html', notify=True)
+        STM.sendMsg(group_name=topic_name, message=tg_msg, my_logger=logger, caller=True, parse_mode='html', notify=True)
 
 
 
