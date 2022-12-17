@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 16-12-2022 11.37.56
+# Date .........: 17-12-2022 08.21.35
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -201,8 +201,8 @@ def process(topic, payload, mqttClient_CB):
 
         ### in caso di RESULT dobbiamo analizzare il payload
         elif suffix=='RESULT':
-            power_key=payload.in_key(in_str='POWER', return_first=True)
-            pulsetime_key=payload.in_key(in_str='PulseTime', return_first=True)
+            power_key=payload.in_key(in_str='POWER', first_match=True)
+            pulsetime_key=payload.in_key(in_str='PulseTime', first_match=True)
             
             ### action indica se dobbiamo inviare un messaggio a telegram
             action=None

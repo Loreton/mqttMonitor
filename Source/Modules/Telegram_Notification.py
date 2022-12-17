@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 16-12-2022 15.16.18
+# Date .........: 17-12-2022 16.28.22
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -171,6 +171,7 @@ def telegram_notify(deviceObj, topic_name: str, action: str, payload: (dict, str
     if _dict:
         # tg_msg=benedict({topic_name: _dict }, keypath_separator='/')
         tg_msg=benedict(_dict, keypath_separator='/')
+        logger.notify('tg_msg: %s', tg_msg.to_json())
 
         logger.notify('sending telegram message: %s', tg_msg)
 
@@ -179,6 +180,15 @@ def telegram_notify(deviceObj, topic_name: str, action: str, payload: (dict, str
         # STM.sendMsg(group_name=topic_name, message=tg_msg.to_yaml(sort_keys=False), my_logger=logger, caller=True, parse_mode=None, notify=True)
 
         # STM.sendMsg(group_name=topic_name, message=tg_msg.to_yaml(sort_keys=False), my_logger=logger, caller=True, parse_mode='html', notify=True)
+        STM.sendMsg(group_name=topic_name, message=tg_msg, my_logger=logger, caller=True, parse_mode='html', notify=True)
+    else:
+        # _dict={"Loreto": 'ciao'}
+        # tg_msg=benedict(_dict, keypath_separator='/')
+        # logger.notify('tg_msg: %s', tg_msg.to_json())
+        # import pdb; pdb.set_trace(); pass # by Loreto
+        logger.notify('%s - no data found for %s', topic_name, action)
+        # tg_msg=f'no data found for {action}'
+        tg_msg={'error': f'no data found for {action}'}
         STM.sendMsg(group_name=topic_name, message=tg_msg, my_logger=logger, caller=True, parse_mode='html', notify=True)
 
 
