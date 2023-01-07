@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 17-12-2022 08.21.35
+# Date .........: 07-01-2023 19.17.51
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -163,13 +163,12 @@ def process(topic, payload, mqttClient_CB):
     ### device object
     ### -----------------------------------------------
     deviceObj=devices[topic_name]
-    # logger.notify('%s - %s', topic_name, deviceObj.full_device.to_json())
-    # logger.notify('     %s', deviceObj.loretoDB.to_json() )
-    # logger.notify('     %s', deviceObj.loretoDB['relays'] )
+
     ### -----------------------------------------------
-    ### comandi derivanti da applicazioni per ottenere un mix di dati
+    ### comandi derivanti da altre applicazioni per ottenere info
+    ### da inviare a telegram group
     ### -----------------------------------------------
-    if prefix=='LnCmnd':
+    if prefix=='LnTelegram':
         tgNotify.telegram_notify(deviceObj=deviceObj, topic_name=topic_name, action=suffix, payload=payload)
         return
 
@@ -208,7 +207,6 @@ def process(topic, payload, mqttClient_CB):
             action=None
 
             if power_key:
-                # deviceObj.updateLoreto_POWER(data=payload)
                 deviceObj.updateDevice(key_path=None, data=payload, writeFile=True)
                 action='power_in_payload'
 
@@ -234,7 +232,7 @@ def process(topic, payload, mqttClient_CB):
 
             ### process data
             if action:
-                tgNotify.telegram_notify(deviceObj=deviceObj, topic_name=topic_name, action=action, payload=payload)
+                tgNotify.in_payload_notify(deviceObj=deviceObj, topic_name=topic_name, action=action, payload=payload)
 
     ### Tested
     elif prefix=='tele':

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 07-01-2023 19.15.38
+# Date .........: 17-12-2022 16.28.22
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -38,16 +38,18 @@ def setup(*, gVars):
 ######################################################
 # process topic name and paylod data to findout query,
 #
-# topic='LnTelegram/topic_name/query' (comando esterno)
+# topic='LnCmnd/topic_name/query' (comando esterno)
 #      payload="summary"
 #      payload="timers"
 #
-# topic='LnTelegram/topic_name/summary'
+# topic='LnCmnd/topic_name/summary'
 #
 ######################################################
-def in_payload_notify(deviceObj, topic_name: str, action: str, payload: (dict, str)=None):
+def telegram_notify(deviceObj, topic_name: str, action: str, payload: (dict, str)=None):
     logger.info('processing topic %s - %s ', topic_name, action)
 
+
+    ### per i soli comandi non provenienti da Telegram
     tg_msg={
         gv.prj_name: {
             "command": action.replace('_in_payload', ''),
@@ -59,7 +61,17 @@ def in_payload_notify(deviceObj, topic_name: str, action: str, payload: (dict, s
         if not deviceObj.telegramNotification():
             logger.warning("%s - %s skipping due to telegramNotification timer", topic_name, payload)
             return
+        # tg_msg[gv.prj_name]['msg']="captured"
 
+    # else:
+
+    if isinstance(payload, dict):
+        if 'debug' in payload and payload['debug'] is True: ### in caso di debug da telegram
+            tg_msg[gv.prj_name]['msg']="has been received"
+            STM.sendMsg(group_name=topic_name, message=tg_msg, my_logger=logger)
+    else:
+        logger.warning('%s - payload is not a dictionry: %s', topic_name, payload)
+        return
 
     _dict={}
 
@@ -69,9 +81,43 @@ def in_payload_notify(deviceObj, topic_name: str, action: str, payload: (dict, s
     relayNames=deviceObj.friendlyNames()
 
     #=====================================================================
+    # actions from telegramBot
+    #=====================================================================
+    if action=='summary':  ### LnCmnd/topic_name/summary
+        _dict.update(deviceObj.Info(italic=True))
+        _dict['Wifi']=deviceObj.wifi(italic=True)
+
+        for index, relay_name in enumerate(relayNames):
+            relay_nr=index+1
+            pt_value, pt_remaining=deviceObj.pulseTimeToHuman(index=index, italic=True)
+            relay_name=f'fn_{relay_name}'
+            _dict[relay_name]={}
+            _dict[relay_name]["Status"]=deviceObj.relayStatus(relay_nr=relay_nr, italic=True)
+            _dict[relay_name]["Pulsetime"]=pt_value
+            _dict[relay_name]["Remaining"]=pt_remaining
+            _dict[relay_name]["Timers"]=deviceObj.timersToHuman(relay_nr=relay_nr, italic=True)
+
+
+    elif action=="mqtt":  ### LnCmnd/topic_name/mqtt
+        _dict.update(deviceObj.Info(italic=True))
+        _dict=deviceObj.mqtt(italic=True)
+
+
+    elif action in ["version", "firmware"]:  ### LnCmnd/topic_name/version
+        _dict=deviceObj.firmware(italic=True)
+
+
+    elif action=="net_status":  ### LnCmnd/topic_name/mqtt
+        _dict=deviceObj.net_status(italic=True)
+
+
+
+
+
+    #=====================================================================
     # actions from Topic_Process
     #=====================================================================
-    if action=='timers_in_payload':
+    elif action=='timers_in_payload':
         for index, relay_name in enumerate(relayNames):
             relay_nr=index+1
             relay_name=f'fn_{relay_name}'
@@ -82,6 +128,7 @@ def in_payload_notify(deviceObj, topic_name: str, action: str, payload: (dict, s
 
     ### Tested
     elif action=='power_in_payload':
+
         ### catturare solo  {"POWERx":"ON/OFF"}
         keys=list(payload.keys())
         if len(keys)==1:
@@ -91,11 +138,8 @@ def in_payload_notify(deviceObj, topic_name: str, action: str, payload: (dict, s
                     name=f'fn_{name}'
                     relay_nr=index+1
                     _dict[name]={}
-                    # _dict[name]=deviceObj.relayStatus(relay_nr=relay_nr, italic=True)
-                    _dict[name]=payload[keys[0]]
+                    _dict[name]=deviceObj.relayStatus(relay_nr=relay_nr, italic=True)
 
-        else:
-            print('NO NON.........................ci sono', payload)
 
 
     ### Tested
@@ -122,81 +166,8 @@ def in_payload_notify(deviceObj, topic_name: str, action: str, payload: (dict, s
     else:
         return
 
-    notify_telegram_group(topic_name=topic_name, action=action, _dict=_dict)
 
 
-
-
-
-
-######################################################
-# process topic name and paylod data to findout query,
-#
-# topic='LnTelegram/topic_name/telegram' (comando esterno)
-#      payload="summary"
-#      payload="timers"
-#
-# topic='LnTelegram/topic_name/summary'
-#
-######################################################
-def telegram_notify(deviceObj, topic_name: str, action: str, payload: (dict, str)=None):
-    logger.info('processing topic %s - %s ', topic_name, action)
-
-    if isinstance(payload, dict):
-        if 'debug' in payload and payload['debug'] is True: ### in caso di debug da telegram
-            tg_msg[gv.prj_name]['msg']="has been received"
-            STM.sendMsg(group_name=topic_name, message=tg_msg, my_logger=logger)
-    else:
-        logger.warning('%s - payload is not a dictionary: %s', topic_name, payload)
-        return
-
-    alias=payload["alias"]
-    _dict={}
-
-    # for index in range(deviceObj.relays):
-    #     relay_name=deviceObj.friendlyNames(index)
-
-    relayNames=deviceObj.friendlyNames()
-
-    #=====================================================================
-    # actions from telegramBot
-    #=====================================================================
-    if alias=='summary':
-        _dict.update(deviceObj.Info(italic=True))
-        _dict['Wifi']=deviceObj.wifi(italic=True)
-
-        for index, relay_name in enumerate(relayNames):
-            relay_nr=index+1
-            pt_value, pt_remaining=deviceObj.pulseTimeToHuman(index=index, italic=True)
-            relay_name=f'fn_{relay_name}'
-            _dict[relay_name]={}
-            _dict[relay_name]["Status"]=deviceObj.relayStatus(relay_nr=relay_nr, italic=True)
-            _dict[relay_name]["Pulsetime"]=pt_value
-            _dict[relay_name]["Remaining"]=pt_remaining
-            _dict[relay_name]["Timers"]=deviceObj.timersToHuman(relay_nr=relay_nr, italic=True)
-
-
-    elif alias=="mqtt":  ### LnTelegram/topic_name/mqtt
-        _dict.update(deviceObj.Info(italic=True))
-        _dict=deviceObj.mqtt(italic=True)
-
-
-    elif alias in ["version", "firmware"]:  ### LnTelegram/topic_name/version
-        _dict=deviceObj.firmware(italic=True)
-
-
-    elif alias=="net_status":  ### LnTelegram/topic_name/mqtt
-        _dict=deviceObj.net_status(italic=True)
-
-
-    notify_telegram_group(topic_name=topic_name, action=alias, _dict=_dict)
-
-
-
-############################################################
-#
-############################################################
-def notify_telegram_group(topic_name: str, action: str, _dict: dict):
     if _dict:
         # tg_msg=benedict({topic_name: _dict }, keypath_separator='/')
         tg_msg=benedict(_dict, keypath_separator='/')

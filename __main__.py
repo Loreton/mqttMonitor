@@ -43,26 +43,7 @@ if __name__ == '__main__':
     gv.tgGroupName             = args.telegram_group_name
     gv.topic_list              = args.topics
 
-    # gv.envars_dir              = os.path.expandvars("${ln_ENVARS_DIR}")
-    # gv.mqttmonitor_runtime_dir = os.path.expandvars("${ln_RUNTIME_DIR}/mqtt_monitor")
-    # gv.brokers_file            = os.path.expandvars("${ln_ENVARS_DIR}/yaml/Mqtt_Brokers.yaml")
-    # gv.telegram_groups_file    = os.path.expandvars("${ln_ENVARS_DIR}/yaml/telegramGroups.yaml")
-    # gv.mariadb_file            = os.path.expandvars("${ln_ENVARS_DIR}/yaml/mariadb.yaml")
-
     import InitializeModules; InitializeModules.Main(gVars=gv)
 
-    # if args.clean_files:
-    #     files = glob.glob(f"{gv.mqttmonitor_runtime_dir}/*.json")
-    #     for f in files:
-    #         os.remove(f)
-    #     files = glob.glob(f"{gv.mqttmonitor_runtime_dir}/*yaml")
-    #     for f in files:
-    #         os.remove(f)
-
-    # gv.mqttmonitor_runtime_dir = mqttmonitor_runtime_dir
-    # gv.envars_dir              = os.environ.get("ln_ENVARS_DIR")
     savePidFile(gv.pid_file)
-
-
-    # mqttClientMonitor.run(topic_list=args.topics, my_logger=logger, systemd=args.systemd)
     mqttClientMonitor.run(gVars=gv)

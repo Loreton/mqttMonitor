@@ -1,7 +1,7 @@
 #!/usr/bin/python
 #
 # updated by ...: Loreto Notarantonio
-# Date .........: 17-12-2022 08.09.37
+# Date .........: 07-01-2023 18.31.43
 #
 
 import  sys; sys.dont_write_bytecode = True
@@ -24,7 +24,7 @@ def setup_LoadYamlFile_Class(*, gVars):
     gv.envars_dir              = os.path.expandvars("${ln_ENVARS_DIR}")
     gv.mqttmonitor_runtime_dir = os.path.expandvars("${ln_RUNTIME_DIR}/mqtt_monitor")
     gv.brokers_file            = os.path.expandvars("${ln_ENVARS_DIR}/yaml/Mqtt_Brokers.yaml")
-    gv.telegram_groups_file    = os.path.expandvars("${ln_ENVARS_DIR}/yaml/telegramGroups.yaml")
+    gv.telegram_groups_file    = os.path.expandvars("${ln_ENVARS_DIR}/yaml/telegramGroups_New.yaml")
     gv.mariadb_file            = os.path.expandvars("${ln_ENVARS_DIR}/yaml/mariadb.yaml")
 
     import LoadYamlFile_Class; LoadYamlFile_Class.setup(gVars=gv)

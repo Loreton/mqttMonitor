@@ -7,7 +7,7 @@
 
 
 ### - Utils
-"$LNLIB_DIR/Utils/LnUtilsAndMonkeys.py"        LnUtils.py
+"$LNLIB_DIR/Utils/LnUtils.py"        =
 
 
 ### - Tasmota
