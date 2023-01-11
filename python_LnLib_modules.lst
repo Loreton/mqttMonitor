@@ -11,8 +11,9 @@
 
 
 ### - Tasmota
-# "${LNLIB_DIR}/tasmota/Tasmota_Human_Converter.py"   =
 "${LNLIB_DIR}/tasmota/Tasmota_Class.py"   =
+"${LNLIB_DIR}/tasmota/Tasmota_Human_Converter.py"      =
+
 
 ### - Time
 ${LNLIB_DIR}/Time/LnTime.py                       =

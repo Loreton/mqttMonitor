@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 07-01-2023 19.15.38
+# Date .........: 09-01-2023 12.10.17
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -16,12 +16,12 @@ from queue import Queue
 import time
 import json, yaml
 import signal
+from benedict import benedict
 
 # from LoretoDict import LnDict
 import SendTelegramMessage as STM
+from LnUtils import dict_bold_italic
 
-# import Tasmota_Formatter as tasmotaFormatter
-from benedict import benedict
 
 
 
@@ -58,6 +58,7 @@ def in_payload_notify(deviceObj, topic_name: str, action: str, payload: (dict, s
     if '_in_payload' in action:
         if not deviceObj.telegramNotification():
             logger.warning("%s - %s skipping due to telegramNotification timer", topic_name, payload)
+            # notify_telegram_group(topic_name=topic_name, action=action, data='Please wait for a while')
             return
 
 
@@ -74,10 +75,10 @@ def in_payload_notify(deviceObj, topic_name: str, action: str, payload: (dict, s
     if action=='timers_in_payload':
         for index, relay_name in enumerate(relayNames):
             relay_nr=index+1
-            relay_name=f'fn_{relay_name}'
+            relay_name=f'rl_{relay_name}'
             _dict[relay_name]={}
-            _dict[relay_name]['Status']=deviceObj.relayStatus(relay_nr=relay_nr, italic=True)
-            _dict[relay_name]["Timers"]=deviceObj.timersToHuman(relay_nr=relay_nr, italic=True)
+            _dict[relay_name]['Status']=deviceObj.relayStatus(relay_nr=relay_nr)
+            _dict[relay_name]["Timers"]=deviceObj.timersToHuman(relay_nr=relay_nr)
 
 
     ### Tested
@@ -88,10 +89,9 @@ def in_payload_notify(deviceObj, topic_name: str, action: str, payload: (dict, s
             if keys[0].startswith('POWER'):
                 ### scan friendly names
                 for index, name in enumerate(relayNames):
-                    name=f'fn_{name}'
+                    name=f'rl_{name}'
                     relay_nr=index+1
                     _dict[name]={}
-                    # _dict[name]=deviceObj.relayStatus(relay_nr=relay_nr, italic=True)
                     _dict[name]=payload[keys[0]]
 
         else:
@@ -100,9 +100,9 @@ def in_payload_notify(deviceObj, topic_name: str, action: str, payload: (dict, s
 
     ### Tested
     elif action=='pulsetime_in_payload':     # payload dovrebbe contenere qualcosa tipo: {"POWER1":"OFF"}
-        for index, name in enumerate(relayNames):
-            name=f'fn_{name}'
-            pt_value, pt_remaining=deviceObj.pulseTimeToHuman(index=index, italic=True)
+        for relay_nr, name in enumerate(relayNames):
+            name=f'rl_{name}'
+            pt_value, pt_remaining=deviceObj.pulseTimeToHuman(relay_nr=relay_nr)
             _dict[name]={}
             _dict[name]["Pulsetime"]=f"{pt_value} ({pt_remaining})"
 
@@ -122,7 +122,7 @@ def in_payload_notify(deviceObj, topic_name: str, action: str, payload: (dict, s
     else:
         return
 
-    notify_telegram_group(topic_name=topic_name, action=action, _dict=_dict)
+    notify_telegram_group(topic_name=topic_name, action=action, data=_dict)
 
 
 
@@ -153,56 +153,56 @@ def telegram_notify(deviceObj, topic_name: str, action: str, payload: (dict, str
     alias=payload["alias"]
     _dict={}
 
-    # for index in range(deviceObj.relays):
-    #     relay_name=deviceObj.friendlyNames(index)
-
     relayNames=deviceObj.friendlyNames()
 
     #=====================================================================
     # actions from telegramBot
     #=====================================================================
     if alias=='summary':
-        _dict.update(deviceObj.Info(italic=True))
-        _dict['Wifi']=deviceObj.wifi(italic=True)
+        _dict.update(deviceObj.Info())
+        _dict['Wifi']=deviceObj.wifi()
 
         for index, relay_name in enumerate(relayNames):
+            pt_value, pt_remaining=deviceObj.pulseTimeToHuman(relay_nr=index) ### parte da '0''
+            relay_name=f'rl_{relay_name}'
             relay_nr=index+1
-            pt_value, pt_remaining=deviceObj.pulseTimeToHuman(index=index, italic=True)
-            relay_name=f'fn_{relay_name}'
             _dict[relay_name]={}
-            _dict[relay_name]["Status"]=deviceObj.relayStatus(relay_nr=relay_nr, italic=True)
+            _dict[relay_name]["Status"]=deviceObj.relayStatus(relay_nr=relay_nr)
             _dict[relay_name]["Pulsetime"]=pt_value
             _dict[relay_name]["Remaining"]=pt_remaining
-            _dict[relay_name]["Timers"]=deviceObj.timersToHuman(relay_nr=relay_nr, italic=True)
+            _dict[relay_name]["Timers"]=deviceObj.timersToHuman(relay_nr=relay_nr)
 
 
     elif alias=="mqtt":  ### LnTelegram/topic_name/mqtt
-        _dict.update(deviceObj.Info(italic=True))
-        _dict=deviceObj.mqtt(italic=True)
+        _dict.update(deviceObj.Info())
+        _dict=deviceObj.mqtt()
 
 
     elif alias in ["version", "firmware"]:  ### LnTelegram/topic_name/version
-        _dict=deviceObj.firmware(italic=True)
+        _dict=deviceObj.firmware()
 
 
     elif alias=="net_status":  ### LnTelegram/topic_name/mqtt
-        _dict=deviceObj.net_status(italic=True)
+        _dict=deviceObj.net_status()
 
 
-    notify_telegram_group(topic_name=topic_name, action=alias, _dict=_dict)
+    notify_telegram_group(topic_name=topic_name, action=alias, data=_dict)
 
 
 
 ############################################################
 #
 ############################################################
-def notify_telegram_group(topic_name: str, action: str, _dict: dict):
-    if _dict:
-        # tg_msg=benedict({topic_name: _dict }, keypath_separator='/')
-        tg_msg=benedict(_dict, keypath_separator='/')
-        logger.notify('tg_msg: %s', tg_msg.to_json())
+def notify_telegram_group(topic_name: str, action: str, data: (dict, str)):
+    if data:
+        if isinstance(data, dict):
+            tg_msg=benedict(data, keypath_separator='§') ### potrebbe esserci il '.' da qualche parte e lo '/' non va bene per il parsemode 'html'
+            logger.notify('tg_msg: %s', tg_msg.to_json())
 
-        logger.notify('sending telegram message: %s', tg_msg)
+            logger.notify('sending telegram message: %s', tg_msg)
+            tg_msg=dict_bold_italic(tg_msg, keys='bold', values='italic', nlevels=2)
+        else:
+            tg_msg=data
 
         ### parse_mode=None altrimenti mi da errore oppure html ma con attenzione:
         ### response: {'ok': False, 'error_code': 400, 'description': "Bad Request: can't parse entities: Can't find end of the entity starting at byte offset 493"}

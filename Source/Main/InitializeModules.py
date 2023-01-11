@@ -1,7 +1,7 @@
 #!/usr/bin/python
 #
 # updated by ...: Loreto Notarantonio
-# Date .........: 07-01-2023 18.31.43
+# Date .........: 09-01-2023 11.45.49
 #
 
 import  sys; sys.dont_write_bytecode = True
@@ -45,6 +45,14 @@ def setup_LnUtils(*, gVars):
     gv.logger=gVars.logger
 
     import LnUtils; LnUtils.setup(gVars=gv)
+
+def setup_LnUtils(*, gVars):
+    gv=SimpleNamespace()
+    gv.logger=gVars.logger
+
+    import Tasmota_Human_Converter as THC; THC.setup(gVars=gv)
+
+
 
 
 
