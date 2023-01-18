@@ -267,7 +267,8 @@ def run(gVars: SimpleNamespace):
 
 
 
-        if int(mm) in [0, 15, 30, 45]:
+        # if int(mm) in [0, 15, 30, 45]:
+        if int(mm) in [0]:
             savePidFile(gv.pid_file)
             STM.sendMsg(group_name=gv.tgGroupName, message="I'm still alive!", my_logger=logger, caller=True, parse_mode='html')
             '''
