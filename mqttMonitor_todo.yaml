@@ -1,0 +1,2 @@
+mqttMonitor:
+    modificare LoadYamlFile_Class to LoadConfigFile

@@ -23,7 +23,9 @@ import  Topic_Process as Topic
 import  SendTelegramMessage as STM
 from    LnTimer import TimerLN as LnTimer
 from    savePidFile import savePidFile
-from    LoadYamlFile_Class import mqttBroker
+# from    LoadYamlFile_Class import mqttBroker
+# from LoadConfigFile import mqttBroker
+
 
 
 
@@ -108,7 +110,8 @@ def connect_mqtt() -> mqtt_client:
         print('da implemetare')
         sys.exit(1)
     else:
-        broker=mqttBroker(broker_name="LnMqtt")
+        # broker=mqttBroker(broker_name="LnMqtt")
+        broker=gv.broker
         url=broker['url']
         port=broker['port']
         auth=broker['auth']
@@ -215,30 +218,35 @@ def run(gVars: SimpleNamespace):
         topic_name='TavoloLavoro'
         mac='C82B964FD367'
         gv.topic_list.append(f'+/{topic_name}/#')
-        gv.topic_list.append(f'LnCmnd/{topic_name}/#')
+        # gv.topic_list.append(f'LnCmnd/#')
+        # gv.topic_list.append(f'LnCmnd/{topic_name}/#')
+        # gv.topic_list.append(f'LnCmnd/mqtt_monitor_application/#')
         gv.topic_list.append(f'tasmota/discovery/{mac}/#') ### MAC di TavoloLavoro
 
     elif gv.topic_list[0] =='VescoviNew':
         topic_name='VescoviNew'
         mac='C44F33978EFA'
         gv.topic_list.append(f'+/{topic_name}/#')
-        gv.topic_list.append(f'LnCmnd/{topic_name}/#')
+        # gv.topic_list.append(f'LnCmnd/#')
+        # gv.topic_list.append(f'LnCmnd/{topic_name}/#')
+        # gv.topic_list.append(f'LnCmnd/mqtt_monitor_application/#')
         gv.topic_list.append(f'tasmota/discovery/{mac}/#') ### MAC di TavoloLavoro
 
     elif gv.topic_list[0] =='Beverino_01':
         topic_name='Beverino_01'
         mac='DC4F2292DFAF'
         gv.topic_list.append(f'+/{topic_name}/#')
-        gv.topic_list.append(f'LnCmnd/{topic_name}/#')
+        # gv.topic_list.append(f'LnCmnd/#')
+        # gv.topic_list.append(f'LnCmnd/{topic_name}/#')
+        # gv.topic_list.append(f'LnCmnd/mqtt_monitor_application/#')
         gv.topic_list.append(f'tasmota/discovery/{mac}/#') ### MAC di TavoloLavoro
 
     else:
-        gv.topic_list.append('LnCmnd/#')
         if not '+/#' in gv.topic_list:
             gv.topic_list.append('tasmota/discovery/#')
 
 
-        # topic_list.append('+/#')
+    gv.topic_list.append('LnCmnd/#')
     subscribe(client, gv.topic_list)
 
 
@@ -282,16 +290,16 @@ def run(gVars: SimpleNamespace):
             i messaggi. Il codice che segue serve a monitorare lo status
             dell'applicazione e farla ripartire se necessario.
             publish_timer if exausted means that the application is NOT responding """
-        if gv.publish_timer.is_expired(logger=logger.debug):
+        if gv.publish_timer.remaining <= 0:
             logger.error('publish_timer - exausted')
             logger.error('restarting application')
             STM.sendMsg(group_name=gv.tgGroupName, message="publish_timer - exausted - application is restarting!", my_logger=logger, caller=True, parse_mode='markdown')
             os.kill(int(os.getpid()), signal.SIGTERM)
 
 
-        if int(mm) in [0]:
-            logger.info('send publih check message')
-            result=client.publish(topic='LnCmnd/mqtt_monitor_application/query', payload='publish timer', qos=0, retain=False)
+        # if int(mm) in [0]:
+        logger.info('send publih check message')
+        result=client.publish(topic='LnCmnd/mqtt_monitor_application/query', payload='publish timer', qos=0, retain=False)
 
         time.sleep(60)
 

@@ -1,6 +1,6 @@
 #
 # updated by ...: Loreto Notarantonio
-# Date .........: 14-12-2022 14.58.31
+# Date .........: 30-01-2023 10.12.37
 #
 
 #########################################################
@@ -12,7 +12,16 @@ main:
     dirs:
         envars:                ${ln_ENVARS_DIR}
         mqttmonitor_runtime:   ${ln_RUNTIME_DIR}/mqtt_monitor
-    files:
-        brokers:               ${ln_ENVARS_DIR}/yaml/Mqtt_Brokers.yaml
-        telegram_groups:       ${ln_ENVARS_DIR}/yaml/telegramGroups.yaml
-        mariadb:               ${ln_ENVARS_DIR}/yaml/mariadb.yaml
+
+
+broker:
+  include_files:
+    - conf/Mqtt_Brokers.lnk.yaml#brokers.lnmqtt
+
+telegram:
+  include_files:
+    - conf/telegramGroups.lnk.yaml
+
+mariadb:
+  include_files:
+    - conf/mariadb.lnk.yaml#mariadb

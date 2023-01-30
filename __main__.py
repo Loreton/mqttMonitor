@@ -18,7 +18,7 @@ import mqttClientMonitor
 from ColoredLogger import setColoredLogger, testLogger
 from ParseInput import ParseInput
 from savePidFile import savePidFile
-from LoadYamlFile_Class import LoadYamlFile_Class
+from LoadConfigFile import readYamlFile
 
 
 if __name__ == '__main__':
@@ -28,22 +28,28 @@ if __name__ == '__main__':
                             console_logger_level=args.console_logger_level,
                             file_logger_level=args.file_logger_level,
                             logging_dir=args.logging_dir, # logging file--> logging_dir + logger_name
-                            threads=True)
-    testLogger(logger)
-
+                            threads=False)
+    # testLogger(logger)
 
     gv=SimpleNamespace()
+
+
+    config=readYamlFile(filename=f'conf/{prj_name}.yaml', search_paths=['conf'], resolve_includes=True, to_benedict=True)
+    # print(config.to_yaml())
+
     gv.logger                  = logger
     gv.prj_name                = prj_name
-
     gv.clear_retained          = False
     gv.just_monitor            = args.monitor
     gv.pid_file                = args.pid_file
     gv.systemd                 = args.systemd
     gv.tgGroupName             = args.telegram_group_name
     gv.topic_list              = args.topics
+    gv.telegramData            = config['telegram']
+    gv.broker                   = config['broker']
 
-    import InitializeModules; InitializeModules.Main(gVars=gv)
+    import InitializeModules;
+    InitializeModules.Main(gVars=gv)
 
     savePidFile(gv.pid_file)
     mqttClientMonitor.run(gVars=gv)

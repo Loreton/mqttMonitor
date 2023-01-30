@@ -1,7 +1,7 @@
 #!/usr/bin/python
 #
 # updated by ...: Loreto Notarantonio
-# Date .........: 09-01-2023 11.45.49
+# Date .........: 30-01-2023 13.26.26
 #
 
 import  sys; sys.dont_write_bytecode = True
@@ -18,18 +18,17 @@ def setup_Telegram_Notification(*, gVars):
     from Telegram_Notification import setup; setup(gVars=gv)
 
 
-def setup_LoadYamlFile_Class(*, gVars):
+def setup_LoadConfigFile(*, gVars):
     gv=SimpleNamespace()
     gv.logger=gVars.logger
-    gv.envars_dir              = os.path.expandvars("${ln_ENVARS_DIR}")
-    gv.mqttmonitor_runtime_dir = os.path.expandvars("${ln_RUNTIME_DIR}/mqtt_monitor")
-    gv.brokers_file            = os.path.expandvars("${ln_ENVARS_DIR}/yaml/Mqtt_Brokers.yaml")
-    gv.telegram_groups_file    = os.path.expandvars("${ln_ENVARS_DIR}/yaml/telegramGroups_New.yaml")
-    gv.mariadb_file            = os.path.expandvars("${ln_ENVARS_DIR}/yaml/mariadb.yaml")
-
-    import LoadYamlFile_Class; LoadYamlFile_Class.setup(gVars=gv)
+    import LoadConfigFile; LoadConfigFile.setup(gVars=gv)
 
 
+def setup_SendTelegramMessage(*, gVars):
+    gv=SimpleNamespace()
+    gv.logger=gVars.logger
+    gv.telegramData=gVars.telegramData
+    import SendTelegramMessage; SendTelegramMessage.setup(gVars=gv)
 
 
 def setup_Topic_Process(*, gVars):
@@ -43,22 +42,17 @@ def setup_Topic_Process(*, gVars):
 def setup_LnUtils(*, gVars):
     gv=SimpleNamespace()
     gv.logger=gVars.logger
-
     import LnUtils; LnUtils.setup(gVars=gv)
-
-def setup_LnUtils(*, gVars):
-    gv=SimpleNamespace()
-    gv.logger=gVars.logger
-
-    import Tasmota_Human_Converter as THC; THC.setup(gVars=gv)
-
 
 
 
 
 def Main(*, gVars):
-    setup_Telegram_Notification(gVars=gVars)
-    setup_LnUtils(gVars=gVars)
-    setup_LoadYamlFile_Class(gVars=gVars)
-    setup_Topic_Process(gVars=gVars)
+    import inspect
+    this=sys.modules[__name__]
+    functions=inspect.getmembers(this, inspect.isfunction)
 
+    for func_name, func_ptr in functions:
+        if func_name.startswith('setup_'):
+            gVars.logger.notify('initializing module: %s', func_name[6:])
+            rc=func_ptr(gVars=gVars)
