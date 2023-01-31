@@ -23,8 +23,6 @@ import  Topic_Process as Topic
 import  SendTelegramMessage as STM
 from    LnTimer import TimerLN as LnTimer
 from    savePidFile import savePidFile
-# from    LoadYamlFile_Class import mqttBroker
-# from LoadConfigFile import mqttBroker
 
 
 
@@ -150,7 +148,7 @@ def checkPayload(message):
 #
 ####################################################################
 def on_message(client, userdata, message):
-    gv.publish_timer.restart(seconds=100) # if message has been received means application is alive.
+    gv.publish_timer.restart() # if message has been received means application is alive.
 
     # payload=checkPayload(message.payload)
     payload=checkPayload(message)
@@ -164,8 +162,8 @@ def on_message(client, userdata, message):
     logger.info("Received:")
 
     if message.retain==1:
-        logger.warning("   topic: %s - retained: %s", message.topic, message.retain)
-        logger.warning("   payload: %s", payload)
+        logger.notify("   topic: %s - retained: %s", message.topic, message.retain)
+        logger.notify("   payload: %s", payload)
         if message.topic=='tele/xxxxxVecoviNew/LWT': # forzatura per uno specifico....
             clear_retained_topic(client, message)
     else:
@@ -209,8 +207,8 @@ def run(gVars: SimpleNamespace):
     client=connect_mqtt()
     gv.client=client
 
-    gv.publish_timer=LnTimer(name='ping publish', default_time=100, start=True, logger=logger)
-    gv.publish_timer.start(seconds=100)
+    gv.publish_timer=LnTimer(name='mqtt publish', default_time=100, logger=logger)
+    gv.publish_timer.start()
 
     # Topic.setup(gVars=gv)
     ### per debug inseriamo un singolo device
@@ -286,6 +284,9 @@ def run(gVars: SimpleNamespace):
             STM.sendMsg(group_name=systemChannelName, message=tg_msg, my_logger=logger, caller=True, parse_mode='markdown')
             '''
 
+        logger.info('publishing check/ping mqtt message')
+        result=client.publish(topic='LnCmnd/mqtt_monitor_application/query', payload='publish timer', qos=0, retain=False)
+
         """ ho notato che dopo un pò il client va in hang e non cattura più
             i messaggi. Il codice che segue serve a monitorare lo status
             dell'applicazione e farla ripartire se necessario.
@@ -297,9 +298,6 @@ def run(gVars: SimpleNamespace):
             os.kill(int(os.getpid()), signal.SIGTERM)
 
 
-        # if int(mm) in [0]:
-        logger.info('send publih check message')
-        result=client.publish(topic='LnCmnd/mqtt_monitor_application/query', payload='publish timer', qos=0, retain=False)
 
         time.sleep(60)
 

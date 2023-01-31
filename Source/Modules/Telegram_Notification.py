@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 09-01-2023 12.10.17
+# Date .........: 31-01-2023 14.51.06
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -18,7 +18,6 @@ import json, yaml
 import signal
 from benedict import benedict
 
-# from LoretoDict import LnDict
 import SendTelegramMessage as STM
 from LnUtils import dict_bold_italic
 
@@ -57,8 +56,7 @@ def in_payload_notify(deviceObj, topic_name: str, action: str, payload: (dict, s
     ### dobbiamo attendere che il timer sia expired
     if '_in_payload' in action:
         if not deviceObj.telegramNotification():
-            logger.warning("%s - %s skipping due to telegramNotification timer", topic_name, payload)
-            # notify_telegram_group(topic_name=topic_name, action=action, data='Please wait for a while')
+            logger.warning("skipping due to telegramNotification timer - %s - %s", topic_name, payload)
             return
 
 
@@ -75,7 +73,7 @@ def in_payload_notify(deviceObj, topic_name: str, action: str, payload: (dict, s
     if action=='timers_in_payload':
         for index, relay_name in enumerate(relayNames):
             relay_nr=index+1
-            relay_name=f'rl_{relay_name}'
+            relay_name=f'relay_{relay_name}'
             _dict[relay_name]={}
             _dict[relay_name]['Status']=deviceObj.relayStatus(relay_nr=relay_nr)
             _dict[relay_name]["Timers"]=deviceObj.timersToHuman(relay_nr=relay_nr)
@@ -89,7 +87,7 @@ def in_payload_notify(deviceObj, topic_name: str, action: str, payload: (dict, s
             if keys[0].startswith('POWER'):
                 ### scan friendly names
                 for index, name in enumerate(relayNames):
-                    name=f'rl_{name}'
+                    name=f'relay_{name}'
                     relay_nr=index+1
                     _dict[name]={}
                     _dict[name]=payload[keys[0]]
@@ -101,7 +99,7 @@ def in_payload_notify(deviceObj, topic_name: str, action: str, payload: (dict, s
     ### Tested
     elif action=='pulsetime_in_payload':     # payload dovrebbe contenere qualcosa tipo: {"POWER1":"OFF"}
         for relay_nr, name in enumerate(relayNames):
-            name=f'rl_{name}'
+            name=f'relay_{name}'
             pt_value, pt_remaining=deviceObj.pulseTimeToHuman(relay_nr=relay_nr)
             _dict[name]={}
             _dict[name]["Pulsetime"]=f"{pt_value} ({pt_remaining})"
@@ -164,7 +162,7 @@ def telegram_notify(deviceObj, topic_name: str, action: str, payload: (dict, str
 
         for index, relay_name in enumerate(relayNames):
             pt_value, pt_remaining=deviceObj.pulseTimeToHuman(relay_nr=index) ### parte da '0''
-            relay_name=f'rl_{relay_name}'
+            relay_name=f'relay_{relay_name}'
             relay_nr=index+1
             _dict[relay_name]={}
             _dict[relay_name]["Status"]=deviceObj.relayStatus(relay_nr=relay_nr)
