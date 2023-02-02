@@ -20,7 +20,7 @@ from savePidFile import savePidFile
 from LoadConfigFile import readYamlFile
 
 
-__ln_version__="mqttMonitor Version: V2023-01-31_184815"
+__ln_version__="mqttMonitor Version: V2023-02-01_095010"
 
 if __name__ == '__main__':
     prj_name='mqttMonitor'
@@ -50,7 +50,7 @@ if __name__ == '__main__':
     gv.tgGroupName             = args.telegram_group_name
     gv.topic_list              = args.topics
     gv.telegramData            = config['telegram']
-    gv.broker                   = config['broker']
+    gv.broker                  = config['broker']
 
     import InitializeModules;
     InitializeModules.Main(gVars=gv)

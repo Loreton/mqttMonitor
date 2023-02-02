@@ -1,6 +1,6 @@
 #
 # updated by ...: Loreto Notarantonio
-# Date .........: 30-01-2023 10.12.37
+# Date .........: 01-02-2023 09.43.17
 #
 
 #########################################################
@@ -22,6 +22,6 @@ telegram:
   include_files:
     - conf/telegramGroups.lnk.yaml
 
-mariadb:
-  include_files:
-    - conf/mariadb.lnk.yaml#mariadb
+# mariadb:
+#   include_files:
+#     - conf/mariadb.lnk.yaml#mariadb

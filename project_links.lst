@@ -16,7 +16,7 @@ dest_Dir="Source/lnLib"
 
 source_Dir="${ln_ENVARS_DIR}/yaml"
 dest_Dir="conf"
-    Mqtt_Brokers.yaml            Mqtt_Brokers.lnk.yaml
-    telegramGroups_New2.yaml     telegramGroups.lnk.yaml
-    mariadb.yaml                 mariadb.lnk.yaml
+    Mqtt_Brokers.yaml               Mqtt_Brokers.lnk.yaml
+    telegramGroups_V202302.yaml     telegramGroups.lnk.yaml
+    # mariadb.yaml                 mariadb.lnk.yaml
 
