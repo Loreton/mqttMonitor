@@ -1,22 +1,26 @@
-source_Dir="../LnPyLib"
+source_Dir="$HOME/GIT-REPO/Python/LnPyLib"
 dest_Dir="Source/lnLib"
 
 
-    Logger/ColoredLogger_V1.3.py          ColoredLogger.py ### rename it
-    telegram/SendTelegramMessage.py
+    Logger/ColoredLogger_V1.3.py                    ColoredLogger.py ### rename it
+    # telegram/TelegramSendMessage_V2023a.py       SendTelegramMessage.py
+    # telegram/SendTelegramMessage_V2023a.py       SendTelegramMessage.py
+    telegram/sendTelegramMsg_Class_V2023a.py     SendTelegramMsg_Class.py
     Utils/LnUtils.py
     tasmota/Tasmota_Class.py
     tasmota/Tasmota_Human_Converter.py
     Time/LnTime.py
     Time/LnTimer.py
     Time/LnSunTime.py
-    Dictionary/LoadConfigFile_V202301.py  LoadConfigFile.py
+    Dictionary/LoadConfigFile_V202301.py            LoadConfigFile.py
 
 
 
 source_Dir="${ln_ENVARS_DIR}/yaml"
 dest_Dir="conf"
     Mqtt_Brokers.yaml               Mqtt_Brokers.lnk.yaml
-    telegramGroups_V202302.yaml     telegramGroups.lnk.yaml
     # mariadb.yaml                 mariadb.lnk.yaml
 
+
+source_Dir="$HOME/.ln/envars/yaml"
+    telegramGroups_lnk.yaml         telegramGroups.lnk.yaml

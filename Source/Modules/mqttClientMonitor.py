@@ -20,7 +20,8 @@ import  subprocess, shlex
 import socket; hostname=socket.gethostname()
 
 import  Topic_Process as Topic
-import  SendTelegramMessage as STM
+# import  SendTelegramMessage as STM
+# import  SendTelegramMessage_Class as STM
 from    LnTimer import TimerLN as LnTimer
 from    savePidFile import savePidFile
 
@@ -254,7 +255,8 @@ def run(gVars: SimpleNamespace):
 
     client.loop_start()
     # STM.sendMsg(group_name=gv.tgGroupName, message="application has been started!", my_logger=logger, caller=True, parse_mode='MarkDown')
-    STM.sendMsg(group_name=gv.tgGroupName, message="application has been started!", my_logger=logger, caller=True, parse_mode='html') ### markdown dà errore
+    # STM.sendMsg(group_name=gv.tgGroupName, message="application has been started!", my_logger=logger, caller=True, parse_mode='html') ### markdown dà errore
+    gv.telegramMessage.send_html(group_name=gv.tgGroupName, message="application has been started!", caller=True) ### markdown dà errore
     time.sleep(4) # Wait for connection setup to complete
 
 
@@ -276,7 +278,8 @@ def run(gVars: SimpleNamespace):
         # if int(mm) in [0, 15, 30, 45]:
         if int(mm) in [0]:
             savePidFile(gv.pid_file)
-            STM.sendMsg(group_name=gv.tgGroupName, message="I'm still alive!", my_logger=logger, caller=True, parse_mode='html')
+            gv.telegramMessage.send_html(group_name=gv.tgGroupName, message="I'm still alive!", caller=True)
+
             '''
             tg_msg={"appl": gv.prj_name,
                     "msg": "I'm still alive!",
@@ -294,7 +297,8 @@ def run(gVars: SimpleNamespace):
         if gv.publish_timer.remaining <= 0:
             logger.error('publish_timer - exausted')
             logger.error('restarting application')
-            STM.sendMsg(group_name=gv.tgGroupName, message="publish_timer - exausted - application is restarting!", my_logger=logger, caller=True, parse_mode='markdown')
+            gv.telegramMessage.send(group_name=gv.tgGroupName, message="publish_timer - exausted - application is restarting!", caller=True)
+
             os.kill(int(os.getpid()), signal.SIGTERM)
 
 

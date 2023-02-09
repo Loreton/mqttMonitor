@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 31-01-2023 14.51.06
+# Date .........: 09-02-2023 11.29.13
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -18,17 +18,11 @@ import json, yaml
 import signal
 from benedict import benedict
 
-import SendTelegramMessage as STM
 from LnUtils import dict_bold_italic
 
-
-
-
-
 def setup(*, gVars):
-    global gv, logger
+    global gv
     gv=gVars
-    logger=gv.logger
 
 
 
@@ -45,7 +39,7 @@ def setup(*, gVars):
 #
 ######################################################
 def in_payload_notify(deviceObj, topic_name: str, action: str, payload: (dict, str)=None):
-    logger.info('processing topic %s - %s ', topic_name, action)
+    gv.logger.info('processing topic %s - %s ', topic_name, action)
 
     tg_msg={
         gv.prj_name: {
@@ -56,7 +50,7 @@ def in_payload_notify(deviceObj, topic_name: str, action: str, payload: (dict, s
     ### dobbiamo attendere che il timer sia expired
     if '_in_payload' in action:
         if not deviceObj.telegramNotification():
-            logger.warning("skipping due to telegramNotification timer - %s - %s", topic_name, payload)
+            gv.logger.warning("skipping due to telegramNotification timer - %s - %s", topic_name, payload)
             return
 
 
@@ -138,14 +132,14 @@ def in_payload_notify(deviceObj, topic_name: str, action: str, payload: (dict, s
 #
 ######################################################
 def telegram_notify(deviceObj, topic_name: str, action: str, payload: (dict, str)=None):
-    logger.info('processing topic %s - %s ', topic_name, action)
+    gv.logger.info('processing topic %s - %s ', topic_name, action)
 
     if isinstance(payload, dict):
         if 'debug' in payload and payload['debug'] is True: ### in caso di debug da telegram
             tg_msg[gv.prj_name]['msg']="has been received"
-            STM.sendMsg(group_name=topic_name, message=tg_msg, my_logger=logger)
+            gv.telegramMessage.send(group_name=topic_name, message=tg_msg)
     else:
-        logger.warning('%s - payload is not a dictionary: %s', topic_name, payload)
+        gv.logger.warning('%s - payload is not a dictionary: %s', topic_name, payload)
         return
 
     alias=payload["alias"]
@@ -195,9 +189,9 @@ def notify_telegram_group(topic_name: str, action: str, data: (dict, str)):
     if data:
         if isinstance(data, dict):
             tg_msg=benedict(data, keypath_separator='§') ### potrebbe esserci il '.' da qualche parte e lo '/' non va bene per il parsemode 'html'
-            logger.notify('tg_msg: %s', tg_msg.to_json())
+            gv.logger.notify('tg_msg: %s', tg_msg.to_json())
 
-            logger.notify('sending telegram message: %s', tg_msg)
+            gv.logger.notify('sending telegram message: %s', tg_msg)
             tg_msg=dict_bold_italic(tg_msg, keys='bold', values='italic', nlevels=2)
         else:
             tg_msg=data
@@ -207,16 +201,17 @@ def notify_telegram_group(topic_name: str, action: str, data: (dict, str)):
         # STM.sendMsg(group_name=topic_name, message=tg_msg.to_yaml(sort_keys=False), my_logger=logger, caller=True, parse_mode=None, notify=True)
 
         # STM.sendMsg(group_name=topic_name, message=tg_msg.to_yaml(sort_keys=False), my_logger=logger, caller=True, parse_mode='html', notify=True)
-        STM.sendMsg(group_name=topic_name, message=tg_msg, my_logger=logger, caller=True, parse_mode='html', notify=True)
+
+        gv.telegramMessage.send_html(group_name=topic_name, message=tg_msg, caller=True, notify=True)
     else:
         # _dict={"Loreto": 'ciao'}
         # tg_msg=benedict(_dict, keypath_separator='/')
         # logger.notify('tg_msg: %s', tg_msg.to_json())
         # import pdb; pdb.set_trace(); pass # by Loreto
-        logger.notify('%s - no data found for %s', topic_name, action)
+        gv.logger.notify('%s - no data found for %s', topic_name, action)
         # tg_msg=f'no data found for {action}'
         tg_msg={'error': f'no data found for {action}'}
-        STM.sendMsg(group_name=topic_name, message=tg_msg, my_logger=logger, caller=True, parse_mode='html', notify=True)
+        gv.telegramMessage.send_html(group_name=topic_name, message=tg_msg, caller=True, notify=True)
 
 
 

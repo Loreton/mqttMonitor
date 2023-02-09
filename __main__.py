@@ -18,9 +18,10 @@ from ColoredLogger import setColoredLogger, testLogger
 from ParseInput import ParseInput
 from savePidFile import savePidFile
 from LoadConfigFile import readYamlFile
+from SendTelegramMsg_Class import SendTelegramMsg_Class
 
 
-__ln_version__="mqttMonitor Version: V2023-02-01_095010"
+__ln_version__="mqttMonitor Version: V2023-02-09_095704"
 
 if __name__ == '__main__':
     prj_name='mqttMonitor'
@@ -30,18 +31,20 @@ if __name__ == '__main__':
                             file_logger_level=args.file_logger_level,
                             logging_dir=args.logging_dir, # logging file--> logging_dir + logger_name
                             threads=False)
+    gv=SimpleNamespace()
+    gv.logger                  = logger
+
     logger.warning(__ln_version__)
-    # testLogger(logger)
 
 
 
-    config=readYamlFile(filename=f'conf/mqttMonitor.yaml', search_paths=['conf'], resolve_includes=True, to_benedict=True)
+    config=readYamlFile(filename=f'mqttMonitor.yaml', logger=logger, search_paths=['conf'], resolve_includes=True, to_benedict=True, exit_on_error=True)
     if not config:
         logger.error('configuration data NOT found')
         sys.exit(1)
 
-    gv=SimpleNamespace()
-    gv.logger                  = logger
+    gv.telegramMessage=SendTelegramMsg_Class(telegram_group_data_file="telegramGroups.lnk.yaml", logger=logger)
+
     gv.prj_name                = prj_name
     gv.clear_retained          = False
     gv.just_monitor            = args.monitor

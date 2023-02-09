@@ -1,7 +1,7 @@
 #!/usr/bin/python
 #
 # updated by ...: Loreto Notarantonio
-# Date .........: 31-01-2023 10.23.04
+# Date .........: 09-02-2023 11.31.09
 #
 
 import  sys; sys.dont_write_bytecode = True
@@ -10,10 +10,21 @@ import os
 from types import SimpleNamespace
 
 
+
+
+def setup_LnUtils(*, gVars):
+    gv=SimpleNamespace()
+    gv.logger=gVars.logger
+
+    import LnUtils; LnUtils.setup(gVars=gv)
+
+
+
 def setup_Telegram_Notification(*, gVars):
     gv=SimpleNamespace()
     gv.logger      = gVars.logger
     gv.prj_name    = gVars.prj_name
+    gv.telegramMessage    = gVars.telegramMessage
 
     from Telegram_Notification import setup; setup(gVars=gv)
 
@@ -24,11 +35,11 @@ def setup_Telegram_Notification(*, gVars):
 #     import LoadConfigFile; LoadConfigFile.setup(gVars=gv)
 
 
-def setup_SendTelegramMessage(*, gVars):
-    gv=SimpleNamespace()
-    gv.logger=gVars.logger
-    gv.telegramData=gVars.telegramData
-    import SendTelegramMessage; SendTelegramMessage.setup(gVars=gv)
+# def setup_SendTelegramMessage(*, gVars):
+#     gv=SimpleNamespace()
+#     gv.logger=gVars.logger
+#     gv.telegramData=gVars.telegramData
+#     import SendTelegramMessage; SendTelegramMessage.setup(gVars=gv)
 
 
 def setup_Topic_Process(*, gVars):
@@ -36,14 +47,6 @@ def setup_Topic_Process(*, gVars):
     gv.logger=gVars.logger
     gv.mqttmonitor_runtime_dir = os.path.expandvars("${ln_RUNTIME_DIR}/mqtt_monitor")
     import Topic_Process; Topic_Process.setup(gVars=gv)
-
-
-
-def setup_LnUtils(*, gVars):
-    gv=SimpleNamespace()
-    gv.logger=gVars.logger
-    import LnUtils; LnUtils.setup(gVars=gv)
-
 
 
 
