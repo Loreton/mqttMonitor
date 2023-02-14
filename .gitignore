@@ -133,6 +133,6 @@ dmypy.json
 .sublime/
 .vscode/
 **/bin/*.zip
-conf/
-Source/lnLib/
+conf/*lnk*
+Source/lnLib/*
 
