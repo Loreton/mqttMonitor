@@ -5,7 +5,7 @@
 # Date .........: 2021-09-17
 #
 # updated by ...: Loreto Notarantonio
-# Date .........: 04-12-2022 14.33.53
+# Date .........: 16-02-2023 18.02.23
 #
 
 import  sys; sys.dont_write_bytecode = True
@@ -28,7 +28,7 @@ def check_dir(path):
 ##############################################################
 # - Parse Input
 ##############################################################
-def ParseInput():
+def ParseInput(version):
     logger_levels=['trace', 'debug', 'notify', 'info', 'function', 'warning', 'error', 'critical']
 
     # -- add common options to all subparsers
@@ -94,6 +94,7 @@ def ParseInput():
         sys.argv.append('-h')
 
     parser=argparse.ArgumentParser(description='mqtt monitoring', formatter_class=argparse.RawTextHelpFormatter)
+    parser.add_argument('--version', action='version', version=version)
 
     parser.add_argument('--topics',
                                 metavar='topics',

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 09-02-2023 11.29.13
+# Date .........: 16-02-2023 17.54.08
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -150,7 +150,7 @@ def telegram_notify(deviceObj, topic_name: str, action: str, payload: (dict, str
     #=====================================================================
     # actions from telegramBot
     #=====================================================================
-    if alias=='summary':
+    if alias in ['summary', 'status']:
         _dict.update(deviceObj.Info())
         _dict['Wifi']=deviceObj.wifi()
 
