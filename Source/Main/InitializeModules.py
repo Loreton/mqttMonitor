@@ -1,7 +1,7 @@
 #!/usr/bin/python
 #
 # updated by ...: Loreto Notarantonio
-# Date .........: 09-02-2023 11.31.09
+# Date .........: 16-02-2023 17.43.59
 #
 
 import  sys; sys.dont_write_bytecode = True
@@ -27,19 +27,6 @@ def setup_Telegram_Notification(*, gVars):
     gv.telegramMessage    = gVars.telegramMessage
 
     from Telegram_Notification import setup; setup(gVars=gv)
-
-
-# def setup_LoadConfigFile(*, gVars):
-#     gv=SimpleNamespace()
-#     gv.logger=gVars.logger
-#     import LoadConfigFile; LoadConfigFile.setup(gVars=gv)
-
-
-# def setup_SendTelegramMessage(*, gVars):
-#     gv=SimpleNamespace()
-#     gv.logger=gVars.logger
-#     gv.telegramData=gVars.telegramData
-#     import SendTelegramMessage; SendTelegramMessage.setup(gVars=gv)
 
 
 def setup_Topic_Process(*, gVars):

@@ -240,6 +240,15 @@ def run(gVars: SimpleNamespace):
         # gv.topic_list.append(f'LnCmnd/mqtt_monitor_application/#')
         gv.topic_list.append(f'tasmota/discovery/{mac}/#') ### MAC di TavoloLavoro
 
+    elif gv.topic_list[0] =='ScaldaSonno':
+        topic_name='Scaldasonno'
+        mac='8CAAB5614B69'
+        gv.topic_list.append(f'+/{topic_name}/#')
+        # gv.topic_list.append(f'LnCmnd/#')
+        # gv.topic_list.append(f'LnCmnd/{topic_name}/#')
+        # gv.topic_list.append(f'LnCmnd/mqtt_monitor_application/#')
+        # gv.topic_list.append(f'shelly/{mac}/#') ### MAC di TavoloLavoro
+
     else:
         if not '+/#' in gv.topic_list:
             gv.topic_list.append('tasmota/discovery/#')

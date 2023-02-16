@@ -1,6 +1,6 @@
 #
 # updated by ...: Loreto Notarantonio
-# Date .........: 01-02-2023 09.43.17
+# Date .........: 16-02-2023 17.43.07
 #
 
 #########################################################
@@ -14,14 +14,7 @@ main:
         mqttmonitor_runtime:   ${ln_RUNTIME_DIR}/mqtt_monitor
 
 
-broker:
-  include_files:
-    - conf/Mqtt_Brokers.lnk.yaml#brokers.lnmqtt
+broker: !include conf/Mqtt_Brokers.lnk.yaml#brokers.lnmqtt
 
-telegram:
-  include_files:
-    - conf/telegramGroups.lnk.yaml
+telegram: !include conf/telegramGroups.lnk.yaml
 
-# mariadb:
-#   include_files:
-#     - conf/mariadb.lnk.yaml#mariadb

@@ -8,6 +8,7 @@
 import  sys; sys.dont_write_bytecode = True
 import  os, glob
 from types import SimpleNamespace
+from benedict import benedict
 
 
 
@@ -17,11 +18,12 @@ import mqttClientMonitor
 from ColoredLogger import setColoredLogger, testLogger
 from ParseInput import ParseInput
 from savePidFile import savePidFile
-from LoadConfigFile import readYamlFile
-from SendTelegramMsg_Class import SendTelegramMsg_Class
+# from LoadConfigFile import readYamlFile
+import FileLoader
+from TelegramSendMessage_Class import TelegramSendMessage_Class
 
 
-__ln_version__="mqttMonitor Version: V2023-02-09_095704"
+__ln_version__="mqttMonitor Version: V2023-02-16_174327"
 
 if __name__ == '__main__':
     prj_name='mqttMonitor'
@@ -38,12 +40,15 @@ if __name__ == '__main__':
 
 
 
-    config=readYamlFile(filename=f'mqttMonitor.yaml', logger=logger, search_paths=['conf'], resolve_includes=True, to_benedict=True, exit_on_error=True)
+    # config=readYamlFile(filename=f'mqttMonitor.yaml', logger=logger, search_paths=['conf'], resolve_includes=True, to_benedict=True, exit_on_error=True)
+    # read all configuration data
+    config=FileLoader.read_yaml(filename='mqttMonitor.yaml', search_paths=['conf'])
     if not config:
         logger.error('configuration data NOT found')
         sys.exit(1)
+    config=benedict(config)
 
-    gv.telegramMessage=SendTelegramMsg_Class(telegram_group_data_file="telegramGroups.lnk.yaml", logger=logger)
+    gv.telegramMessage=TelegramSendMessage_Class(telegram_group_data_file="telegramGroups.lnk.yaml", logger=logger)
 
     gv.prj_name                = prj_name
     gv.clear_retained          = False
