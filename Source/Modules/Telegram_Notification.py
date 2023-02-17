@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 16-02-2023 17.54.08
+# Date .........: 17-02-2023 08.48.01
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -79,12 +79,18 @@ def in_payload_notify(deviceObj, topic_name: str, action: str, payload: (dict, s
         keys=list(payload.keys())
         if len(keys)==1:
             if keys[0].startswith('POWER'):
-                ### scan friendly names
-                for index, name in enumerate(relayNames):
-                    name=f'relay_{name}'
+                cur_relay=int(keys[0].split('POWER')[1])
+                for index, relay_name in enumerate(relayNames):  ### scan friendly names
+                    relay_name=f'relay_{relay_name}'
                     relay_nr=index+1
-                    _dict[name]={}
-                    _dict[name]=payload[keys[0]]
+                    _dict[relay_name]={}
+                    if relay_nr==cur_relay:
+                        _dict[relay_name]=payload[keys[0]]
+                    else:
+                        _dict[relay_name]=deviceObj.relayStatus(relay_nr=relay_nr)
+
+
+
 
         else:
             print('NO NON.........................ci sono', payload)
