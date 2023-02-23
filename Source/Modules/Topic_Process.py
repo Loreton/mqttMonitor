@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 16-02-2023 17.45.44
+# Date .........: 23-02-2023 08.47.26
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -203,6 +203,7 @@ def process(topic, payload, mqttClient_CB):
         elif suffix=='RESULT':
             power_key=payload.in_key(in_str='POWER', first_match=True)
             pulsetime_key=payload.in_key(in_str='PulseTime', first_match=True)
+            timer_key=payload.in_key(in_str='Timer', first_match=True)
             
             ### action indica se dobbiamo inviare un messaggio a telegram
             action=None
@@ -219,9 +220,13 @@ def process(topic, payload, mqttClient_CB):
             elif 'PowerOnState' in payload:
                 action='poweronstate_in_payload'
 
-            elif 'Timers' in payload:
+            elif 'Timers' in payload: ### full timers display
                 deviceObj.updateDevice(key_path="TIMERS", data=payload, writeFile=True)
                 action='timers_in_payload'
+
+            elif timer_key and timer_key != 'Timers': ### single timer display
+                deviceObj.updateDevice(key_path=f"TIMERS.{timer_key}", data=payload, writeFile=False)
+                action='single_timer_in_payload'
 
 
             elif 'SSId1' in payload:

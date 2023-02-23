@@ -226,28 +226,24 @@ def run(gVars: SimpleNamespace):
         topic_name='VescoviNew'
         mac='C44F33978EFA'
         gv.topic_list.append(f'+/{topic_name}/#')
-        # gv.topic_list.append(f'LnCmnd/#')
-        # gv.topic_list.append(f'LnCmnd/{topic_name}/#')
-        # gv.topic_list.append(f'LnCmnd/mqtt_monitor_application/#')
+        gv.topic_list.append(f'tasmota/discovery/{mac}/#') ### MAC di TavoloLavoro
+
+    elif gv.topic_list[0].lower() =='computercasetta':
+        topic_name='ComputerCasetta'
+        mac='BC:DD:C2:85:AB:47'.replace(':', '')
+        gv.topic_list.append(f'+/{topic_name}/#')
         gv.topic_list.append(f'tasmota/discovery/{mac}/#') ### MAC di TavoloLavoro
 
     elif gv.topic_list[0] =='Beverino_01':
         topic_name='Beverino_01'
         mac='DC4F2292DFAF'
         gv.topic_list.append(f'+/{topic_name}/#')
-        # gv.topic_list.append(f'LnCmnd/#')
-        # gv.topic_list.append(f'LnCmnd/{topic_name}/#')
-        # gv.topic_list.append(f'LnCmnd/mqtt_monitor_application/#')
         gv.topic_list.append(f'tasmota/discovery/{mac}/#') ### MAC di TavoloLavoro
 
-    elif gv.topic_list[0] =='ScaldaSonno':
+    elif gv.topic_list[0] =='Scaldasonno':
         topic_name='Scaldasonno'
         mac='8CAAB5614B69'
         gv.topic_list.append(f'+/{topic_name}/#')
-        # gv.topic_list.append(f'LnCmnd/#')
-        # gv.topic_list.append(f'LnCmnd/{topic_name}/#')
-        # gv.topic_list.append(f'LnCmnd/mqtt_monitor_application/#')
-        # gv.topic_list.append(f'shelly/{mac}/#') ### MAC di TavoloLavoro
 
     else:
         if not '+/#' in gv.topic_list:
@@ -303,7 +299,7 @@ def run(gVars: SimpleNamespace):
             i messaggi. Il codice che segue serve a monitorare lo status
             dell'applicazione e farla ripartire se necessario.
             publish_timer if exausted means that the application is NOT responding """
-        if gv.publish_timer.remaining <= 0:
+        if gv.publish_timer.remaining_time() <= 0:
             logger.error('publish_timer - exausted')
             logger.error('restarting application')
             gv.telegramMessage.send(group_name=gv.tgGroupName, message="publish_timer - exausted - application is restarting!", caller=True)

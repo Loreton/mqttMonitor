@@ -23,7 +23,7 @@ import FileLoader
 from TelegramSendMessage_Class import TelegramSendMessage_Class
 
 
-__ln_version__="mqttMonitor Version: V2023-02-16_180544"
+__ln_version__="mqttMonitor Version: V2023-02-17_090530"
 
 if __name__ == '__main__':
     prj_name='mqttMonitor'

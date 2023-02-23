@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 17-02-2023 08.48.01
+# Date .........: 23-02-2023 16.51.15
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -19,6 +19,9 @@ import signal
 from benedict import benedict
 
 from LnUtils import dict_bold_italic
+import Tasmota_Human_Converter as THC
+
+
 
 def setup(*, gVars):
     global gv
@@ -71,6 +74,11 @@ def in_payload_notify(deviceObj, topic_name: str, action: str, payload: (dict, s
             _dict[relay_name]={}
             _dict[relay_name]['Status']=deviceObj.relayStatus(relay_nr=relay_nr)
             _dict[relay_name]["Timers"]=deviceObj.timersToHuman(relay_nr=relay_nr)
+
+    ### display nudo e crudo del timerX
+    elif action=='single_timer_in_payload':
+        _dict=payload
+
 
 
     ### Tested
