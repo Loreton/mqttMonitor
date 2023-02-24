@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 23-02-2023 08.47.26
+# Date .........: 24-02-2023 13.36.34
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -238,6 +238,7 @@ def process(topic, payload, mqttClient_CB):
 
             ### process data
             if action:
+                logger.info('%s: ', topic_name, action)
                 tgNotify.in_payload_notify(deviceObj=deviceObj, topic_name=topic_name, action=action, payload=payload)
 
     ### Tested

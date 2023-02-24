@@ -1,7 +1,7 @@
 #!/usr/bin/python
 #
 # updated by ...: Loreto Notarantonio
-# Date .........: 16-02-2023 17.43.59
+# Date .........: 24-02-2023 13.29.21
 #
 
 import  sys; sys.dont_write_bytecode = True
@@ -34,6 +34,15 @@ def setup_Topic_Process(*, gVars):
     gv.logger=gVars.logger
     gv.mqttmonitor_runtime_dir = os.path.expandvars("${ln_RUNTIME_DIR}/mqtt_monitor")
     import Topic_Process; Topic_Process.setup(gVars=gv)
+
+
+
+def setup_Tasmota_Human_Converter(*, gVars):
+    gv=SimpleNamespace()
+    gv.logger=gVars.logger
+
+    import Tasmota_Human_Converter; Tasmota_Human_Converter.setup(gVars=gv)
+
 
 
 
