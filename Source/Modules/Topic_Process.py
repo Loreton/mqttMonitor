@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 24-02-2023 13.36.34
+# Date .........: 25-02-2023 18.43.11
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -195,7 +195,7 @@ def process(topic, payload, mqttClient_CB):
 
         ### incude tutti gli STATUSx
         elif suffix.startswith('STATUS'):
-            deviceObj.updateDevice(key_path='STATUS', data=payload, writeFile=True)
+            deviceObj.updateDevice(key_path='STATUS', data=payload, writeOnFile=True)
 
 
 
@@ -209,7 +209,7 @@ def process(topic, payload, mqttClient_CB):
             action=None
 
             if power_key:
-                deviceObj.updateDevice(key_path=None, data=payload, writeFile=True)
+                deviceObj.updateDevice(key_path=None, data=payload, writeOnFile=True)
                 action='power_in_payload'
 
             ### Tested
@@ -221,11 +221,12 @@ def process(topic, payload, mqttClient_CB):
                 action='poweronstate_in_payload'
 
             elif 'Timers' in payload: ### full timers display
-                deviceObj.updateDevice(key_path="TIMERS", data=payload, writeFile=True)
+                deviceObj.updateDevice(key_path="TIMERS", data=payload, writeOnFile=True)
                 action='timers_in_payload'
 
             elif timer_key and timer_key != 'Timers': ### single timer display
-                deviceObj.updateDevice(key_path=f"TIMERS.{timer_key}", data=payload, writeFile=False)
+                # deviceObj.updateDevice(key_path=f"TIMERS.{timer_key}", data=payload, writeOnFile=True)
+                deviceObj.updateDevice(key_path=f"TIMERS", data=payload, writeOnFile=True)
                 action='single_timer_in_payload'
 
 
@@ -238,17 +239,17 @@ def process(topic, payload, mqttClient_CB):
 
             ### process data
             if action:
-                logger.info('%s: ', topic_name, action)
+                logger.info('%s: %s', topic_name, action)
                 tgNotify.in_payload_notify(deviceObj=deviceObj, topic_name=topic_name, action=action, payload=payload)
 
     ### Tested
     elif prefix=='tele':
 
         if suffix=='STATE':
-            deviceObj.updateDevice(key_path="STATE", data=payload, writeFile=True)
+            deviceObj.updateDevice(key_path="STATE", data=payload, writeOnFile=True)
 
         elif suffix=='LWT':
-            deviceObj.updateDevice(key_path="LWT", data=payload, writeFile=True)
+            deviceObj.updateDevice(key_path="LWT", data=payload, writeOnFile=True)
 
         elif suffix=='HASS_STATE':
             pass
@@ -260,7 +261,7 @@ def process(topic, payload, mqttClient_CB):
 
     elif prefix=='tasmota':
         if suffix in ['sensors', 'config']:
-            deviceObj.updateDevice(key_path="Config", data=payload, writeFile=True)
+            deviceObj.updateDevice(key_path="Config", data=payload, writeOnFile=True)
 
     else:
         logger.warning("topic: %s not managed - payload: %s", topic, payload)

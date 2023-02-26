@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 23-02-2023 16.51.15
+# Date .........: 25-02-2023 18.31.09
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -78,7 +78,11 @@ def in_payload_notify(deviceObj, topic_name: str, action: str, payload: (dict, s
     ### display nudo e crudo del timerX
     elif action=='single_timer_in_payload':
         _dict=payload
-
+        keys=list(_dict.keys())
+        if len(keys)==1:
+            ptr=_dict[keys[0]]
+            if 'Mode' in ptr: ptr.pop('Mode')
+            if 'Window' in ptr: ptr.pop('Window')
 
 
     ### Tested
