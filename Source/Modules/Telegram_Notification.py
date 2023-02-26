@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 25-02-2023 18.31.09
+# Date .........: 26-02-2023 17.32.58
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -66,6 +66,7 @@ def in_payload_notify(deviceObj, topic_name: str, action: str, payload: (dict, s
 
     #=====================================================================
     # actions from Topic_Process
+    # @ToDo:  26-02-2023 17.25.08 inserire il display del pulseTime
     #=====================================================================
     if action=='timers_in_payload':
         for index, relay_name in enumerate(relayNames):
@@ -73,7 +74,10 @@ def in_payload_notify(deviceObj, topic_name: str, action: str, payload: (dict, s
             relay_name=f'relay_{relay_name}'
             _dict[relay_name]={}
             _dict[relay_name]['Status']=deviceObj.relayStatus(relay_nr=relay_nr)
+            pt_value, pt_remaining=deviceObj.pulseTimeToHuman(relay_nr=index) ### parte da 0
+            _dict[relay_name]["Pulsetime"]=f"{pt_value} ({pt_remaining})"
             _dict[relay_name]["Timers"]=deviceObj.timersToHuman(relay_nr=relay_nr)
+
 
     ### display nudo e crudo del timerX
     elif action=='single_timer_in_payload':
@@ -85,7 +89,7 @@ def in_payload_notify(deviceObj, topic_name: str, action: str, payload: (dict, s
             if 'Window' in ptr: ptr.pop('Window')
 
 
-    ### Tested
+    # @ToDo:  26-02-2023 17.25.08 inserire il display del pulseTime
     elif action=='power_in_payload':
         ### catturare solo  {"POWERx":"ON/OFF"}
         keys=list(payload.keys())
@@ -93,14 +97,16 @@ def in_payload_notify(deviceObj, topic_name: str, action: str, payload: (dict, s
             if keys[0].startswith('POWER'):
                 cur_relay=int(keys[0].split('POWER')[1])
                 for index, relay_name in enumerate(relayNames):  ### scan friendly names
-                    relay_name=f'relay_{relay_name}'
                     relay_nr=index+1
+                    relay_name=f'relay_{relay_name}'
                     _dict[relay_name]={}
                     if relay_nr==cur_relay:
-                        _dict[relay_name]=payload[keys[0]]
+                        _dict[relay_name]['Status']=payload[keys[0]]
                     else:
-                        _dict[relay_name]=deviceObj.relayStatus(relay_nr=relay_nr)
+                        _dict[relay_name]['Status']=deviceObj.relayStatus(relay_nr=relay_nr)
 
+                    pt_value, pt_remaining=deviceObj.pulseTimeToHuman(relay_nr=index) ### parte da 0
+                    _dict[relay_name]["Pulsetime"]=f"{pt_value} ({pt_remaining})"
 
 
 
@@ -110,11 +116,11 @@ def in_payload_notify(deviceObj, topic_name: str, action: str, payload: (dict, s
 
     ### Tested
     elif action=='pulsetime_in_payload':     # payload dovrebbe contenere qualcosa tipo: {"POWER1":"OFF"}
-        for relay_nr, name in enumerate(relayNames):
-            name=f'relay_{name}'
+        for relay_nr, relay_name in enumerate(relayNames):
+            name=f'relay_{relay_name}'
             pt_value, pt_remaining=deviceObj.pulseTimeToHuman(relay_nr=relay_nr)
-            _dict[name]={}
-            _dict[name]["Pulsetime"]=f"{pt_value} ({pt_remaining})"
+            _dict[relay_name]={}
+            _dict[relay_name]["Pulsetime"]=f"{pt_value} ({pt_remaining})"
 
 
     elif action=='poweronstate_in_payload':     # payload dovrebbe contenere qualcosa tipo: {"POWER1":"OFF"}
