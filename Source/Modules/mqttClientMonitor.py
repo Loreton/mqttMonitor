@@ -281,16 +281,10 @@ def run(gVars: SimpleNamespace):
 
 
         # if int(mm) in [0, 15, 30, 45]:
-        if int(mm) in [0]:
+        if int(hh) in gv.config['main.still_alive_interval_hours'] and int(mm) in [0]:
             savePidFile(gv.pid_file)
             gv.telegramMessage.send_html(group_name=gv.tgGroupName, message="I'm still alive!", caller=True)
 
-            '''
-            tg_msg={"appl": gv.prj_name,
-                    "msg": "I'm still alive!",
-                    }
-            STM.sendMsg(group_name=systemChannelName, message=tg_msg, my_logger=logger, caller=True, parse_mode='markdown')
-            '''
 
         logger.info('publishing check/ping mqtt message')
         result=client.publish(topic='LnCmnd/mqtt_monitor_application/query', payload='publish timer', qos=0, retain=False)

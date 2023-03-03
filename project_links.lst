@@ -27,3 +27,4 @@ dest_Dir="conf"
 
 source_Dir="$HOME/.ln/envars/yaml"
     telegramGroups_lnk.yaml         telegramGroups.lnk.yaml
+    ln_system_variables.yaml        ln_system_variables.lnk.yaml

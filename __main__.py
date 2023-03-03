@@ -23,7 +23,7 @@ import FileLoader
 from TelegramSendMessage_Class import TelegramSendMessage_Class
 
 
-__ln_version__="mqttMonitor Version: V2023-02-17_090530"
+__ln_version__="mqttMonitor Version: V2023-03-03_184656"
 
 if __name__ == '__main__':
     prj_name='mqttMonitor'
@@ -38,17 +38,20 @@ if __name__ == '__main__':
 
     logger.warning(__ln_version__)
 
+    import InitializeModules; InitializeModules.Main(gVars=gv) ### inizialmente solo il logger
 
 
-    # config=readYamlFile(filename=f'mqttMonitor.yaml', logger=logger, search_paths=['conf'], resolve_includes=True, to_benedict=True, exit_on_error=True)
     # read all configuration data
     config=FileLoader.read_yaml(filename='mqttMonitor.yaml', search_paths=['conf'])
     if not config:
         logger.error('configuration data NOT found')
         sys.exit(1)
-    config=benedict(config)
+    gv.config=benedict(config)
 
-    gv.telegramMessage=TelegramSendMessage_Class(telegram_group_data_file="telegramGroups.lnk.yaml", logger=logger)
+    FileLoader.set_Variables(gv.config['system_variables'])
+    gv.telegramMessage=TelegramSendMessage_Class(telegram_group_data=gv.config['telegram'], logger=logger)
+
+
 
     gv.prj_name                = prj_name
     gv.clear_retained          = False
@@ -57,11 +60,11 @@ if __name__ == '__main__':
     gv.systemd                 = args.systemd
     gv.tgGroupName             = args.telegram_group_name
     gv.topic_list              = args.topics
-    gv.telegramData            = config['telegram']
-    gv.broker                  = config['broker']
+    gv.telegramData            = gv.config['telegram']
+    gv.broker                  = gv.config['broker']
+    gv.mqttmonitor_runtime_dir = os.environ["ln_RUNTIME_DIR"]
 
-    import InitializeModules;
-    InitializeModules.Main(gVars=gv)
+    InitializeModules.Main(gVars=gv) ### initializing per altre variabili.
 
     savePidFile(gv.pid_file)
     mqttClientMonitor.run(gVars=gv)

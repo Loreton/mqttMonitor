@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 26-02-2023 17.32.58
+# Date .........: 03-03-2023 17.49.12
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -66,7 +66,7 @@ def in_payload_notify(deviceObj, topic_name: str, action: str, payload: (dict, s
 
     #=====================================================================
     # actions from Topic_Process
-    # @ToDo:  26-02-2023 17.25.08 inserire il display del pulseTime
+    # @LnToDo:  03-03-2023 inserire il display del pulseTime
     #=====================================================================
     if action=='timers_in_payload':
         for index, relay_name in enumerate(relayNames):
@@ -74,9 +74,10 @@ def in_payload_notify(deviceObj, topic_name: str, action: str, payload: (dict, s
             relay_name=f'relay_{relay_name}'
             _dict[relay_name]={}
             _dict[relay_name]['Status']=deviceObj.relayStatus(relay_nr=relay_nr)
-            pt_value, pt_remaining=deviceObj.pulseTimeToHuman(relay_nr=index) ### parte da 0
-            _dict[relay_name]["Pulsetime"]=f"{pt_value} ({pt_remaining})"
             _dict[relay_name]["Timers"]=deviceObj.timersToHuman(relay_nr=relay_nr)
+            pt_value, pt_remaining=deviceObj.pulseTimeToHuman(relay_nr=index) ### parte da 0
+            if pt_value!=0:
+                _dict[relay_name]["Pulsetime"]=f"{pt_value} ({pt_remaining})"
 
 
     ### display nudo e crudo del timerX
@@ -89,9 +90,9 @@ def in_payload_notify(deviceObj, topic_name: str, action: str, payload: (dict, s
             if 'Window' in ptr: ptr.pop('Window')
 
 
-    # @ToDo:  26-02-2023 17.25.08 inserire il display del pulseTime
+    # @LnToDo:  03-03-2023 inserire il display del pulseTime
     elif action=='power_in_payload':
-        ### catturare solo  {"POWERx":"ON/OFF"}
+        ### dobbiamo catturare solo  {"POWERx":"ON/OFF"}
         keys=list(payload.keys())
         if len(keys)==1:
             if keys[0].startswith('POWER'):
@@ -106,7 +107,8 @@ def in_payload_notify(deviceObj, topic_name: str, action: str, payload: (dict, s
                         _dict[relay_name]['Status']=deviceObj.relayStatus(relay_nr=relay_nr)
 
                     pt_value, pt_remaining=deviceObj.pulseTimeToHuman(relay_nr=index) ### parte da 0
-                    _dict[relay_name]["Pulsetime"]=f"{pt_value} ({pt_remaining})"
+                    if pt_value!=0:
+                        _dict[relay_name]["Pulsetime"]=f"{pt_value} ({pt_remaining})"
 
 
 

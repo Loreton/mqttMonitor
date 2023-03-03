@@ -1,7 +1,7 @@
 #!/usr/bin/python
 #
 # updated by ...: Loreto Notarantonio
-# Date .........: 24-02-2023 13.29.21
+# Date .........: 03-03-2023 18.44.20
 #
 
 import  sys; sys.dont_write_bytecode = True
@@ -23,8 +23,8 @@ def setup_LnUtils(*, gVars):
 def setup_Telegram_Notification(*, gVars):
     gv=SimpleNamespace()
     gv.logger      = gVars.logger
-    gv.prj_name    = gVars.prj_name
-    gv.telegramMessage    = gVars.telegramMessage
+    if hasattr(gVars, 'prj_name'):          gv.prj_name=gVars.prj_name
+    if hasattr(gVars, 'telegramMessage'):   gv.telegramMessage=gVars.telegramMessage
 
     from Telegram_Notification import setup; setup(gVars=gv)
 
@@ -32,7 +32,7 @@ def setup_Telegram_Notification(*, gVars):
 def setup_Topic_Process(*, gVars):
     gv=SimpleNamespace()
     gv.logger=gVars.logger
-    gv.mqttmonitor_runtime_dir = os.path.expandvars("${ln_RUNTIME_DIR}/mqtt_monitor")
+    if hasattr(gVars, 'mqttmonitor_runtime_dir'):   gv.mqttmonitor_runtime_dir=gVars.mqttmonitor_runtime_dir
     import Topic_Process; Topic_Process.setup(gVars=gv)
 
 
@@ -40,8 +40,15 @@ def setup_Topic_Process(*, gVars):
 def setup_Tasmota_Human_Converter(*, gVars):
     gv=SimpleNamespace()
     gv.logger=gVars.logger
-
     import Tasmota_Human_Converter; Tasmota_Human_Converter.setup(gVars=gv)
+
+
+
+def setup_FileLoader(*, gVars):
+    gv=SimpleNamespace()
+    gv.logger=gVars.logger
+    import FileLoader; FileLoader.setup(gVars=gv)
+
 
 
 

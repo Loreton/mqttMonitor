@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 25-02-2023 18.43.11
+# Date .........: 03-03-2023 18.46.15
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -16,30 +16,21 @@ from queue import Queue
 import time
 import json, yaml
 import signal
-
-# from LoretoDict import LnDict
-# import SendTelegramMessage as STM
-# from TelegramSendMessage_Class import TelegramSendMessage_Class
 from benedict import benedict
 
-# import Tasmota_Formatter as tasmotaFormatter
 import Telegram_Notification as tgNotify
-
 from Tasmota_Class import TasmotaClass
 
 
 
 
 
+
 def setup(gVars: SimpleNamespace):
-    global logger, mqttmonitor_runtime_dir, devices, macTable
+    global gv, devices, macTable
     gv=gVars
-    logger=gv.logger
-    mqttmonitor_runtime_dir=gv.mqttmonitor_runtime_dir
     devices=dict()
     macTable=dict()
-
-    # tgNotify.setup(my_logger=logger)
 
 
 
@@ -93,9 +84,9 @@ def tasmota_discovery_modify_topic(topic, mac_table, payload):
 # Invia un summary status per tutti i device
 ##########################################################
 def sendStatus():
-    logger.notify("Sending summary to Telegram")
+    gv.logger.notify("Sending summary to Telegram")
     for topic_name in devices.keys():
-        logger.notify("Sending summary for %s to Telegram", topic_name)
+        gv.logger.notify("Sending summary for %s to Telegram", topic_name)
         tgNotify.telegram_notify(deviceObj=devices[topic_name], topic_name=topic_name, action='summary', payload=None)
 
 
@@ -123,8 +114,8 @@ def refreshDeviceData(topic_name: str, deviceObj, mqttClient_CB):
 #  Per comodità cerco di utilizzare il topic_name==Device_name
 #########################################################
 def process(topic, payload, mqttClient_CB):
-    logger.info('processing topic: %s', topic)
-    logger.info('   payload: %s - %s', type(payload), payload)
+    gv.logger.info('processing topic: %s', topic)
+    gv.logger.info('   payload: %s - %s', type(payload), payload)
 
 
     #--------------------------------------
@@ -147,7 +138,7 @@ def process(topic, payload, mqttClient_CB):
     ### skip some topics
     ### -----------------------------------------------
     if prefix == 'cmnd' or topic_name in ['tasmotas']:
-        logger.warning('skipping topic: %s [in attesa di capire meglio come sfruttarlo]', topic)
+        gv.logger.warning('skipping topic: %s [in attesa di capire meglio come sfruttarlo]', topic)
         return
 
 
@@ -155,8 +146,8 @@ def process(topic, payload, mqttClient_CB):
     ### create device dictionary entry if not exists
     ### -----------------------------------------------
     if not topic_name in devices:
-        logger.info('creating device: %s', topic_name)
-        devices[topic_name]=TasmotaClass(device_name=topic_name, runtime_dir=mqttmonitor_runtime_dir, logger=logger)
+        gv.logger.info('creating device: %s', topic_name)
+        devices[topic_name]=TasmotaClass(device_name=topic_name, runtime_dir=gv.mqttmonitor_runtime_dir, logger=logger)
         refreshDeviceData(topic_name=topic_name, deviceObj=devices[topic_name], mqttClient_CB=mqttClient_CB)
 
 
@@ -178,7 +169,7 @@ def process(topic, payload, mqttClient_CB):
     if isinstance(payload, dict):
         payload=benedict(payload)
     else:
-        logger.warning('%s: skipping payload: %s - %s', topic_name, type(payload), payload)
+        gv.logger.warning('%s: skipping payload: %s - %s', topic_name, type(payload), payload)
         return
 
 
@@ -239,7 +230,7 @@ def process(topic, payload, mqttClient_CB):
 
             ### process data
             if action:
-                logger.info('%s: %s', topic_name, action)
+                gv.logger.info('%s: %s', topic_name, action)
                 tgNotify.in_payload_notify(deviceObj=deviceObj, topic_name=topic_name, action=action, payload=payload)
 
     ### Tested
@@ -264,7 +255,7 @@ def process(topic, payload, mqttClient_CB):
             deviceObj.updateDevice(key_path="Config", data=payload, writeOnFile=True)
 
     else:
-        logger.warning("topic: %s not managed - payload: %s", topic, payload)
+        gv.logger.warning("topic: %s not managed - payload: %s", topic, payload)
 
 
     # deviceObj.savingDataOnFile()

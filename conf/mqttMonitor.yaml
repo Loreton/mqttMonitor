@@ -1,6 +1,6 @@
 #
 # updated by ...: Loreto Notarantonio
-# Date .........: 16-02-2023 17.43.07
+# Date .........: 03-03-2023 18.12.37
 #
 
 #########################################################
@@ -9,12 +9,21 @@
 
 
 main:
-    dirs:
-        envars:                ${ln_ENVARS_DIR}
-        mqttmonitor_runtime:   ${ln_RUNTIME_DIR}/mqtt_monitor
+    # dirs:
+    #     envars:                ${ln_ENVARS_DIR}
+    #     mqttmonitor_runtime:   ${ln_RUNTIME_DIR}/mqtt_monitor
+
+    # mqttmonitor_runtime_dir:   ${ln_RUNTIME_DIR}/mqtt_monitor
+    # envars_dir:                ${ln_ENVARS_DIR}
+    still_alive_interval_hours:
+            - 1
+            - 7
+            - 13
+            - 19
 
 
 broker: !include conf/Mqtt_Brokers.lnk.yaml#brokers.lnmqtt
 
 telegram: !include conf/telegramGroups.lnk.yaml
 
+system_variables: !include conf/ln_system_variables.lnk.yaml#system_envars
