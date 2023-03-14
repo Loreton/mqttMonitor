@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 03-03-2023 18.46.15
+# Date .........: 14-03-2023 16.38.17
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -147,7 +147,7 @@ def process(topic, payload, mqttClient_CB):
     ### -----------------------------------------------
     if not topic_name in devices:
         gv.logger.info('creating device: %s', topic_name)
-        devices[topic_name]=TasmotaClass(device_name=topic_name, runtime_dir=gv.mqttmonitor_runtime_dir, logger=logger)
+        devices[topic_name]=TasmotaClass(device_name=topic_name, runtime_dir=gv.mqttmonitor_runtime_dir, logger=gv.logger)
         refreshDeviceData(topic_name=topic_name, deviceObj=devices[topic_name], mqttClient_CB=mqttClient_CB)
 
 
