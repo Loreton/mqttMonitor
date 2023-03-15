@@ -2,14 +2,13 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 15-03-2023 11.44.26
+# Date .........: 15-03-2023 18.58.12
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
 
 import  sys; sys.dont_write_bytecode = True
 import  os
-# import logging; logger=logging.getLogger(__name__)
 from types import SimpleNamespace
 import threading
 from queue import Queue
@@ -27,10 +26,10 @@ from Tasmota_Class import TasmotaClass
 
 
 def setup(gVars: SimpleNamespace):
-    global gv, devices, macTable
+    global gv
     gv=gVars
-    devices=dict()
-    macTable=dict()
+    # gv.devices=dict()
+    # gv.macTable=dict()
 
 
 
@@ -63,7 +62,7 @@ def tasmota_discovery_modify_topic(topic, mac_table, payload):
     _tasmota, _discovery, _mac,  suffix, *rest=topic.split('/')
 
     if _mac in mac_table:
-        topic_name=macTable[_mac]
+        topic_name=gv.macTable[_mac]
 
     else:
         mac=payload.get('mac')
@@ -85,9 +84,9 @@ def tasmota_discovery_modify_topic(topic, mac_table, payload):
 ##########################################################
 def sendStatus():
     gv.logger.notify("Sending summary to Telegram")
-    for topic_name in devices.keys():
+    for topic_name in gv.devices.keys():
         gv.logger.notify("Sending summary for %s to Telegram", topic_name)
-        tgNotify.telegram_notify(deviceObj=devices[topic_name], topic_name=topic_name, action='summary', payload=None)
+        tgNotify.telegram_notify(deviceObj=gv.devices[topic_name], topic_name=topic_name, action='summary', payload=None)
 
 
 
@@ -118,16 +117,12 @@ def process(topic, payload, mqttClient_CB):
     gv.logger.info('   payload: %s - %s', type(payload), payload)
 
 
-    #--------------------------------------
-    # analisi del topic_name, del device e del payload
-    #--------------------------------------
-
     ### viene rilasciato automaticamente da tasmota
     if topic.startswith("tasmota/discovery"):
         """ topic='tasmota/discovery/DC4F22D3B32F/sensors'
             topic='tasmota/discovery/DC4F22D3B32F/config'
             cambiare il topic attraverso il MAC """
-        topic=tasmota_discovery_modify_topic(topic, macTable, payload)
+        topic=tasmota_discovery_modify_topic(topic, gv.macTable, payload)
 
 
     prefix, topic_name, suffix, *rest=topic.split('/')
@@ -143,32 +138,25 @@ def process(topic, payload, mqttClient_CB):
 
 
     ### -----------------------------------------------
-    ### create device dictionary entry if not exists
+    ### create device object if not exists
     ### -----------------------------------------------
-    if not topic_name in devices:
+    if not topic_name in gv.devices:
         gv.logger.info('creating device: %s', topic_name)
-        devices[topic_name]=TasmotaClass(device_name=topic_name, runtime_dir=gv.mqttmonitor_runtime_dir, logger=gv.logger)
-        refreshDeviceData(topic_name=topic_name, deviceObj=devices[topic_name], mqttClient_CB=mqttClient_CB)
+        gv.devices[topic_name]=TasmotaClass(device_name=topic_name, runtime_dir=gv.mqttmonitor_runtime_dir, logger=gv.logger)
+        refreshDeviceData(topic_name=topic_name, deviceObj=gv.devices[topic_name], mqttClient_CB=mqttClient_CB)
 
+    deviceObj=gv.devices[topic_name]
 
-    ### -----------------------------------------------
-    ### device object
-    ### -----------------------------------------------
-    deviceObj=devices[topic_name]
-
-    ### -----------------------------------------------
-    ### comandi derivanti da altre applicazioni per ottenere info
-    ### da inviare a telegram group
-    ### -----------------------------------------------
+        ### -----------------------------------------------
+        ### comandi derivanti da altre applicazioni per ottenere info
+        ### da inviare a telegram group
+        ### -----------------------------------------------
     if prefix=='LnTelegram':
         tgNotify.telegram_notify(deviceObj=deviceObj, topic_name=topic_name, action=suffix, payload=payload)
         return
 
 
-
-    if isinstance(payload, dict):
-        payload=benedict(payload)
-    else:
+    if not isinstance(payload, (benedict, dict)):
         gv.logger.warning('%s: skipping payload: %s - %s', topic_name, type(payload), payload)
         return
 
@@ -216,7 +204,6 @@ def process(topic, payload, mqttClient_CB):
                 action='timers_in_payload'
 
             elif timer_key and timer_key != 'Timers': ### single timer display
-                # deviceObj.updateDevice(key_path=f"TIMERS.{timer_key}", data=payload, writeOnFile=True)
                 deviceObj.updateDevice(key_path=f"TIMERS", data=payload, writeOnFile=True)
                 action='single_timer_in_payload'
 
@@ -245,16 +232,13 @@ def process(topic, payload, mqttClient_CB):
         elif suffix=='HASS_STATE':
             pass
 
-    elif prefix=='shellies':
-        Shellies.process(payload)
-
-
     elif prefix=='tasmota':
         if suffix in ['sensors', 'config']:
+            print(type(payload), isinstance(payload, benedict))
+            # import pdb; pdb.set_trace(); pass # by Loreto
             deviceObj.updateDevice(key_path="Config", data=payload, writeOnFile=True)
 
     else:
         gv.logger.warning("topic: %s not managed - payload: %s", topic, payload)
 
 
-    # deviceObj.savingDataOnFile()

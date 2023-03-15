@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 15-03-2023 11.44.26
+# Date .........: 14-03-2023 16.38.17
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -18,7 +18,7 @@ import json, yaml
 import signal
 from benedict import benedict
 
-import Tasmota_Telegram_Notification as tgNotify
+import Telegram_Notification as tgNotify
 from Tasmota_Class import TasmotaClass
 
 
@@ -245,8 +245,9 @@ def process(topic, payload, mqttClient_CB):
         elif suffix=='HASS_STATE':
             pass
 
-    elif prefix=='shellies':
-        Shellies.process(payload)
+    elif prefix=='shelliesx':
+        if suffix=='ext_temperatures':
+            pass
 
 
     elif prefix=='tasmota':

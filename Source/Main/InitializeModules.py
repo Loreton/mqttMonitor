@@ -1,7 +1,7 @@
 #!/usr/bin/python
 #
 # updated by ...: Loreto Notarantonio
-# Date .........: 03-03-2023 18.44.20
+# Date .........: 15-03-2023 18.00.40
 #
 
 import  sys; sys.dont_write_bytecode = True
@@ -20,20 +20,24 @@ def setup_LnUtils(*, gVars):
 
 
 
-def setup_Telegram_Notification(*, gVars):
+def setup_Tasmota_Telegram_Notification(*, gVars):
     gv=SimpleNamespace()
     gv.logger      = gVars.logger
     if hasattr(gVars, 'prj_name'):          gv.prj_name=gVars.prj_name
     if hasattr(gVars, 'telegramMessage'):   gv.telegramMessage=gVars.telegramMessage
 
-    from Telegram_Notification import setup; setup(gVars=gv)
+    from Tasmota_Telegram_Notification import setup; setup(gVars=gv)
 
 
-def setup_Topic_Process(*, gVars):
-    gv=SimpleNamespace()
-    gv.logger=gVars.logger
-    if hasattr(gVars, 'mqttmonitor_runtime_dir'):   gv.mqttmonitor_runtime_dir=gVars.mqttmonitor_runtime_dir
-    import Topic_Process; Topic_Process.setup(gVars=gv)
+# def setup_Topic_Process(*, gVars):
+#     gv=SimpleNamespace()
+#     gv.logger=gVars.logger
+#     if hasattr(gVars, 'mqttmonitor_runtime_dir'):   gv.mqttmonitor_runtime_dir=gVars.mqttmonitor_runtime_dir
+#     import Topic_Process; Topic_Process.setup(gVars=gv)
+#     import Tasmota_Device; Tasmota_Device.setup(gVars=gv)
+#     import Shellies_Device; Shellies_Device.setup(gVars=gv)
+#     import LnCmnd_Process; LnCmnd_Process.setup(gVars=gv)
+
 
 
 
