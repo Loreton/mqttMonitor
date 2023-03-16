@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 15-03-2023 19.27.08
+# Date .........: 16-03-2023 11.27.58
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -44,13 +44,16 @@ def setup(*, gVars):
 def in_payload_notify(deviceObj, topic_name: str, action: str, payload: (dict, str)=None):
     gv.logger.info('processing topic %s - %s ', topic_name, action, stacklevel=2)
 
-    tg_msg={
-        gv.prj_name: {
-            "command": action.replace('_in_payload', ''),
-            }
-        }
 
-    _dict={}
+    # tg_msg={
+    #     gv.prj_name: {
+    #         "command": action.replace('_in_payload', ''),
+    #         "notify": False,
+    #         }
+    #     }
+
+    # tg_dictMsg={"tg_notify": False}
+    tg_dictMsg={"tg_notify": False}
 
     ### dobbiamo attendere che il timer sia expired
     if '_in_payload' in action:
@@ -78,24 +81,24 @@ def in_payload_notify(deviceObj, topic_name: str, action: str, payload: (dict, s
         for index, relay_name in enumerate(relayNames):
             relay_nr=index+1
             relay_name=f'relay_{relay_name}'
-            _dict[relay_name]={}
-            _dict[relay_name]['Status']=deviceObj.relayStatus(relay_nr=relay_nr)
+            tg_dictMsg[relay_name]={}
+            tg_dictMsg[relay_name]['Status']=deviceObj.relayStatus(relay_nr=relay_nr)
             # _dict[relay_name]["Timers"]=deviceObj.timersToHuman(relay_nr=relay_nr)
             # _dict[relay_name]["Timers"]=deviceObj.timersToHuman(relay_nr=relay_nr, timers_data=_timers_data)
             # @ToDo:  15-03-2023 verificare timer di VescoviNew
-            _dict[relay_name]["Timers"]=THC.timersToHuman(timers_data=_timers_data, relay_nr=relay_nr)
+            tg_dictMsg[relay_name]["Timers"]=THC.timersToHuman(timers_data=_timers_data, relay_nr=relay_nr)
 
-            pt_value, pt_remaining=deviceObj.pulseTimeToHuman(relay_nr=index) ### parte da 0
+            pt_value, pt_remaining=THC.pulseTimeToHuman(pulsetime_data=deviceObj.getDeviceDB('PulseTime'), relay_nr=relay_nr, strip_leading=True)
             if pt_value!=0:
-                _dict[relay_name]["Pulsetime"]=f"{pt_value} ({pt_remaining})"
+                tg_dictMsg[relay_name]["Pulsetime"]=f"{pt_value} ({pt_remaining})"
 
 
     ### display nudo e crudo del timerX
     elif action=='single_timer_in_payload':
-        _dict=payload
-        keys=list(_dict.keys())
+        tg_dictMsg=payload
+        keys=list(tg_dictMsg.keys())
         if len(keys)==1:
-            ptr=_dict[keys[0]]
+            ptr=tg_dictMsg[keys[0]]
             if 'Mode' in ptr: ptr.pop('Mode')
             if 'Window' in ptr: ptr.pop('Window')
 
@@ -106,19 +109,21 @@ def in_payload_notify(deviceObj, topic_name: str, action: str, payload: (dict, s
         keys=list(payload.keys())
         if len(keys)==1:
             if keys[0].startswith('POWER'):
+                tg_dictMsg={"tg_notify": True}
                 cur_relay=int(keys[0].split('POWER')[1])
                 for index, relay_name in enumerate(relayNames):  ### scan friendly names
                     relay_nr=index+1
                     relay_name=f'relay_{relay_name}'
-                    _dict[relay_name]={}
+                    tg_dictMsg[relay_name]={}
                     if relay_nr==cur_relay:
-                        _dict[relay_name]['Status']=payload[keys[0]]
+                        tg_dictMsg[relay_name]['Status']=payload[keys[0]]
                     else:
-                        _dict[relay_name]['Status']=deviceObj.relayStatus(relay_nr=relay_nr)
+                        tg_dictMsg[relay_name]['Status']=deviceObj.relayStatus(relay_nr=relay_nr)
 
-                    pt_value, pt_remaining=deviceObj.pulseTimeToHuman(relay_nr=index) ### parte da 0
+                    pt_value, pt_remaining=THC.pulseTimeToHuman(pulsetime_data=deviceObj.getDeviceDB('PulseTime'), relay_nr=relay_nr, strip_leading=True)
+
                     if pt_value!=0:
-                        _dict[relay_name]["Pulsetime"]=f"{pt_value} ({pt_remaining})"
+                        tg_dictMsg[relay_name]["Pulsetime"]=f"{pt_value} ({pt_remaining})"
 
 
 
@@ -128,29 +133,32 @@ def in_payload_notify(deviceObj, topic_name: str, action: str, payload: (dict, s
 
     ### Tested
     elif action=='pulsetime_in_payload':     # payload dovrebbe contenere qualcosa tipo: {"POWER1":"OFF"}
-        for relay_nr, relay_name in enumerate(relayNames):
+        for index, relay_name in enumerate(relayNames):
+            relay_nr=index+1
             name=f'relay_{relay_name}'
-            pt_value, pt_remaining=deviceObj.pulseTimeToHuman(relay_nr=relay_nr)
-            _dict[relay_name]={}
-            _dict[relay_name]["Pulsetime"]=f"{pt_value} ({pt_remaining})"
+            # pt_value, pt_remaining=deviceObj.pulseTimeToHuman(relay_nr=relay_nr)
+            pt_value, pt_remaining=THC.pulseTimeToHuman(pulsetime_data=deviceObj.getDeviceDB('PulseTime'), relay_nr=relay_nr, strip_leading=True)
+
+            tg_dictMsg[relay_name]={}
+            tg_dictMsg[relay_name]["Pulsetime"]=f"{pt_value} ({pt_remaining})"
 
 
     elif action=='poweronstate_in_payload':     # payload dovrebbe contenere qualcosa tipo: {"POWER1":"OFF"}
         value=payload['PowerOnState']
         _values=["OFF", "ON", "TOGGLE", "Last State", "ON + disable power control", "Inverted PulseTime"]
-        _dict["PowerOnState"]=_values[int(value)]
+        tg_dictMsg["PowerOnState"]=_values[int(value)]
 
 
     elif action in ['ssid_in_payload']:     # payload dovrebbe contenere qualcosa tipo: {"POWER1":"OFF"}
-        _dict=payload
+        tg_dictMsg=payload
 
     elif action in ["ipaddress_in_payload"]:     # payload dovrebbe contenere qualcosa tipo: {"POWER1":"OFF"}
-        _dict=deviceObj.net_status(payload=payload)
+        tg_dictMsg=deviceObj.net_status(payload=payload)
 
     else:
         return
 
-    notify_telegram_group(topic_name=topic_name, action=action, data=_dict)
+    notify_telegram_group(topic_name=topic_name, action=action, data=tg_dictMsg)
 
 
 
@@ -179,7 +187,7 @@ def telegram_notify(deviceObj, topic_name: str, action: str, payload: (dict, str
         return
 
     alias=payload["alias"]
-    _dict={}
+    tg_dictMsg={"tg_notify": False}
 
     relayNames=deviceObj.friendlyNames()
 
@@ -187,34 +195,37 @@ def telegram_notify(deviceObj, topic_name: str, action: str, payload: (dict, str
     # actions from telegramBot
     #=====================================================================
     if alias in ['summary', 'status']:
-        _dict.update(deviceObj.Info())
-        _dict['Wifi']=deviceObj.wifi()
+        tg_dictMsg.update(deviceObj.Info())
+        tg_dictMsg['Wifi']=deviceObj.wifi()
 
         for index, relay_name in enumerate(relayNames):
-            pt_value, pt_remaining=deviceObj.pulseTimeToHuman(relay_nr=index) ### parte da '0''
+            relay_nr=index+1
+            pt_value, pt_remaining=THC.pulseTimeToHuman(pulsetime_data=deviceObj.getDeviceDB('PulseTime'), relay_nr=relay_nr, strip_leading=True)
+            # pt_value, pt_remaining=deviceObj.pulseTimeToHuman(relay_nr=index) ### parte da '0''
+
             relay_name=f'relay_{relay_name}'
             relay_nr=index+1
-            _dict[relay_name]={}
-            _dict[relay_name]["Status"]=deviceObj.relayStatus(relay_nr=relay_nr)
-            _dict[relay_name]["Pulsetime"]=pt_value
-            _dict[relay_name]["Remaining"]=pt_remaining
-            _dict[relay_name]["Timers"]=deviceObj.timersToHuman(relay_nr=relay_nr)
+            tg_dictMsg[relay_name]={}
+            tg_dictMsg[relay_name]["Status"]=deviceObj.relayStatus(relay_nr=relay_nr)
+            tg_dictMsg[relay_name]["Pulsetime"]=pt_value
+            tg_dictMsg[relay_name]["Remaining"]=pt_remaining
+            tg_dictMsg[relay_name]["Timers"]=deviceObj.timersToHuman(relay_nr=relay_nr)
 
 
     elif alias=="mqtt":  ### LnTelegram/topic_name/mqtt
-        _dict.update(deviceObj.Info())
-        _dict=deviceObj.mqtt()
+        tg_dictMsg.update(deviceObj.Info())
+        tg_dictMsg=deviceObj.mqtt()
 
 
     elif alias in ["version", "firmware"]:  ### LnTelegram/topic_name/version
-        _dict=deviceObj.firmware()
+        tg_dictMsg=deviceObj.firmware()
 
 
     elif alias=="net_status":  ### LnTelegram/topic_name/mqtt
-        _dict=deviceObj.net_status()
+        tg_dictMsg=deviceObj.net_status()
 
 
-    notify_telegram_group(topic_name=topic_name, action=alias, data=_dict)
+    notify_telegram_group(topic_name=topic_name, action=alias, data=tg_dictMsg)
 
 
 
@@ -222,8 +233,13 @@ def telegram_notify(deviceObj, topic_name: str, action: str, payload: (dict, str
 #
 ############################################################
 def notify_telegram_group(topic_name: str, action: str, data: (dict, str)):
+    tg_notify=False
+
     if data:
         if isinstance(data, dict):
+            if "tg_notify" in data:
+                tg_notify=data.pop("tg_notify")
+
             tg_msg=benedict(data, keypath_separator='§') ### potrebbe esserci il '.' da qualche parte e lo '/' non va bene per il parsemode 'html'
             gv.logger.notify('tg_msg: %s', tg_msg.to_json())
 
@@ -232,22 +248,12 @@ def notify_telegram_group(topic_name: str, action: str, data: (dict, str)):
         else:
             tg_msg=data
 
-        ### parse_mode=None altrimenti mi da errore oppure html ma con attenzione:
-        ### response: {'ok': False, 'error_code': 400, 'description': "Bad Request: can't parse entities: Can't find end of the entity starting at byte offset 493"}
-        # STM.sendMsg(group_name=topic_name, message=tg_msg.to_yaml(sort_keys=False), my_logger=logger, caller=True, parse_mode=None, notify=True)
+        gv.telegramMessage.send_html(group_name=topic_name, message=tg_msg, caller=True, notify=tg_notify)
 
-        # STM.sendMsg(group_name=topic_name, message=tg_msg.to_yaml(sort_keys=False), my_logger=logger, caller=True, parse_mode='html', notify=True)
-
-        gv.telegramMessage.send_html(group_name=topic_name, message=tg_msg, caller=True, notify=True)
     else:
-        # _dict={"Loreto": 'ciao'}
-        # tg_msg=benedict(_dict, keypath_separator='/')
-        # logger.notify('tg_msg: %s', tg_msg.to_json())
-        # import pdb; pdb.set_trace(); pass # by Loreto
         gv.logger.notify('%s - no data found for %s', topic_name, action)
-        # tg_msg=f'no data found for {action}'
         tg_msg={'error': f'no data found for {action}'}
-        gv.telegramMessage.send_html(group_name=topic_name, message=tg_msg, caller=True, notify=True)
+        gv.telegramMessage.send_html(group_name=topic_name, message=tg_msg, caller=True, notify=tg_notify)
 
 
 
