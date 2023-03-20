@@ -253,7 +253,7 @@ def run(gVars: SimpleNamespace):
     gv.devices=dict()
     gv.macTable=dict()
     gv.tgGroupName  = gv.args.telegram_group_name
-    gv.just_monitor = gv.args.monitor
+    gv.just_monitor = gv.args.just_monitor
     gv.topic_list   = gv.args.topics
 
     ### initialize my modules
@@ -269,9 +269,10 @@ def run(gVars: SimpleNamespace):
     gv.publish_timer=LnTimer(name='mqtt publish', default_time=100, logger=gv.logger)
     gv.publish_timer.start()
 
+    dev_name=gv.topic_list[0].lower()
     # Topic.setup(gVars=gv)
     ### per debug inseriamo un singolo device
-    if gv.topic_list[0] =='TavoloLavoro':
+    if dev_name =='tavololavoro':
         topic_name='TavoloLavoro'
         mac='C82B964FD367'
         gv.topic_list.append(f'+/{topic_name}/#')
@@ -280,28 +281,34 @@ def run(gVars: SimpleNamespace):
         # gv.topic_list.append(f'LnCmnd/mqtt_monitor_application/#')
         gv.topic_list.append(f'tasmota/discovery/{mac}/#') ### MAC di TavoloLavoro
 
-    elif gv.topic_list[0] =='VescoviNew':
+    elif dev_name =='vescovinew':
         topic_name='VescoviNew'
         mac='C44F33978EFA'
         gv.topic_list.append(f'+/{topic_name}/#')
         gv.topic_list.append(f'tasmota/discovery/{mac}/#') ### MAC di TavoloLavoro
 
-    elif gv.topic_list[0].lower() =='computercasetta':
+    elif dev_name =='computercasetta':
         topic_name='ComputerCasetta'
         mac='BC:DD:C2:85:AB:47'.replace(':', '')
         gv.topic_list.append(f'+/{topic_name}/#')
         gv.topic_list.append(f'tasmota/discovery/{mac}/#') ### MAC di TavoloLavoro
 
-    elif gv.topic_list[0] =='Beverino_01':
+    elif dev_name =='beverino_01':
         topic_name='Beverino_01'
         mac='DC4F2292DFAF'
         gv.topic_list.append(f'+/{topic_name}/#')
         gv.topic_list.append(f'tasmota/discovery/{mac}/#') ### MAC di TavoloLavoro
 
-    elif gv.topic_list[0] =='Scaldasonno':
+    elif dev_name =='scaldasonno':
         topic_name='Scaldasonno'
         mac='8CAAB5614B69'
         gv.topic_list.append(f'+/{topic_name}/#')
+
+    elif dev_name =='farolegnaia':
+        topic_name='FaroLegnaia'
+        mac='BCDDC285AEEB'
+        gv.topic_list.append(f'+/{topic_name}/#')
+        gv.topic_list.append(f'tasmota/discovery/{mac}/#') ### MAC di TavoloLavoro
 
     else:
         if not '+/#' in gv.topic_list:

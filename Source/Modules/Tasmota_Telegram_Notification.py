@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 16-03-2023 11.27.58
+# Date .........: 19-03-2023 18.08.49
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -197,6 +197,7 @@ def telegram_notify(deviceObj, topic_name: str, action: str, payload: (dict, str
     if alias in ['summary', 'status']:
         tg_dictMsg.update(deviceObj.Info())
         tg_dictMsg['Wifi']=deviceObj.wifi()
+        _timers_data=deviceObj.getDeviceDB('TIMERS')
 
         for index, relay_name in enumerate(relayNames):
             relay_nr=index+1
@@ -209,7 +210,7 @@ def telegram_notify(deviceObj, topic_name: str, action: str, payload: (dict, str
             tg_dictMsg[relay_name]["Status"]=deviceObj.relayStatus(relay_nr=relay_nr)
             tg_dictMsg[relay_name]["Pulsetime"]=pt_value
             tg_dictMsg[relay_name]["Remaining"]=pt_remaining
-            tg_dictMsg[relay_name]["Timers"]=deviceObj.timersToHuman(relay_nr=relay_nr)
+            tg_dictMsg[relay_name]["Timers"]=THC.timersToHuman(timers_data=_timers_data, relay_nr=relay_nr)
 
 
     elif alias=="mqtt":  ### LnTelegram/topic_name/mqtt

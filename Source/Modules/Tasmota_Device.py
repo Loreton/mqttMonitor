@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 15-03-2023 18.58.12
+# Date .........: 19-03-2023 10.31.37
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -142,7 +142,7 @@ def process(topic, payload, mqttClient_CB):
     ### -----------------------------------------------
     if not topic_name in gv.devices:
         gv.logger.info('creating device: %s', topic_name)
-        gv.devices[topic_name]=TasmotaClass(device_name=topic_name, runtime_dir=gv.mqttmonitor_runtime_dir, logger=gv.logger)
+        gv.devices[topic_name]=TasmotaClass(gVars=gv, device_name=topic_name)
         refreshDeviceData(topic_name=topic_name, deviceObj=gv.devices[topic_name], mqttClient_CB=mqttClient_CB)
 
     deviceObj=gv.devices[topic_name]
@@ -168,7 +168,7 @@ def process(topic, payload, mqttClient_CB):
 
     ### dati che arrivano direttamente da tasmota
     if prefix=='stat':
-        if suffix=='POWER':
+        if suffix=='POWER': ### payload is string
             ''' skip perchè prendiamo il topic con json payload 'stat/xxxx/RESULT {"POWER": "OFF"}' '''
             pass
 

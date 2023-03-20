@@ -5,7 +5,7 @@
 # Date .........: 2021-09-17
 #
 # updated by ...: Loreto Notarantonio
-# Date .........: 16-02-2023 18.02.23
+# Date .........: 20-03-2023 15.44.15
 #
 
 import  sys; sys.dont_write_bytecode = True
@@ -45,7 +45,7 @@ def ParseInput(version):
         # _parser.add_argument('--go', help='specify if command must be executed. (dry-run is default)', action='store_true')
         _parser.add_argument('--display-args', action='store_true', help='''Display arguments\n\n''' )
         _parser.add_argument('--systemd', action='store_true', help='''It's a systemd process\n\n''' )
-        _parser.add_argument('--clean-files', action='store_true', help='''Clean all devices files\n\n''' )
+        _parser.add_argument('--clean-data', action='store_true', help='''Clean all devices data\n\n''' )
         _parser.add_argument('--pid-file', type=str, required=False, default='/tmp/mqttmonitor/mqttmonitor.pid', help='''pid file\n\n''' )
 
         _parser.add_argument( "--console-logger-level",
@@ -93,8 +93,16 @@ def ParseInput(version):
     if len(sys.argv) == 1:
         sys.argv.append('-h')
 
-    parser=argparse.ArgumentParser(description='mqtt monitoring', formatter_class=argparse.RawTextHelpFormatter)
+    # parser=argparse.ArgumentParser(description='mqtt monitoring', formatter_class=argparse.RawTextHelpFormatter)
+    # https://stackoverflow.com/questions/61324536/python-argparse-with-argumentdefaultshelpformatter-and-rawtexthelpformatter
+    class UltimateHelpFormatter_xx(argparse.ArgumentDefaultsHelpFormatter, argparse.RawTextHelpFormatter ): pass
+    class UltimateHelpFormatter(argparse.RawTextHelpFormatter ): pass
+
+    parser=argparse.ArgumentParser(epilog="first line\n second line", formatter_class=UltimateHelpFormatter)
+
     parser.add_argument('--version', action='version', version=version)
+
+
 
     parser.add_argument('--topics',
                                 metavar='topics',
@@ -103,15 +111,33 @@ def ParseInput(version):
                                 # nargs='*',
                                 nargs='+', type=str,
                                 help="""topics to listen, delimited by spaces.
-        Es: --topics vescovi-Power Vescovi-Control
-            default: +/#
+        Es: --topics topic1 topic2 +/#
+            (default: %(default)s)
     """)
-    parser.add_argument('--clear-retained', action='store_true', help='''clear retained messages (topic +/# far all)\n\n''')
-    parser.add_argument('--retained', action='store_true', help='''display retaied messages (topic +/# far all)\n\n''')
-    parser.add_argument('--monitor', action='store_true', help='''just monitoring mqtt broker messages (topic +/# far all)\n\n''')
+    parser.add_argument('--clear-retained',
+                        action='store_true',
+                        help='''clear retained messages (topic +/# far all) (default: %(default)s)\n\n''')
 
-    parser.add_argument('--telegram-group-name', metavar='-', required=True, type=str, default=None,
-            help='Telegram group_name related to this application')
+    parser.add_argument('--retained',
+                        action='store_true',
+                        help='''display retaied messages (default: %(default)s)\n\n''')
+
+    parser.add_argument('--just-monitor',
+                        action='store_true',
+                        help='''just monitoring mqtt broker messages (default: %(default)s)\n\n''')
+
+    parser.add_argument('--save-period',
+                        required=False,
+                        default=5, ### valore iniziale... poi nel programma verrà portato a 60
+                        type=int,
+                        help="period to save device data on file (default: %(default)s)\n\n")
+
+    parser.add_argument('--telegram-group-name',
+                        metavar='-',
+                        required=True,
+                        type=str,
+                        default=None,
+                        help='Telegram group_name related to this application (default: %(default)s)\n\n')
 
 
     single_parser_common_options(parser)
