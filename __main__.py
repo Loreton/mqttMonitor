@@ -23,7 +23,7 @@ import FileLoader
 from TelegramSendMessage_Class import TelegramSendMessage_Class
 
 
-__ln_version__="mqttMonitor Version: V2023-03-20_155246"
+__ln_version__="mqttMonitor Version: V2023-03-26_182708"
 
 if __name__ == '__main__':
     prj_name='mqttMonitor'
@@ -32,9 +32,11 @@ if __name__ == '__main__':
                             console_logger_level=args.console_logger_level,
                             file_logger_level=args.file_logger_level,
                             logging_dir=args.logging_dir, # logging file--> logging_dir + logger_name
-                            threads=False)
+                            threads=False,
+                            create_logging_dir=True)
+
     gv=SimpleNamespace()
-    gv.logger                  = logger
+    gv.logger = logger
 
     logger.warning(__ln_version__)
 
@@ -42,13 +44,13 @@ if __name__ == '__main__':
 
 
     # read all configuration data
-    config=FileLoader.read_yaml(filename='mqttMonitor.yaml', search_paths=['conf'])
+    config=FileLoader.load_yaml(filename='mqttMonitor.yaml', search_paths=['conf'])
     if not config:
         logger.error('configuration data NOT found')
         sys.exit(1)
     gv.config=benedict(config)
 
-    FileLoader.set_Variables(gv.config['system_variables'])
+    FileLoader.setVariables(gv.config['system_variables'])
     gv.telegramMessage=TelegramSendMessage_Class(telegram_group_data=gv.config['telegram'], logger=logger)
 
 

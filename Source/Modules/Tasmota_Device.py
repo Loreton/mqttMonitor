@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 19-03-2023 10.31.37
+# Date .........: 26-03-2023 18.41.22
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -175,8 +175,6 @@ def process(topic, payload, mqttClient_CB):
         ### incude tutti gli STATUSx
         elif suffix.startswith('STATUS'):
             deviceObj.updateDevice(key_path='STATUS', data=payload, writeOnFile=True)
-
-
 
         ### in caso di RESULT dobbiamo analizzare il payload
         elif suffix=='RESULT':

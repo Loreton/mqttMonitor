@@ -310,6 +310,12 @@ def run(gVars: SimpleNamespace):
         gv.topic_list.append(f'+/{topic_name}/#')
         gv.topic_list.append(f'tasmota/discovery/{mac}/#') ### MAC di TavoloLavoro
 
+    elif dev_name =='presscontrol':
+        topic_name='PressControl'
+        mac='600194C24001'
+        gv.topic_list.append(f'+/{topic_name}/#')
+        gv.topic_list.append(f'tasmota/discovery/{mac}/#') ### MAC di TavoloLavoro
+
     else:
         if not '+/#' in gv.topic_list:
             gv.topic_list.append('tasmota/discovery/#')
