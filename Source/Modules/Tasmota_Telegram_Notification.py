@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 19-03-2023 18.08.49
+# Date .........: 15-04-2023 18.04.08
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -44,15 +44,6 @@ def setup(*, gVars):
 def in_payload_notify(deviceObj, topic_name: str, action: str, payload: (dict, str)=None):
     gv.logger.info('processing topic %s - %s ', topic_name, action, stacklevel=2)
 
-
-    # tg_msg={
-    #     gv.prj_name: {
-    #         "command": action.replace('_in_payload', ''),
-    #         "notify": False,
-    #         }
-    #     }
-
-    # tg_dictMsg={"tg_notify": False}
     tg_dictMsg={"tg_notify": False}
 
     ### dobbiamo attendere che il timer sia expired

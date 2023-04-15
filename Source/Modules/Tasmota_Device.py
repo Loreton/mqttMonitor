@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 26-03-2023 18.41.22
+# Date .........: 15-04-2023 18.21.33
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -97,7 +97,7 @@ def sendStatus():
 #-
 ################################################
 def refreshDeviceData(topic_name: str, deviceObj, mqttClient_CB):
-    deviceObj.telegramNotification(seconds=20) # temoporary stop to telegram notification
+    deviceObj.telegramNotification(seconds=60) # temoporary stop to telegram notification
     _commands='state; power; status 0; timers; pulsetime; topic; teleperiod 30; SetOption26 1'
     result=mqttClient_CB.publish(f'cmnd/{topic_name}/backlog', _commands, qos=0, retain=False)
 
