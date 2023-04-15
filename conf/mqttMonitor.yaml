@@ -1,6 +1,6 @@
 #
 # updated by ...: Loreto Notarantonio
-# Date .........: 03-03-2023 18.12.37
+# Date .........: 15-04-2023 17.43.27
 #
 
 #########################################################
@@ -16,10 +16,11 @@ main:
     # mqttmonitor_runtime_dir:   ${ln_RUNTIME_DIR}/mqtt_monitor
     # envars_dir:                ${ln_ENVARS_DIR}
     still_alive_interval_hours:
-            - 1
-            - 7
-            - 13
-            - 19
+            # - 1
+            # - 7
+            # - 13
+            # - 19
+            - 6
 
 
 broker: !include conf/Mqtt_Brokers.lnk.yaml#brokers.lnmqtt
