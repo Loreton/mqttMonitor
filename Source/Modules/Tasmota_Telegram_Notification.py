@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 15-04-2023 18.04.08
+# Date .........: 23-04-2023 17.15.32
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -74,8 +74,6 @@ def in_payload_notify(deviceObj, topic_name: str, action: str, payload: (dict, s
             relay_name=f'relay_{relay_name}'
             tg_dictMsg[relay_name]={}
             tg_dictMsg[relay_name]['Status']=deviceObj.relayStatus(relay_nr=relay_nr)
-            # _dict[relay_name]["Timers"]=deviceObj.timersToHuman(relay_nr=relay_nr)
-            # _dict[relay_name]["Timers"]=deviceObj.timersToHuman(relay_nr=relay_nr, timers_data=_timers_data)
             # @ToDo:  15-03-2023 verificare timer di VescoviNew
             tg_dictMsg[relay_name]["Timers"]=THC.timersToHuman(timers_data=_timers_data, relay_nr=relay_nr)
 
@@ -127,7 +125,6 @@ def in_payload_notify(deviceObj, topic_name: str, action: str, payload: (dict, s
         for index, relay_name in enumerate(relayNames):
             relay_nr=index+1
             name=f'relay_{relay_name}'
-            # pt_value, pt_remaining=deviceObj.pulseTimeToHuman(relay_nr=relay_nr)
             pt_value, pt_remaining=THC.pulseTimeToHuman(pulsetime_data=deviceObj.getDeviceDB('PulseTime'), relay_nr=relay_nr, strip_leading=True)
 
             tg_dictMsg[relay_name]={}
