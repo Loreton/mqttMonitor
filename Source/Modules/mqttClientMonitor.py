@@ -93,6 +93,10 @@ def connect_mqtt() -> mqtt_client:
             gv.logger.info("Connected to MQTT Broker!")
         else:
             gv.logger.info("Failed to connect, return code %d\n", rc)
+            gv.telegramMessage.send_html(group_name=gv.tgGroupName, message=f"Failed to connect to mqtt, return code:{rc}", caller=True) ### markdown dà errore
+            os.kill(int(os.getpid()), signal.SIGTERM)
+            sys.exit(1)
+
 
     def on_disconnect(client, userdata, rc):
         logging.info("disconnecting reason: %s", rc)
@@ -121,7 +125,7 @@ def connect_mqtt() -> mqtt_client:
     client = mqtt_client.Client(client_id)
     client.on_connect = on_connect
     if auth: client.username_pw_set(**auth)
-    client.connect(url, int(port))
+    rcode=client.connect(url, int(port))
     return client
 
 
