@@ -20,11 +20,7 @@ dest_Dir="Source/lnLib"
 
 
 
-source_Dir="${ln_ENVARS_DIR}/yaml"
 dest_Dir="conf"
-    Mqtt_Brokers.yaml               Mqtt_Brokers.lnk.yaml
-
-
-source_Dir="$HOME/.ln/envars/yaml"
-    telegramGroups_lnk.yaml         telegramGroups.lnk.yaml
-    ln_system_variables.yaml        ln_system_variables.lnk.yaml
+    $HOME/.ln/envars/yaml/Mqtt_Brokers.yaml                 Mqtt_Brokers.lnk.yaml
+    $HOME/.ln/config/devicesDB/telegramGroups_V202302.yaml  telegramGroups.lnk.yaml
+    $HOME/.ln/envars/yaml/ln_system_variables.yaml          ln_system_variables.lnk.yaml

@@ -18,12 +18,12 @@ import mqttClientMonitor
 from ColoredLogger import setColoredLogger, testLogger
 from ParseInput import ParseInput
 from savePidFile import savePidFile
-# from LoadConfigFile import readYamlFile
+
 import FileLoader
 from TelegramSendMessage_Class import TelegramSendMessage_Class
 
 
-__ln_version__="mqttMonitor Version: V2023-03-26_182708"
+__ln_version__="mqttMonitor Version: V2023-05-13_081840"
 
 if __name__ == '__main__':
     prj_name='mqttMonitor'

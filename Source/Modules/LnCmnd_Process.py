@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 15-03-2023 17.36.30
+# Date .........: 13-05-2023 12.10.39
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -51,7 +51,7 @@ def process(topic, payload, mqttClient_CB):
         ### da inviare a telegram group
         ### -----------------------------------------------
     elif first_qualifier in ["LnTelegram"]:
-        tgNotify.telegram_notify(deviceObj=deviceObj, topic_name=topic_name, action=suffix, payload=payload)
+        tgNotify.telegram_notify(deviceObj=deviceObj, topic_name=topic_name, payload=payload)
         return
 
 

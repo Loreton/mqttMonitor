@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 15-04-2023 18.21.33
+# Date .........: 13-05-2023 12.12.38
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -86,7 +86,7 @@ def sendStatus():
     gv.logger.notify("Sending summary to Telegram")
     for topic_name in gv.devices.keys():
         gv.logger.notify("Sending summary for %s to Telegram", topic_name)
-        tgNotify.telegram_notify(deviceObj=gv.devices[topic_name], topic_name=topic_name, action='summary', payload=None)
+        tgNotify.telegram_notify(deviceObj=gv.devices[topic_name], topic_name=topic_name, payload={"alias": "summary"})
 
 
 
@@ -152,7 +152,7 @@ def process(topic, payload, mqttClient_CB):
         ### da inviare a telegram group
         ### -----------------------------------------------
     if prefix=='LnTelegram':
-        tgNotify.telegram_notify(deviceObj=deviceObj, topic_name=topic_name, action=suffix, payload=payload)
+        tgNotify.telegram_notify(deviceObj=deviceObj, topic_name=topic_name, payload=payload)
         return
 
 

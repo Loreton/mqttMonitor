@@ -105,12 +105,6 @@ def connect_mqtt() -> mqtt_client:
         client.disconnect_flag=True
 
 
-    # filename=os.path.expandvars("${ln_ENVARS_DIR}/yaml/Mqtt_Brokers.yaml")
-    # with open(filename, 'r') as f:
-    #     content=f.read() # single string
-    # my_brokers=yaml.load(content, Loader=yaml.SafeLoader)
-
-
     HIVE_MQ=False
     if HIVE_MQ:
         print('da implemetare')
@@ -194,44 +188,6 @@ def on_message(client, userdata, message):
     else:
         gv.logger.error('%s: NOT managed. payload: %s', message.topic, payload)
         import pdb; pdb.set_trace(); pass # by Loreto
-
-
-
-####################################################################
-#
-####################################################################
-def on_message_OK(client, userdata, message):
-    import  Topic_Process as Topic
-
-    gv.publish_timer.restart() # if message has been received means application is alive.
-
-    # payload=checkPayload(message.payload)
-    payload=checkPayload(message)
-
-    if message.topic=='LnCmnd/mqtt_monitor_application/query':
-        gv.logger.notify('%s keepalive message has been received', message.topic)
-        return
-
-
-    # if payload: NON ricordo perché l'ho inserito
-    gv.logger.info("Received:")
-
-    if message.retain==1:
-        gv.logger.notify("   topic: %s - retained: %s", message.topic, message.retain)
-        gv.logger.notify("   payload: %s", payload)
-        if message.topic=='tele/xxxxxVecoviNew/LWT': # forzatura per uno specifico....
-            clear_retained_topic(client, message)
-    else:
-        gv.logger.info("   topic: %s", message.topic)
-        gv.logger.debug("   payload: %s", payload)
-
-
-    if gv.clear_retained and message.retain:
-        clear_retained_topic(client, message)
-
-    if not gv.just_monitor:
-        Topic.process(topic=message.topic, payload=payload, mqttClient_CB=client)
-
 
 
 
@@ -334,8 +290,6 @@ def run(gVars: SimpleNamespace):
 
 
     client.loop_start()
-    # STM.sendMsg(group_name=gv.tgGroupName, message="application has been started!", my_logger=gv.logger, caller=True, parse_mode='MarkDown')
-    # STM.sendMsg(group_name=gv.tgGroupName, message="application has been started!", my_logger=gv.logger, caller=True, parse_mode='html') ### markdown dà errore
     gv.telegramMessage.send_html(group_name=gv.tgGroupName, message="application has been started!", caller=True) ### markdown dà errore
     time.sleep(4) # Wait for connection setup to complete
 
@@ -344,21 +298,17 @@ def run(gVars: SimpleNamespace):
     systemChannelName=f"{hostname}"
 
     while True:
-        mm=time.strftime("%M")
-        hh=time.strftime("%H")
-        ss=time.strftime("%S")
+        mm=int(time.strftime("%M"))
+        hh=int(time.strftime("%H"))
+        ss=int(time.strftime("%S"))
 
-        # if int(mm)==0 and int(hh)>6 and int(hh)<22:
-        # if int(mm)==0 and int(hh)%12: # ogni 12 ore...
-        if int(mm)==0 and int(hh) in [6, 12, 18, 22]: # ogni 12 ore...
-            Topic.sendStatus()
+        if mm==0:
+            if hh in [6, 12, 13, 18, 22]: # ogni 12 ore...
+                Tasmota_Device.sendStatus()
 
-
-
-        # if int(mm) in [0, 15, 30, 45]:
-        if int(hh) in gv.config['main.still_alive_interval_hours'] and int(mm) in [0]:
-            savePidFile(gv.args.pid_file)
-            gv.telegramMessage.send_html(group_name=gv.tgGroupName, message="I'm still alive!", caller=True)
+            if hh in gv.config['main.still_alive_interval_hours']:
+                savePidFile(gv.args.pid_file)
+                gv.telegramMessage.send_html(group_name=gv.tgGroupName, message="I'm still alive!", caller=True)
 
 
         gv.logger.info('publishing check/ping mqtt message')

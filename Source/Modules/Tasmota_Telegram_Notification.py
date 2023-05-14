@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 23-04-2023 17.15.32
+# Date .........: 13-05-2023 12.16.42
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -146,7 +146,7 @@ def in_payload_notify(deviceObj, topic_name: str, action: str, payload: (dict, s
     else:
         return
 
-    notify_telegram_group(topic_name=topic_name, action=action, data=tg_dictMsg)
+    notify_telegram_group(topic_name=topic_name, data=tg_dictMsg)
 
 
 
@@ -154,17 +154,13 @@ def in_payload_notify(deviceObj, topic_name: str, action: str, payload: (dict, s
 
 
 ######################################################
-# process topic name and paylod data to findout query,
-#
-# topic='LnTelegram/topic_name/telegram' (comando esterno)
-#      payload="summary"
-#      payload="timers"
-#
-# topic='LnTelegram/topic_name/summary'
+# topic='LnTelegram/topic_name/alias' (comando esterno)
+#      payload['alias']="summary" or other....
 #
 ######################################################
-def telegram_notify(deviceObj, topic_name: str, action: str, payload: (dict, str)=None):
-    gv.logger.info('processing topic %s - %s ', topic_name, action)
+# def telegram_notify(deviceObj, topic_name: str, action: str, payload: (dict, str)=None):
+def telegram_notify(deviceObj, topic_name: str,  payload: (dict, str)=None):
+    gv.logger.info('processing topic %s - payload: %s ', topic_name, str(payload))
 
     if isinstance(payload, dict):
         if 'debug' in payload and payload['debug'] is True: ### in caso di debug da telegram
@@ -214,37 +210,28 @@ def telegram_notify(deviceObj, topic_name: str, action: str, payload: (dict, str
         tg_dictMsg=deviceObj.net_status()
 
 
-    notify_telegram_group(topic_name=topic_name, action=alias, data=tg_dictMsg)
+    if tg_dictMsg:
+        notify_telegram_group(topic_name=topic_name, data=tg_dictMsg)
 
 
 
 ############################################################
 #
 ############################################################
-def notify_telegram_group(topic_name: str, action: str, data: (dict, str)):
+def notify_telegram_group(topic_name: str, data: (dict, str)):
     tg_notify=False
 
-    if data:
-        if isinstance(data, dict):
-            if "tg_notify" in data:
-                tg_notify=data.pop("tg_notify")
+    if isinstance(data, dict):
+        if "tg_notify" in data:
+            tg_notify=data.pop("tg_notify")
 
-            tg_msg=benedict(data, keypath_separator='§') ### potrebbe esserci il '.' da qualche parte e lo '/' non va bene per il parsemode 'html'
-            gv.logger.notify('tg_msg: %s', tg_msg.to_json())
+        tg_msg=benedict(data, keypath_separator='§') ### potrebbe esserci il '.' da qualche parte e lo '/' non va bene per il parsemode 'html'
+        gv.logger.notify('tg_msg: %s', tg_msg.to_json())
 
-            gv.logger.notify('sending telegram message: %s', tg_msg)
-            tg_msg=dict_bold_italic(tg_msg, keys='bold', values='italic', nlevels=2)
-        else:
-            tg_msg=data
-
-        gv.telegramMessage.send_html(group_name=topic_name, message=tg_msg, caller=True, notify=tg_notify)
-
+        gv.logger.notify('sending telegram message: %s', tg_msg)
+        tg_msg=dict_bold_italic(tg_msg, keys='bold', values='italic', nlevels=2)
     else:
-        gv.logger.notify('%s - no data found for %s', topic_name, action)
-        tg_msg={'error': f'no data found for {action}'}
-        gv.telegramMessage.send_html(group_name=topic_name, message=tg_msg, caller=True, notify=tg_notify)
+        tg_msg=data
 
-
-
-
+    gv.telegramMessage.send_html(group_name=topic_name, message=tg_msg, caller=True, notify=tg_notify)
 
