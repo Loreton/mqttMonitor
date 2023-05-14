@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 13-05-2023 12.12.38
+# Date .........: 14-05-2023 10.50.24
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -232,7 +232,7 @@ def process(topic, payload, mqttClient_CB):
 
     elif prefix=='tasmota':
         if suffix in ['sensors', 'config']:
-            print(type(payload), isinstance(payload, benedict))
+            # print(type(payload), isinstance(payload, benedict))
             # import pdb; pdb.set_trace(); pass # by Loreto
             deviceObj.updateDevice(key_path="Config", data=payload, writeOnFile=True)
 
