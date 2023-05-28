@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 13-05-2023 12.16.42
+# Date .........: 28-05-2023 09.18.12
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -50,7 +50,6 @@ def in_payload_notify(deviceObj, topic_name: str, action: str, payload: (dict, s
     if '_in_payload' in action:
         if not deviceObj.telegramNotification():
             gv.logger.warning("skipping due to telegramNotification timer - %s - %s", topic_name, payload)
-            # notify_telegram_group(topic_name=topic_name, action=action, data="please retry in a few seconds")
             return
 
 
