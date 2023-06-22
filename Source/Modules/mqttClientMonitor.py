@@ -276,6 +276,12 @@ def run(gVars: SimpleNamespace):
         gv.topic_list.append(f'+/{topic_name}/#')
         gv.topic_list.append(f'tasmota/discovery/{mac}/#') ### MAC di TavoloLavoro
 
+    elif dev_name =='loadsuperiore':
+        topic_name='LoadSuperiore'
+        mac='DC4F22931793'
+        gv.topic_list.append(f'+/{topic_name}/#')
+        gv.topic_list.append(f'tasmota/discovery/{mac}/#') ### MAC di TavoloLavoro
+
     else:
         if not '+/#' in gv.topic_list:
             gv.topic_list.append('tasmota/discovery/#')
@@ -303,7 +309,7 @@ def run(gVars: SimpleNamespace):
         ss=int(time.strftime("%S"))
 
         if mm==0:
-            if hh in [6, 12, 13, 18, 22]: # ogni 12 ore...
+            if hh in gv.config['main.send_status_hours']:
                 Tasmota_Device.sendStatus()
 
             if hh in gv.config['main.still_alive_interval_hours']:
@@ -321,7 +327,7 @@ def run(gVars: SimpleNamespace):
         if gv.publish_timer.remaining_time() <= 0:
             gv.logger.error('publish_timer - exausted')
             gv.logger.error('restarting application')
-            gv.telegramMessage.send(group_name=gv.tgGroupName, message="publish_timer - exausted - application is restarting!", caller=True)
+            gv.telegramMessage.send(group_name=gv.tgGroupName, msg_text="publish_timer - exausted - application is restarting!", caller=True)
 
             os.kill(int(os.getpid()), signal.SIGTERM)
 

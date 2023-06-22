@@ -1,6 +1,6 @@
 #
 # updated by ...: Loreto Notarantonio
-# Date .........: 15-04-2023 17.43.27
+# Date .........: 22-06-2023 18.12.54
 #
 
 #########################################################
@@ -21,6 +21,9 @@ main:
             # - 13
             # - 19
             - 6
+    send_status_hours:
+            - 6
+            - 21
 
 
 broker: !include conf/Mqtt_Brokers.lnk.yaml#brokers.lnmqtt

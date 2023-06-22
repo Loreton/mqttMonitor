@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 14-05-2023 10.50.24
+# Date .........: 28-05-2023 12.00.21
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -28,8 +28,6 @@ from Tasmota_Class import TasmotaClass
 def setup(gVars: SimpleNamespace):
     global gv
     gv=gVars
-    # gv.devices=dict()
-    # gv.macTable=dict()
 
 
 
@@ -102,12 +100,6 @@ def refreshDeviceData(topic_name: str, deviceObj, mqttClient_CB):
     result=mqttClient_CB.publish(f'cmnd/{topic_name}/backlog', _commands, qos=0, retain=False)
 
 
-
-#########################################################
-# TEST:
-#    cmnd/TavoloLavoro/bcacklog power
-#    cmnd/TavoloLavoro/bcacklog timers
-#########################################################
 
 #########################################################
 #  Per comodità cerco di utilizzare il topic_name==Device_name
