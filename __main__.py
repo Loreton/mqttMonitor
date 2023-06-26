@@ -23,7 +23,7 @@ import FileLoader
 from TelegramSendMessage_Class import TelegramSendMessage_Class
 
 
-__ln_version__="mqttMonitor Version: V2023-05-13_081840"
+__ln_version__="mqttMonitor Version: V2023-06-26_122415"
 
 if __name__ == '__main__':
     prj_name='mqttMonitor'
@@ -60,7 +60,6 @@ if __name__ == '__main__':
     gv.args                    = args
     gv.telegramData            = gv.config['telegram']
     gv.broker                  = gv.config['broker']
-    # gv.mqttmonitor_runtime_dir = f'{os.environ["ln_RUNTIME_DIR"]}/{prj_name}'
     gv.mqttmonitor_runtime_dir = os.path.expandvars("${ln_RUNTIME_DIR}/mqttMonitor")
 
     InitializeModules.Main(gVars=gv) ### initializing per altre variabili.
