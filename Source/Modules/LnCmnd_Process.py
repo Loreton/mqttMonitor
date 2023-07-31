@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 13-05-2023 12.10.39
+# Date .........: 30-07-2023 11.59.05
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -20,11 +20,14 @@ from types import SimpleNamespace
 
 
 
-def setup(gVars: SimpleNamespace):
+
+
+def setup(**kwargs):
     global gv
-    gv=gVars
+    gv=SimpleNamespace()
 
-
+    gv.logger=kwargs["logger"]
+    # gv.devicesDB=kwargs["devicesDB"]
 
 
 

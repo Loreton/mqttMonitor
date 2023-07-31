@@ -1,0 +1,56 @@
+#
+# updated by ...: Loreto Notarantonio
+# Date .........: 30-07-2023 11.09.00
+#
+
+#########################################################
+# -       MqttMonitor config data
+#########################################################
+
+
+main:
+    # dirs:
+    #     envars:                ${ln_ENVARS_DIR}
+    #     mqttmonitor_runtime:   ${ln_RUNTIME_DIR}/mqtt_monitor
+
+    # mqttmonitor_runtime_dir:   ${ln_RUNTIME_DIR}/mqtt_monitor
+    # envars_dir:                ${ln_ENVARS_DIR}
+    still_alive_interval_hours:
+            # - 1
+            # - 7
+            # - 13
+            # - 19
+            - 6
+    send_status_hours:
+            - 8
+            # - 21
+
+
+# broker: !include conf/Mqtt_Brokers.lnk.yaml#brokers.lnmqtt
+
+# telegram: !include conf/telegramGroups.lnk.yaml
+
+
+
+
+# envars: !include conf/ln_system_variables.lnk.yaml
+system_variables: !include conf/ln_system_variables.lnk.yaml#system_envars
+
+
+devices_data:
+    bots:       !include "conf/telegramBots.lnk.yaml#bots"
+    broker:     !include conf/Mqtt_Brokers.lnk.yaml#brokers.lnmqtt
+    devices:    !include_merge [
+                    "conf/Computers.lnk.yaml#raspberry",
+                    "conf/Computers.lnk.yaml#pc",
+                    "conf/Cellulari.lnk.yaml#cellulari",
+                    "conf/Printers.lnk.yaml#printers",
+                    "conf/Routers.lnk.yaml#routers",
+                    "conf/Tasmota.lnk.yaml#tasmota",
+                    "conf/Shelly.lnk.yaml#shelly",
+                    "conf/Telecamere.lnk.yaml#telecamere",
+                    "conf/TV.lnk.yaml#tv",
+                    "conf/Unused.lnk.yaml#unused",
+                    "conf/telegramApplGroups.lnk.yaml#application_groups",
+                    "conf/telegramChannels.lnk.yaml#channels",
+                ]

@@ -10,6 +10,8 @@
 import  sys; sys.dont_write_bytecode = True
 import  os
 from types import SimpleNamespace
+import random
+
 
 import  signal
 import  yaml, json
@@ -86,14 +88,13 @@ def clear_retained_topic(client, message):
 ####################################################################
 #
 ####################################################################
-def connect_mqtt() -> mqtt_client:
-    client_id='lnmqtt' + str(uuid.uuid4())
+def connect_mqtt(client_id: str) -> mqtt_client:
     def on_connect(client, userdata, flags, rc):
         if rc == 0:
             gv.logger.info("Connected to MQTT Broker!")
         else:
             gv.logger.info("Failed to connect, return code %d\n", rc)
-            gv.telegramMessage.send_html(group_name=gv.tgGroupName, message=f"Failed to connect to mqtt, return code:{rc}", caller=True) ### markdown dà errore
+            gv.telegramMessage.send_html(group_name=gv.tg_group_name, message=f"Failed to connect to mqtt, return code:{rc}", caller=True) ### markdown dà errore
             os.kill(int(os.getpid()), signal.SIGTERM)
             sys.exit(1)
 
@@ -110,16 +111,14 @@ def connect_mqtt() -> mqtt_client:
         print('da implemetare')
         sys.exit(1)
     else:
-        # broker=mqttBroker(broker_name="LnMqtt")
         broker=gv.broker
-        url=broker['url']
-        port=broker['port']
-        auth=broker['auth']
+        auth=dict(broker.auth)
 
     client = mqtt_client.Client(client_id)
     client.on_connect = on_connect
     if auth: client.username_pw_set(**auth)
-    rcode=client.connect(url, int(port))
+    rcode=client.connect(broker.url, int(broker.port))
+
     return client
 
 
@@ -207,88 +206,87 @@ def subscribe(client: mqtt_client, topics: list):
 ####################################################################
 #
 ####################################################################
-def run(gVars: SimpleNamespace):
+def run(**kwargs):
     global gv
-    gv     = gVars
-    gv.devices=dict()
-    gv.macTable=dict()
-    gv.tgGroupName  = gv.args.telegram_group_name
-    gv.just_monitor = gv.args.just_monitor
-    gv.topic_list   = gv.args.topics
+    gv=benedict(kwargs, keyattr_enabled=True, keyattr_dynamic=False)
+    topic_list = kwargs["topics"]
+
 
     ### initialize my modules
-    Tasmota_Device.setup(gVars=gv)
-    Shellies_Device.setup(gVars=gv)
-    LnCmnd.setup(gVars=gv)
-    tgNotify.setup(gVars=gv)
+    Tasmota_Device.setup(**kwargs)
+    Shellies_Device.setup(**kwargs)
+    LnCmnd.setup(**kwargs)
+    tgNotify.setup(**kwargs)
 
 
-    client=connect_mqtt()
-    gv.client=client
-
-    gv.publish_timer=LnTimer(name='mqtt publish', default_time=100, logger=gv.logger)
-    gv.publish_timer.start()
-
-    dev_name=gv.topic_list[0].lower()
+    dev_name=topic_list[0].lower()
     # Topic.setup(gVars=gv)
     ### per debug inseriamo un singolo device
     if dev_name =='tavololavoro':
         topic_name='TavoloLavoro'
         mac='C82B964FD367'
-        gv.topic_list.append(f'+/{topic_name}/#')
-        # gv.topic_list.append(f'LnCmnd/#')
-        # gv.topic_list.append(f'LnCmnd/{topic_name}/#')
-        # gv.topic_list.append(f'LnCmnd/mqtt_monitor_application/#')
-        gv.topic_list.append(f'tasmota/discovery/{mac}/#') ### MAC di TavoloLavoro
+        topic_list.append(f'+/{topic_name}/#')
+        # topic_list.append(f'LnCmnd/#')
+        # topic_list.append(f'LnCmnd/{topic_name}/#')
+        # topic_list.append(f'LnCmnd/mqtt_monitor_application/#')
+        topic_list.append(f'tasmota/discovery/{mac}/#') ### MAC di TavoloLavoro
 
     elif dev_name =='vescovinew':
         topic_name='VescoviNew'
         mac='C44F33978EFA'
-        gv.topic_list.append(f'+/{topic_name}/#')
-        gv.topic_list.append(f'tasmota/discovery/{mac}/#') ### MAC di TavoloLavoro
+        topic_list.append(f'+/{topic_name}/#')
+        topic_list.append(f'tasmota/discovery/{mac}/#') ### MAC di TavoloLavoro
 
     elif dev_name =='computercasetta':
         topic_name='ComputerCasetta'
         mac='BC:DD:C2:85:AB:47'.replace(':', '')
-        gv.topic_list.append(f'+/{topic_name}/#')
-        gv.topic_list.append(f'tasmota/discovery/{mac}/#') ### MAC di TavoloLavoro
+        topic_list.append(f'+/{topic_name}/#')
+        topic_list.append(f'tasmota/discovery/{mac}/#') ### MAC di TavoloLavoro
 
     elif dev_name =='beverino_01':
         topic_name='Beverino_01'
         mac='DC4F2292DFAF'
-        gv.topic_list.append(f'+/{topic_name}/#')
-        gv.topic_list.append(f'tasmota/discovery/{mac}/#') ### MAC di TavoloLavoro
+        topic_list.append(f'+/{topic_name}/#')
+        topic_list.append(f'tasmota/discovery/{mac}/#') ### MAC di TavoloLavoro
 
     elif dev_name =='scaldasonno':
         topic_name='Scaldasonno'
         mac='8CAAB5614B69'
-        gv.topic_list.append(f'+/{topic_name}/#')
+        topic_list.append(f'+/{topic_name}/#')
 
     elif dev_name =='farolegnaia':
         topic_name='FaroLegnaia'
         mac='BCDDC285AEEB'
-        gv.topic_list.append(f'+/{topic_name}/#')
-        gv.topic_list.append(f'tasmota/discovery/{mac}/#') ### MAC di TavoloLavoro
+        topic_list.append(f'+/{topic_name}/#')
+        topic_list.append(f'tasmota/discovery/{mac}/#') ### MAC di TavoloLavoro
 
     elif dev_name =='presscontrol':
         topic_name='PressControl'
         mac='600194C24001'
-        gv.topic_list.append(f'+/{topic_name}/#')
-        gv.topic_list.append(f'tasmota/discovery/{mac}/#') ### MAC di TavoloLavoro
+        topic_list.append(f'+/{topic_name}/#')
+        topic_list.append(f'tasmota/discovery/{mac}/#') ### MAC di TavoloLavoro
 
     elif dev_name =='loadsuperiore':
         topic_name='LoadSuperiore'
         mac='DC4F22931793'
-        gv.topic_list.append(f'+/{topic_name}/#')
-        gv.topic_list.append(f'tasmota/discovery/{mac}/#') ### MAC di TavoloLavoro
+        topic_list.append(f'+/{topic_name}/#')
+        topic_list.append(f'tasmota/discovery/{mac}/#') ### MAC di TavoloLavoro
 
     else:
-        if not '+/#' in gv.topic_list:
-            gv.topic_list.append('tasmota/discovery/#')
+        if not '+/#' in topic_list:
+            topic_list.append('tasmota/discovery/#')
 
 
-    gv.topic_list.append('LnCmnd/#')
-    subscribe(client, gv.topic_list)
+    topic_list.append('LnCmnd/#')
+
+    client_id = f'LnMqttMonitor-{random.randint(0, 1000)}'
+    client=connect_mqtt(client_id)
+    gv.client=client
+
+    gv.publish_timer=LnTimer(name='mqtt publish', default_time=100, logger=gv.logger)
+    gv.publish_timer.start()
+
+    subscribe(client, topic_list)
 
 
     if gv.just_monitor:
@@ -296,7 +294,7 @@ def run(gVars: SimpleNamespace):
 
 
     client.loop_start()
-    gv.telegramMessage.send_html(group_name=gv.tgGroupName, message="application has been started!", caller=True) ### markdown dà errore
+    gv.telegramMessage.send_html(group_name=gv.tg_group_name, message="application has been started!", caller=True) ### markdown dà errore
     time.sleep(4) # Wait for connection setup to complete
 
 
@@ -314,7 +312,7 @@ def run(gVars: SimpleNamespace):
 
             if hh in gv.config['main.still_alive_interval_hours']:
                 savePidFile(gv.args.pid_file)
-                gv.telegramMessage.send_html(group_name=gv.tgGroupName, message="I'm still alive!", caller=True)
+                gv.telegramMessage.send_html(group_name=gv.tg_group_name, message="I'm still alive!", caller=True)
 
 
         gv.logger.info('publishing check/ping mqtt message')
@@ -327,7 +325,7 @@ def run(gVars: SimpleNamespace):
         if gv.publish_timer.remaining_time() <= 0:
             gv.logger.error('publish_timer - exausted')
             gv.logger.error('restarting application')
-            gv.telegramMessage.send(group_name=gv.tgGroupName, msg_text="publish_timer - exausted - application is restarting!", caller=True)
+            gv.telegramMessage.send(group_name=gv.tg_group_name, msg_text="publish_timer - exausted - application is restarting!", caller=True)
 
             os.kill(int(os.getpid()), signal.SIGTERM)
 

@@ -5,7 +5,7 @@
 # Date .........: 2021-09-17
 #
 # updated by ...: Loreto Notarantonio
-# Date .........: 20-03-2023 15.44.15
+# Date .........: 31-07-2023 08.28.55
 #
 
 import  sys; sys.dont_write_bytecode = True
@@ -45,7 +45,7 @@ def ParseInput(version):
         # _parser.add_argument('--go', help='specify if command must be executed. (dry-run is default)', action='store_true')
         _parser.add_argument('--display-args', action='store_true', help='''Display arguments\n\n''' )
         _parser.add_argument('--systemd', action='store_true', help='''It's a systemd process\n\n''' )
-        _parser.add_argument('--clean-data', action='store_true', help='''Clean all devices data\n\n''' )
+        _parser.add_argument('--clean-device-data', action='store_true', help='''Clean all devices data\n\n''' )
         _parser.add_argument('--pid-file', type=str, required=False, default='/tmp/mqttmonitor/mqttmonitor.pid', help='''pid file\n\n''' )
 
         _parser.add_argument( "--console-logger-level",
@@ -132,7 +132,7 @@ def ParseInput(version):
                         type=int,
                         help="period to save device data on file (default: %(default)s)\n\n")
 
-    parser.add_argument('--telegram-group-name',
+    parser.add_argument('--tg-group-name',
                         metavar='-',
                         required=True,
                         type=str,

@@ -2,25 +2,57 @@ source_Dir="$HOME/GIT-REPO/Python/LnPyLib"
 dest_Dir="Source/lnLib"
 
 
-    Logger/ColoredLogger_V1.3.py                    ColoredLogger.py ### rename it
-    # telegram/SendTelegramMessage_V2023a.py       SendTelegramMessage.py
-    # telegram/sendTelegramMsg_Class_V2023a.py     SendTelegramMsg_Class.py
-    # Dictionary/LoadConfigFile_V202301.py            LoadConfigFile.py
 
-    telegram/TelegramSendMessage_Class_V202302.py  TelegramSendMessage_Class.py
-    # telegram/TelegramSendMessage_V2023a.py       SendTelegramMessage.py
 
-    Utils/LnUtils.py
-    tasmota/Tasmota_Class.py
-    tasmota/Tasmota_Human_Converter.py
+
+
+
+
+    ### - Utils
+    "Utils/LnUtils.py"
+    "Utils/devicesDB.py"
+
+    ### - Telegram
+    telegram/sendTelegramMsg_Class_V2023b.py  TelegramSendMessage_Class.py
+
+    ### - Tasmota
+    "tasmota/Tasmota_Human_Converter.py"
+    "tasmota/Tasmota_Class.py"
+
+    "MQTT/MqttTxRx_Class.py"                          ### - Mqtt
+
+    ### - Logger
+    "Logger/ColoredLogger_V1.3.py"          ColoredLogger.py ### rename it
+
+    ### - Dictionary
+    files/FileLoader.py                FileLoader.py
+
+
+    ### - Time
     Time/LnTime.py
     Time/LnTimer.py
     Time/LnSunTime.py
-    files/FileLoader.py                FileLoader.py
 
 
 
 dest_Dir="conf"
-    $HOME/.ln/envars/yaml/Mqtt_Brokers.yaml                 Mqtt_Brokers.lnk.yaml
-    $HOME/.ln/config/devicesDB/telegramGroups_V202302.yaml  telegramGroups.lnk.yaml
-    $HOME/.ln/envars/yaml/ln_system_variables.yaml          ln_system_variables.lnk.yaml
+
+    "$HOME/.ln/envars/yaml/ln_system_variables.yaml"          "ln_system_variables.lnk.yaml"
+
+
+    "${HOME}/.ln/config/devicesDB/telegramBots.yaml"        "telegramBots.lnk.yaml"
+    "${HOME}/.ln/config/devicesDB/Mqtt_Brokers.yaml"        "Mqtt_Brokers.lnk.yaml"
+    "${HOME}/.ln/config/devicesDB/telegramBots.yaml"        "telegramBots.lnk.yaml"
+
+    "${HOME}/.ln/config/devicesDB/telegramApplGroups.yaml"  "telegramApplGroups.lnk.yaml"
+    "${HOME}/.ln/config/devicesDB/telegramChannels.yaml"    "telegramChannels.lnk.yaml"
+
+    "${HOME}/.ln/config/devicesDB/Computers.yaml"           "Computers.lnk.yaml"
+    "${HOME}/.ln/config/devicesDB/Cellulari.yaml"           "Cellulari.lnk.yaml"
+    "${HOME}/.ln/config/devicesDB/Printers.yaml"            "Printers.lnk.yaml"
+    "${HOME}/.ln/config/devicesDB/Routers.yaml"             "Routers.lnk.yaml"
+    "${HOME}/.ln/config/devicesDB/Tasmota.yaml"             "Tasmota.lnk.yaml"
+    "${HOME}/.ln/config/devicesDB/Shelly.yaml"              "Shelly.lnk.yaml"
+    "${HOME}/.ln/config/devicesDB/Telecamere.yaml"          "Telecamere.lnk.yaml"
+    "${HOME}/.ln/config/devicesDB/TV.yaml"                  "TV.lnk.yaml"
+    "${HOME}/.ln/config/devicesDB/Unused.yaml"               "Unused.lnk.yaml"

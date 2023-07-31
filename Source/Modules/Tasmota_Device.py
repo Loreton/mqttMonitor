@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 28-05-2023 12.00.21
+# Date .........: 31-07-2023 08.21.34
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -25,9 +25,15 @@ from Tasmota_Class import TasmotaClass
 
 
 
-def setup(gVars: SimpleNamespace):
+def setup(**kwargs):
     global gv
-    gv=gVars
+    gv=benedict(kwargs, keyattr_enabled=True, keyattr_dynamic=False)
+    # gv=SimpleNamespace()
+    # gv.logger=kwargs["logger"]
+    # gv.devicesDB=kwargs["devicesDB"]
+    # gv.mqttmonitor_runtime_dir=kwargs["mqttmonitor_runtime_dir"]
+    gv.devices={}
+    gv.macTable={}
 
 
 
@@ -134,7 +140,7 @@ def process(topic, payload, mqttClient_CB):
     ### -----------------------------------------------
     if not topic_name in gv.devices:
         gv.logger.info('creating device: %s', topic_name)
-        gv.devices[topic_name]=TasmotaClass(gVars=gv, device_name=topic_name)
+        gv.devices[topic_name]=TasmotaClass(device_name=topic_name, **gv)
         refreshDeviceData(topic_name=topic_name, deviceObj=gv.devices[topic_name], mqttClient_CB=mqttClient_CB)
 
     deviceObj=gv.devices[topic_name]

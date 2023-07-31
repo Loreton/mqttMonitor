@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 15-03-2023 15.30.39
+# Date .........: 30-07-2023 11.58.54
 
 
 
@@ -12,11 +12,15 @@ from types import SimpleNamespace
 
 
 
-def setup(gVars: SimpleNamespace):
-    global gv
-    gv=gVars
-    devices=dict()
 
+
+
+def setup(**kwargs):
+    global gv
+    gv=SimpleNamespace()
+
+    gv.logger=kwargs["logger"]
+    gv.devicesDB=kwargs["devicesDB"]
 
 
 

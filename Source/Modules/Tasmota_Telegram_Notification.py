@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 28-05-2023 09.18.12
+# Date .........: 31-07-2023 08.41.59
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -17,16 +17,24 @@ import time
 import json, yaml
 import signal
 from benedict import benedict
+from types import SimpleNamespace
 
 from LnUtils import dict_bold_italic
 import Tasmota_Human_Converter as THC
 
 
 
-def setup(*, gVars):
+def setup(**kwargs: dict):
     global gv
-    gv=gVars
+    gv=benedict(kwargs, keyattr_enabled=True, keyattr_dynamic=False)
+    THC.setup(**kwargs)
 
+# def setup(**kwargs):
+#     global gv
+#     gv=SimpleNamespace()
+
+#     gv.logger=kwargs["logger"]
+#     gv.devicesDB=kwargs["devicesDB"]
 
 
 
