@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 31-07-2023 08.41.59
+# Date .........: 01-08-2023 08.11.42
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -24,10 +24,19 @@ import Tasmota_Human_Converter as THC
 
 
 
-def setup(**kwargs: dict):
-    global gv
-    gv=benedict(kwargs, keyattr_enabled=True, keyattr_dynamic=False)
-    THC.setup(**kwargs)
+#####################################
+# gVars is benedict dictionary
+#####################################
+def setup(gVars: dict):
+    global gv, C
+    gv=gVars
+    C=gv.logger.getColors()
+    THC.setup(gVars)
+
+# def setup(**kwargs: dict):
+#     global gv
+#     gv=benedict(kwargs, keyattr_enabled=True, keyattr_dynamic=False)
+#     THC.setup(**kwargs)
 
 # def setup(**kwargs):
 #     global gv
@@ -72,8 +81,6 @@ def in_payload_notify(deviceObj, topic_name: str, action: str, payload: (dict, s
     # @LnToDo:  03-03-2023 inserire il display del pulseTime
     #=====================================================================
     if action=='timers_in_payload':
-        # import pdb; pdb.set_trace(); pass # by Loreto
-        # _timers=deviceObj.deviceDB.get('TIMERS')
         _timers_data=deviceObj.getDeviceDB('TIMERS')
 
         for index, relay_name in enumerate(relayNames):

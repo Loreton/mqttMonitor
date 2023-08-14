@@ -180,13 +180,11 @@ def on_message(client, userdata, message):
         LnCmnd.process(topic=message.topic, payload=payload, mqttClient_CB=client)
 
     elif first_qualifier in ["cmnd", "tele", "stat", "tasmota", "LnTelegram"]:
-        # Topic.process(topic=message.topic, payload=payload, mqttClient_CB=client)
         Tasmota_Device.process(topic=message.topic, payload=payload, mqttClient_CB=client)
 
 
     else:
         gv.logger.error('%s: NOT managed. payload: %s', message.topic, payload)
-        import pdb; pdb.set_trace(); pass # by Loreto
 
 
 
@@ -206,17 +204,17 @@ def subscribe(client: mqtt_client, topics: list):
 ####################################################################
 #
 ####################################################################
-def run(**kwargs):
+def run(gVars: dict):
     global gv
-    gv=benedict(kwargs, keyattr_enabled=True, keyattr_dynamic=False)
-    topic_list = kwargs["topics"]
+    gv=gVars
+    topic_list = gv["topics"]
 
 
     ### initialize my modules
-    Tasmota_Device.setup(**kwargs)
-    Shellies_Device.setup(**kwargs)
-    LnCmnd.setup(**kwargs)
-    tgNotify.setup(**kwargs)
+    Tasmota_Device.setup(gVars)
+    Shellies_Device.setup(gVars)
+    LnCmnd.setup(gVars)
+    tgNotify.setup(gVars)
 
 
     dev_name=topic_list[0].lower()

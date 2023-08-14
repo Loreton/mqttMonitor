@@ -1,6 +1,6 @@
 #
 # updated by ...: Loreto Notarantonio
-# Date .........: 30-07-2023 11.09.00
+# Date .........: 31-07-2023 17.23.03
 #
 
 #########################################################
@@ -20,20 +20,12 @@ main:
             # - 7
             # - 13
             # - 19
-            - 6
-    send_status_hours:
             - 8
+    send_status_hours:
+            - 21
             # - 21
 
 
-# broker: !include conf/Mqtt_Brokers.lnk.yaml#brokers.lnmqtt
-
-# telegram: !include conf/telegramGroups.lnk.yaml
-
-
-
-
-# envars: !include conf/ln_system_variables.lnk.yaml
 system_variables: !include conf/ln_system_variables.lnk.yaml#system_envars
 
 

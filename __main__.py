@@ -36,8 +36,8 @@ def loadConfigurationData(gVars: dict):
     gVars["logger"]=logger
     gVars["OpSys"]=platform.system()
 
-    LnUtils.setup(**gVars)
-    FileLoader.setup(**gVars)
+    LnUtils.setup(gVars)
+    FileLoader.setup(gVars)
 
 
     config: dict = FileLoader.load_yaml(filename=f'{prj_name}_config.yaml', to_dict="benedict", remove_templates=True)
@@ -62,7 +62,7 @@ def loadConfigurationData(gVars: dict):
 #######################################################
 if __name__ == '__main__':
     prj_name='mqttMonitor'
-    __ln_version__=f"{prj_name} version: V2023-07-31_082619"
+    __ln_version__=f"{prj_name} version: V2023-08-01_080942"
     args=ParseInput(__ln_version__)
 
     # ---- Loggging
@@ -115,4 +115,4 @@ if __name__ == '__main__':
 
 
     # savePidFile(args.pid_file)
-    mqttClientMonitor.run(**gVars)
+    mqttClientMonitor.run(gVars)

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 30-07-2023 11.58.54
+# Date .........: 01-08-2023 08.00.07
 
 
 
@@ -13,14 +13,22 @@ from types import SimpleNamespace
 
 
 
+#####################################
+# gVars is benedict dictionary
+#####################################
+def setup(gVars: dict):
+    global gv, C
+    gv=gVars
+    C=gv.logger.getColors()
 
 
-def setup(**kwargs):
-    global gv
-    gv=SimpleNamespace()
 
-    gv.logger=kwargs["logger"]
-    gv.devicesDB=kwargs["devicesDB"]
+# def setup(**kwargs):
+#     global gv
+#     gv=SimpleNamespace()
+
+#     gv.logger=kwargs["logger"]
+#     gv.devicesDB=kwargs["devicesDB"]
 
 
 

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 31-07-2023 08.21.34
+# Date .........: 01-08-2023 10.21.54
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -24,16 +24,24 @@ from Tasmota_Class import TasmotaClass
 
 
 
+#####################################
+# gVars is benedict dictionary
+#####################################
+def setup(gVars: dict):
+    global gv, C
+    gv=gVars
+    C=gv.logger.getColors()
+    gv.devices={}
+    gv.macTable={}
 
-def setup(**kwargs):
-    global gv
-    gv=benedict(kwargs, keyattr_enabled=True, keyattr_dynamic=False)
+
+# def setup(**kwargs):
+#     global gv
+#     gv=benedict(kwargs, keyattr_enabled=True, keyattr_dynamic=False)
     # gv=SimpleNamespace()
     # gv.logger=kwargs["logger"]
     # gv.devicesDB=kwargs["devicesDB"]
     # gv.mqttmonitor_runtime_dir=kwargs["mqttmonitor_runtime_dir"]
-    gv.devices={}
-    gv.macTable={}
 
 
 
@@ -140,7 +148,7 @@ def process(topic, payload, mqttClient_CB):
     ### -----------------------------------------------
     if not topic_name in gv.devices:
         gv.logger.info('creating device: %s', topic_name)
-        gv.devices[topic_name]=TasmotaClass(device_name=topic_name, **gv)
+        gv.devices[topic_name]=TasmotaClass(device_name=topic_name, gVars=gv)
         refreshDeviceData(topic_name=topic_name, deviceObj=gv.devices[topic_name], mqttClient_CB=mqttClient_CB)
 
     deviceObj=gv.devices[topic_name]
@@ -231,7 +239,6 @@ def process(topic, payload, mqttClient_CB):
     elif prefix=='tasmota':
         if suffix in ['sensors', 'config']:
             # print(type(payload), isinstance(payload, benedict))
-            # import pdb; pdb.set_trace(); pass # by Loreto
             deviceObj.updateDevice(key_path="Config", data=payload, writeOnFile=True)
 
     else:
