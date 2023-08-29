@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 01-08-2023 10.21.54
+# Date .........: 29-08-2023 19.18.54
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -33,16 +33,7 @@ def setup(gVars: dict):
     C=gv.logger.getColors()
     gv.devices={}
     gv.macTable={}
-
-
-# def setup(**kwargs):
-#     global gv
-#     gv=benedict(kwargs, keyattr_enabled=True, keyattr_dynamic=False)
-    # gv=SimpleNamespace()
-    # gv.logger=kwargs["logger"]
-    # gv.devicesDB=kwargs["devicesDB"]
-    # gv.mqttmonitor_runtime_dir=kwargs["mqttmonitor_runtime_dir"]
-
+    gv.staticDeviceDB=gv.devicesDB
 
 
 
@@ -105,14 +96,6 @@ def sendStatus():
 
 
 
-################################################
-#-
-################################################
-def refreshDeviceData(topic_name: str, deviceObj, mqttClient_CB):
-    deviceObj.telegramNotification(seconds=60) # temoporary stop to telegram notification
-    _commands='state; power; status 0; timers; pulsetime; topic; teleperiod 30; SetOption26 1'
-    result=mqttClient_CB.publish(f'cmnd/{topic_name}/backlog', _commands, qos=0, retain=False)
-
 
 
 #########################################################
@@ -147,9 +130,24 @@ def process(topic, payload, mqttClient_CB):
     ### create device object if not exists
     ### -----------------------------------------------
     if not topic_name in gv.devices:
+        if not topic_name:
+            return
         gv.logger.info('creating device: %s', topic_name)
         gv.devices[topic_name]=TasmotaClass(device_name=topic_name, gVars=gv)
-        refreshDeviceData(topic_name=topic_name, deviceObj=gv.devices[topic_name], mqttClient_CB=mqttClient_CB)
+
+        xxObj=gv.devices[topic_name]
+        static_device=gv.staticDeviceDB.getDevice(mac=xxObj.mac())
+        if static_device:
+            xxObj.telegramNotification(seconds=60) # temoporary stop to telegram notification
+            if topic_name != static_device.name:
+                gv.logger.warning("topic_name: [%s] is different from static device: [%s]", topic_name, static_device.name)
+                commands=static_device.get("tasmota_setup_commands", [])
+                result=mqttClient_CB.publish(f'cmnd/{topic_name}/backlog', ";".join(commands), qos=0, retain=False)
+
+            else:
+                commands=static_device.get("tasmota_refresh_commands", [])
+                result=mqttClient_CB.publish(f'cmnd/{topic_name}/backlog', ";".join(commands), qos=0, retain=False)
+
 
     deviceObj=gv.devices[topic_name]
 

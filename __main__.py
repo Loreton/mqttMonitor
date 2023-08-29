@@ -33,9 +33,6 @@ from TelegramSendMessage_Class import TelegramSendMessage_Class
 #
 #######################################################
 def loadConfigurationData(gVars: dict):
-    gVars["logger"]=logger
-    gVars["OpSys"]=platform.system()
-
     LnUtils.setup(gVars)
     FileLoader.setup(gVars)
 
@@ -43,17 +40,24 @@ def loadConfigurationData(gVars: dict):
     config: dict = FileLoader.load_yaml(filename=f'{prj_name}_config.yaml', to_dict="benedict", remove_templates=True)
     """Load configuration data"""
 
+    LnUtils.writeFile(filepath=f"/tmp/{prj_name}/{prj_name}_unresolved_config.yaml", data=config, replace=True)
+    """save unresolved configuration data"""
+
     FileLoader.resolve_my_references(d=config["devices_data"])
+    """resolve internal cross references"""
+
+    FileLoader.resolve_my_references(d=config)
     """resolve internal cross references"""
 
     LnUtils.writeFile(filepath=f"/tmp/{prj_name}/{prj_name}_full_config.yaml", data=config, replace=True)
     """save full configuration data"""
 
 
-    FileLoader.setVariables(data=config["system_variables"])
+    system_variables=config.pop("system_variables")
+    FileLoader.setVariables(data=system_variables)
     """Setting environment variables"""
-    return config
 
+    return config
 
 
 
@@ -62,7 +66,7 @@ def loadConfigurationData(gVars: dict):
 #######################################################
 if __name__ == '__main__':
     prj_name='mqttMonitor'
-    __ln_version__=f"{prj_name} version: V2023-08-01_080942"
+    __ln_version__=f"{prj_name} version: V2023-08-29_162659"
     args=ParseInput(__ln_version__)
 
     # ---- Loggging
@@ -80,39 +84,33 @@ if __name__ == '__main__':
 
     date_time=datetime.now().strftime("%Y%m%d_%H%M")
 
-    gVars=benedict(**vars(args), keyattr_enabled=True, keyattr_dynamic=False) # copy all input args to gv
+    gv=benedict(**vars(args), keyattr_enabled=True, keyattr_dynamic=False) # copy all input args to gv
+    gv.logger             = logger
+    gv.OpSys: str         = platform.system()
+    gv.prj_name: str      = prj_name
+    gv.search_paths: list = ['conf']
+    gv.date_time: str     = datetime.now().strftime("%Y%m%d_%H%M")
 
-    config=loadConfigurationData(gVars)
+    os.environ['DATE_TIME']=gv.date_time
+    config=loadConfigurationData(gVars=gv)
+
     devices_data=config.pop("devices_data")
-    system_variables=config.pop("system_variables")
-
     devicesDB=devicesDB_Class(db_data=devices_data, error_on_duplicate=True, save_on_file=True, logger=logger, prj_name=prj_name)
     """instantiate deviceaDB class (crea gli indici per alcuni attributi) """
 
 
 
-    gVars["logger"]                 = logger
-    gVars["prj_name"]: str                = prj_name
-    gVars["clear_retained"]               = False
-    gVars["args"]                         = args
-    gVars["mqttmonitor_runtime_dir"]: str = os.path.expandvars("${ln_RUNTIME_DIR}/mqttMonitor")
-    gVars["date_time"]: str               = date_time
-    gVars["search_paths"]: list           = ['conf']
 
-    # gVars["systemd"]: str                 = args.systemd
-    # gVars["tg_group_name"]: str           = args.telegram_group_name
-    # gVars["just_monitor"]: str            = args.just_monitor
-    # gVars["clean_device_data"]: str       = args.clean_data
-    # gVars["topics"]: str                  = args.topics
-    # gVars.update(**args)
-
-    gVars["envars_dir"]: str              = os.environ.get("ln_ENVARS_DIR")
-    gVars["config"]: dict                 = config
-    gVars["devicesDB"]: dict              = devicesDB
-    gVars["telegramMessage"]              = TelegramSendMessage_Class(devicesDB=devicesDB, logger=logger)
-    gVars["broker"]                       = devicesDB.getBroker()
+    gv.clear_retained               = False
+    gv.args                         = args
+    gv.mqttmonitor_runtime_dir: str = os.path.expandvars("${ln_RUNTIME_DIR}/mqttMonitor")
+    gv.envars_dir: str              = os.environ.get("ln_ENVARS_DIR")
+    gv.config: dict                 = config
+    gv.devicesDB: dict              = devicesDB
+    gv.telegramMessage              = TelegramSendMessage_Class(devicesDB=devicesDB, logger=logger)
+    gv.broker                       = devicesDB.getBroker()
 
 
 
     # savePidFile(args.pid_file)
-    mqttClientMonitor.run(gVars)
+    mqttClientMonitor.run(gVars=gv)

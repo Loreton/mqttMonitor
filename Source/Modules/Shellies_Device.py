@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 01-08-2023 08.00.07
+# Date .........: 29-08-2023 16.34.56
 
 
 
@@ -20,15 +20,6 @@ def setup(gVars: dict):
     global gv, C
     gv=gVars
     C=gv.logger.getColors()
-
-
-
-# def setup(**kwargs):
-#     global gv
-#     gv=SimpleNamespace()
-
-#     gv.logger=kwargs["logger"]
-#     gv.devicesDB=kwargs["devicesDB"]
 
 
 

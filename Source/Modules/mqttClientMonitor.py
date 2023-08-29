@@ -89,6 +89,7 @@ def clear_retained_topic(client, message):
 #
 ####################################################################
 def connect_mqtt(client_id: str) -> mqtt_client:
+    gv.logger.info("Connecting to MQTT Broker: %s", gv.broker)
     def on_connect(client, userdata, flags, rc):
         if rc == 0:
             gv.logger.info("Connected to MQTT Broker!")
@@ -217,63 +218,21 @@ def run(gVars: dict):
     tgNotify.setup(gVars)
 
 
-    dev_name=topic_list[0].lower()
-    # Topic.setup(gVars=gv)
-    ### per debug inseriamo un singolo device
-    if dev_name =='tavololavoro':
-        topic_name='TavoloLavoro'
-        mac='C82B964FD367'
-        topic_list.append(f'+/{topic_name}/#')
-        # topic_list.append(f'LnCmnd/#')
-        # topic_list.append(f'LnCmnd/{topic_name}/#')
-        # topic_list.append(f'LnCmnd/mqtt_monitor_application/#')
-        topic_list.append(f'tasmota/discovery/{mac}/#') ### MAC di TavoloLavoro
-
-    elif dev_name =='vescovinew':
-        topic_name='VescoviNew'
-        mac='C44F33978EFA'
-        topic_list.append(f'+/{topic_name}/#')
-        topic_list.append(f'tasmota/discovery/{mac}/#') ### MAC di TavoloLavoro
-
-    elif dev_name =='computercasetta':
-        topic_name='ComputerCasetta'
-        mac='BC:DD:C2:85:AB:47'.replace(':', '')
-        topic_list.append(f'+/{topic_name}/#')
-        topic_list.append(f'tasmota/discovery/{mac}/#') ### MAC di TavoloLavoro
-
-    elif dev_name =='beverino_01':
-        topic_name='Beverino_01'
-        mac='DC4F2292DFAF'
-        topic_list.append(f'+/{topic_name}/#')
-        topic_list.append(f'tasmota/discovery/{mac}/#') ### MAC di TavoloLavoro
-
-    elif dev_name =='scaldasonno':
-        topic_name='Scaldasonno'
-        mac='8CAAB5614B69'
-        topic_list.append(f'+/{topic_name}/#')
-
-    elif dev_name =='farolegnaia':
-        topic_name='FaroLegnaia'
-        mac='BCDDC285AEEB'
-        topic_list.append(f'+/{topic_name}/#')
-        topic_list.append(f'tasmota/discovery/{mac}/#') ### MAC di TavoloLavoro
-
-    elif dev_name =='presscontrol':
-        topic_name='PressControl'
-        mac='600194C24001'
-        topic_list.append(f'+/{topic_name}/#')
-        topic_list.append(f'tasmota/discovery/{mac}/#') ### MAC di TavoloLavoro
-
-    elif dev_name =='loadsuperiore':
-        topic_name='LoadSuperiore'
-        mac='DC4F22931793'
-        topic_list.append(f'+/{topic_name}/#')
-        topic_list.append(f'tasmota/discovery/{mac}/#') ### MAC di TavoloLavoro
+    ### check if a specific topics are entered
+    topics=topic_list[:]
+    for topic in topics:
+        device=gv.devicesDB.getDevice(name=topic)
+        if device:
+            topic_list.remove(topic)
+            topic_name=device.name
+            mac=device.mac.replace(":", "")
+            topic_list.append(f'+/{topic_name}/#')
+            if device.type=="tasmota":
+                topic_list.append(f'tasmota/discovery/{mac}/#') ### MAC
 
     else:
         if not '+/#' in topic_list:
             topic_list.append('tasmota/discovery/#')
-
 
     topic_list.append('LnCmnd/#')
 
