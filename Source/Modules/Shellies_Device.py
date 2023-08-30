@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 29-08-2023 16.34.56
+# Date .........: 30-08-2023 06.42.45
 
 
 
@@ -24,14 +24,18 @@ def setup(gVars: dict):
 
 
 def process(topic, payload, mqttClient_CB):
-    prefix, topic_name, suffix, *rest=topic.split('/')
+    prefix, topic_name, suffix, *rest=topic.split('/') ### potrebbe dare errore
+    token=topic.split("/")
+    if len(token) > 0:
+        prefix=token[0]
 
-    ### --------------
-    if prefix=='LnCmnd':
-        if topic=='LnCmnd/mqtt_monitor_application/query':
-            gv.logger.notify('%s keepalive message has been received', message.topic)
-            return
+        if prefix=='LnCmnd':
+            if topic=='LnCmnd/mqtt_monitor_application/query':
+                gv.logger.notify('%s keepalive message has been received', message.topic)
+                return
 
     else:
         gv.logger.warning("topic: %s not managed - payload: %s", topic, payload)
+
+
 

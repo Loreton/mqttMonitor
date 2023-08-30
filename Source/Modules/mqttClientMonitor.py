@@ -169,6 +169,7 @@ def on_message(client, userdata, message):
     if gv.clear_retained and message.retain:
         clear_retained_topic(client, message)
 
+
     first_qualifier, *rest=message.topic.split('/')
 
     if gv.just_monitor:

@@ -56,6 +56,11 @@ def loadConfigurationData(gVars: dict):
     system_variables=config.pop("system_variables")
     FileLoader.setVariables(data=system_variables)
     """Setting environment variables"""
+    for var in ["ln_ENVARS_DIR", "ln_RUNTIME_DIR"]:
+        if not os.getenv(var):
+            gv.logger.error("La variabile: %s non risulta impostata.", var)
+            sys.exit(1)
+
 
     return config
 
@@ -66,7 +71,7 @@ def loadConfigurationData(gVars: dict):
 #######################################################
 if __name__ == '__main__':
     prj_name='mqttMonitor'
-    __ln_version__=f"{prj_name} version: V2023-08-29_162659"
+    __ln_version__=f"{prj_name} version: V2023-08-30_171314"
     args=ParseInput(__ln_version__)
 
     # ---- Loggging
