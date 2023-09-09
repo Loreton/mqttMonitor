@@ -14,12 +14,12 @@
             "args": [
                 "--logging-dir=/tmp/mqttmonitor", 
                 "--pid-file=/tmp/mqttmonitor/mqttmonitor.pid", 
-                "--telegram-group-name=Ln_MqttMonitor_Client", 
                 "--file-logger-level=warning",
                 "--console-logger-level=info",
-                "--topics=+/VescoviNew/#",
+                // "--topics=+/VescoviNew/#",
                 "--topics=TavoloLavoro",
-                "--clean",
+                "--tg-group-name=Ln_MqttMonitor_Client"
+                // "--clean",
             ],
                 
             "env": {"ln_RUNTIME_DIR": "/home/loreto/ln_runtime"},

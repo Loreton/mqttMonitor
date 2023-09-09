@@ -1,4 +1,4 @@
-source_Dir="$HOME/GIT-REPO/Python/LnPyLib"
+source_Dir="$HOME/GIT-REPO/Python/lnPyLib"
 dest_Dir="Source/lnLib"
 
 
@@ -10,10 +10,13 @@ dest_Dir="Source/lnLib"
 
     ### - Utils
     "Utils/LnUtils.py"
-    "Utils/devicesDB.py"
+    # "Utils/devicesDB.py"
+    "Utils/devicesDB_New_20230902.py"         devicesDB.py
+
 
     ### - Telegram
-    telegram/sendTelegramMsg_Class_V2023b.py  TelegramSendMessage_Class.py
+    # telegram/sendTelegramMsg_Class_V2023b.py  TelegramSendMessage_Class.py
+    telegram/sendTelegramMsg_V202309.py       TelegramSendMessage.py
 
     ### - Tasmota
     "tasmota/Tasmota_Human_Converter.py"
@@ -22,7 +25,7 @@ dest_Dir="Source/lnLib"
     "MQTT/MqttTxRx_Class.py"                          ### - Mqtt
 
     ### - Logger
-    "Logger/ColoredLogger_V1.3.py"          ColoredLogger.py ### rename it
+    "Logger/ColoredLogger_V103.py"          ColoredLogger.py ### rename it
 
     ### - Dictionary
     files/FileLoader.py                FileLoader.py

@@ -29,7 +29,9 @@ import  Tasmota_Device
 import  Shellies_Device
 import  LnCmnd_Process as LnCmnd
 import  Tasmota_Telegram_Notification as tgNotify
+import  TelegramSendMessage as TSM
 
+from Tasmota_Class import TasmotaClass
 
 
 
@@ -147,10 +149,117 @@ def checkPayload(message):
     return payload
 
 
+
 ####################################################################
 #
 ####################################################################
 def on_message(client, userdata, message):
+    gv.publish_timer.restart() # if message has been received means application is alive.
+    gv.logger.info("Received:")
+    full_topic=message.topic
+
+    if message.retain==1:
+        gv.logger.notify("   topic: %s - retained: %s", full_topic, message.retain)
+        gv.logger.notify("   payload: %s", message.payload)
+        if full_topic=='tele/xxxxxVecoviNew/LWT': # forzatura per uno specifico....
+            clear_retained_topic(client, message)
+    else:
+        gv.logger.info("   topic: %s", full_topic)
+        gv.logger.info("   payload: %s", message.payload)
+
+    payload=checkPayload(message)
+
+    if gv.clear_retained and message.retain:
+        clear_retained_topic(client, message)
+
+
+
+
+
+    """viene rilasciato automaticamente da tasmota
+        topic='tasmota/discovery/DC4F22D3B32F/sensors'
+        topic='tasmota/discovery/DC4F22D3B32F/config'
+    cambiare il topic attraverso il MAC """
+    if full_topic.startswith("tasmota/discovery"):
+        # _tasmota, _discovery, _mac,  suffix, *rest=topic.split('/')
+        mac=payload.get('mac')
+        topic_name=payload.get('t')
+
+        if (device:=gv.devicesDB.getDeviceInstance(mac=mac)) is None:
+            gv.logger.error("MAC: %s [%s] NOT found in devicesDB.", mac, full_topic)
+            return
+
+        full_topic=f'tasmota/{topic_name}/{suffix}'
+
+
+    first_qualifier, topic_name, *rest=full_topic.split('/')
+
+
+    # ------------------------------------------------------
+    # - device è un object_class e non un dictionary
+    # ------------------------------------------------------
+    if (device:=gv.devicesDB.getDeviceInstance(dev_name=topic_name)) is None:
+        gv.logger.error("tgGroup: %s NOT found in devicesDB.", topic_name)
+        return
+
+
+
+
+    """ create relative class_type intance"""
+    if device.type=="tasmota":
+        if not device.name in gv.tasmotaDevices.keys():
+            tasmota_dev=TasmotaClass(device_class=device, gVars=gv)
+            gv.tasmotaDevices[device.name]=tasmota_dev
+        else:
+            tasmota_dev=gv.tasmotaDevices[device.name]
+
+
+        tasmota_dev.processMqttMessage(topic=full_topic, payload=payload, mqttClient_CB=client)
+
+
+    elif device.type=='shelly':
+        err_msg="per gli shelly non ancora implementato"
+        gv.logger.warning(err_msg)
+
+    elif device.type=='application':
+        err_msg="per i gruppi tipo application non ancora implementato"
+        gv.logger.warning(err_msg)
+
+    else:
+        err_msg=f"{full_topic} non ancora implementato"
+        gv.logger.warning(err_msg)
+
+
+
+
+
+
+
+
+
+
+    # if gv.just_monitor:
+    #     pass
+
+    # elif first_qualifier in ["shellies"]:
+    #     Shellies_Device.process(topic=message.topic, payload=payload, mqttClient_CB=client)
+
+    # elif first_qualifier in ["LnCmnd"]:
+    #     LnCmnd.process(topic=message.topic, payload=payload, mqttClient_CB=client)
+
+    # elif first_qualifier in ["cmnd", "tele", "stat", "tasmota", "LnTelegram"]:
+    #     Tasmota_Device.process(topic=message.topic, payload=payload, mqttClient_CB=client)
+
+
+    # else:
+    #     gv.logger.error('%s: NOT managed. payload: %s', message.topic, payload)
+
+
+
+####################################################################
+#
+####################################################################
+def on_message_prev(client, userdata, message):
     gv.publish_timer.restart() # if message has been received means application is alive.
 
 
@@ -210,19 +319,36 @@ def run(gVars: dict):
     global gv
     gv=gVars
     topic_list = gv["topics"]
+    gv.tasmotaDevices={}
+    gv.macTable={}
 
+
+
+    ### - get application info from deviceDB
+    if (appl_device := gv.devicesDB.getDeviceInstance(dev_name=gv.tg_group_name)):
+        assert appl_device.type=="application"
+        # appl_tg=appl_device.tg
+    else:
+        gv.logger.error("%s NOT found in devicesDB.", gv.tg_group_name)
+        sys.exit(1)
+
+    gv.appl_device=appl_device
 
     ### initialize my modules
+    TSM.setup(gVars)
     Tasmota_Device.setup(gVars)
     Shellies_Device.setup(gVars)
     LnCmnd.setup(gVars)
     tgNotify.setup(gVars)
 
 
+
+
+
     ### check if a specific topics are entered
     topics=topic_list[:]
     for topic in topics:
-        device=gv.devicesDB.getDevice(name=topic)
+        device=gv.devicesDB.getDeviceInstance(dev_name=topic)
         if device:
             topic_list.remove(topic)
             topic_name=device.name
@@ -252,7 +378,7 @@ def run(gVars: dict):
 
 
     client.loop_start()
-    gv.telegramMessage.send_html(group_name=gv.tg_group_name, message="application has been started!", caller=True) ### markdown dà errore
+    TSM.send_html(tg_group=appl_device.tg, message="application has been started!", caller=True, notify=True)
     time.sleep(4) # Wait for connection setup to complete
 
 
@@ -270,7 +396,7 @@ def run(gVars: dict):
 
             if hh in gv.config['main.still_alive_interval_hours']:
                 savePidFile(gv.args.pid_file)
-                gv.telegramMessage.send_html(group_name=gv.tg_group_name, message="I'm still alive!", caller=True)
+                TSM.send_html(tg_group=appl_device.tg, message="I'm still alive!", caller=True, notify=False)
 
 
         gv.logger.info('publishing check/ping mqtt message')
@@ -283,7 +409,7 @@ def run(gVars: dict):
         if gv.publish_timer.remaining_time() <= 0:
             gv.logger.error('publish_timer - exausted')
             gv.logger.error('restarting application')
-            gv.telegramMessage.send(group_name=gv.tg_group_name, msg_text="publish_timer - exausted - application is restarting!", caller=True)
+            TSM.send_html(tg_group=appl_device.tg, message="publish_timer - exausted - application is restarting!", caller=True, notify=False)
 
             os.kill(int(os.getpid()), signal.SIGTERM)
 

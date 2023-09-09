@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 29-08-2023 19.18.54
+# Date .........: 09-09-2023 16.05.44
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -31,9 +31,9 @@ def setup(gVars: dict):
     global gv, C
     gv=gVars
     C=gv.logger.getColors()
-    gv.devices={}
+    gv.running_devices={}
     gv.macTable={}
-    gv.staticDeviceDB=gv.devicesDB
+    # gv.staticDeviceDB=gv.devicesDB
 
 
 
@@ -87,9 +87,9 @@ def tasmota_discovery_modify_topic(topic, mac_table, payload):
 ##########################################################
 def sendStatus():
     gv.logger.notify("Sending summary to Telegram")
-    for topic_name in gv.devices.keys():
+    for topic_name in gv.running_devices.keys():
         gv.logger.notify("Sending summary for %s to Telegram", topic_name)
-        tgNotify.telegram_notify(deviceObj=gv.devices[topic_name], topic_name=topic_name, payload={"alias": "summary"})
+        tgNotify.telegram_notify(deviceObj=gv.running_devices[topic_name], topic_name=topic_name, payload={"alias": "summary"})
 
 
 
@@ -129,14 +129,15 @@ def process(topic, payload, mqttClient_CB):
     ### -----------------------------------------------
     ### create device object if not exists
     ### -----------------------------------------------
-    if not topic_name in gv.devices:
+    if not topic_name in gv.running_devices:
         if not topic_name:
             return
+        import pdb; pdb.set_trace(); pass # by Loreto
         gv.logger.info('creating device: %s', topic_name)
-        gv.devices[topic_name]=TasmotaClass(device_name=topic_name, gVars=gv)
+        gv.running_devices[topic_name]=TasmotaClass(device_name=topic_name, gVars=gv)
 
-        xxObj=gv.devices[topic_name]
-        static_device=gv.staticDeviceDB.getDevice(mac=xxObj.mac())
+        xxObj=gv.running_devices[topic_name]
+        static_device=gv.devicesDB_class.getDeviceInstance(mac=xxObj.mac())
         if static_device:
             xxObj.telegramNotification(seconds=60) # temoporary stop to telegram notification
             if topic_name != static_device.name:
@@ -149,7 +150,7 @@ def process(topic, payload, mqttClient_CB):
                 result=mqttClient_CB.publish(f'cmnd/{topic_name}/backlog', ";".join(commands), qos=0, retain=False)
 
 
-    deviceObj=gv.devices[topic_name]
+    deviceObj=gv.running_devices[topic_name]
 
         ### -----------------------------------------------
         ### comandi derivanti da altre applicazioni per ottenere info

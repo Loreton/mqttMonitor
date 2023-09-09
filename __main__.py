@@ -26,44 +26,39 @@ import FileLoader
 import LnUtils
 from    devicesDB import devicesDB_Class
 
-from TelegramSendMessage_Class import TelegramSendMessage_Class
+# from TelegramSendMessage_Class import TelegramSendMessage_Class
 
 
-#######################################################
-#
-#######################################################
-def loadConfigurationData(gVars: dict):
-    LnUtils.setup(gVars)
-    FileLoader.setup(gVars)
+
+def setVars(type: str=None):
+    global gv
+    if type=="01":
+        # ----- basic variables
+        gv=benedict(**vars(args), keyattr_enabled=True, keyattr_dynamic=False) # copy all input args to gv
+        gv.logger             = logger
+        gv.OpSys: str         = platform.system()
+        gv.prj_name: str      = prj_name
+        gv.search_paths: list = ['conf']
+        gv.date_time: str     = datetime.now().strftime("%Y%m%d_%H%M")
+        gv.tmp_dir=f"/tmp/{prj_name}"
+        os.environ['DATE_TIME']=gv.date_time
+
+        # ----- modules initialization
+        LnUtils.setup(gVars=gv)
+        FileLoader.setup(gVars=gv)
 
 
-    config: dict = FileLoader.load_yaml(filename=f'{prj_name}_config.yaml', to_dict="benedict", remove_templates=True)
-    """Load configuration data"""
 
-    LnUtils.writeFile(filepath=f"/tmp/{prj_name}/{prj_name}_unresolved_config.yaml", data=config, replace=True)
-    """save unresolved configuration data"""
+    else:
+        gv.clear_retained                   = False
+        gv.args                             = args
+        gv.mqttmonitor_runtime_dir: str     = os.path.expandvars("${ln_RUNTIME_DIR}/mqttMonitor")
+        gv.envars_dir: str                  = os.environ.get("ln_ENVARS_DIR")
+        gv.config: dict                     = config
+        gv.devicesDB: devicesDB_Class = devicesDB
+        gv.broker                           = devicesDB.getBroker()
 
-    FileLoader.resolve_my_references(d=config["devices_data"])
-    """resolve internal cross references"""
-
-    FileLoader.resolve_my_references(d=config)
-    """resolve internal cross references"""
-
-    LnUtils.writeFile(filepath=f"/tmp/{prj_name}/{prj_name}_full_config.yaml", data=config, replace=True)
-    """save full configuration data"""
-
-
-    system_variables=config.pop("system_variables")
-    FileLoader.setVariables(data=system_variables)
-    """Setting environment variables"""
-    for var in ["ln_ENVARS_DIR", "ln_RUNTIME_DIR"]:
-        if not os.getenv(var):
-            gv.logger.error("La variabile: %s non risulta impostata.", var)
-            sys.exit(1)
-
-
-    return config
-
+    return gv
 
 
 #######################################################
@@ -71,7 +66,7 @@ def loadConfigurationData(gVars: dict):
 #######################################################
 if __name__ == '__main__':
     prj_name='mqttMonitor'
-    __ln_version__=f"{prj_name} version: V2023-08-30_171314"
+    __ln_version__=f"{prj_name} version: V2023-09-09_183741"
     args=ParseInput(__ln_version__)
 
     # ---- Loggging
@@ -87,35 +82,21 @@ if __name__ == '__main__':
     logger.info('------- Starting -----------')
     logger.warning(__ln_version__)
 
-    date_time=datetime.now().strftime("%Y%m%d_%H%M")
+    # ----- basic variables
+    gv=setVars("01")
 
-    gv=benedict(**vars(args), keyattr_enabled=True, keyattr_dynamic=False) # copy all input args to gv
-    gv.logger             = logger
-    gv.OpSys: str         = platform.system()
-    gv.prj_name: str      = prj_name
-    gv.search_paths: list = ['conf']
-    gv.date_time: str     = datetime.now().strftime("%Y%m%d_%H%M")
 
-    os.environ['DATE_TIME']=gv.date_time
-    config=loadConfigurationData(gVars=gv)
+    # ----- read configuration data
+    config_file=f"{prj_name}_config.yaml"
+    config=FileLoader.loadConfigurationData(config_file=config_file, tmp_dir=gv.tmp_dir, gVars=gv)
 
     devices_data=config.pop("devices_data")
     devicesDB=devicesDB_Class(db_data=devices_data, error_on_duplicate=True, save_on_file=True, logger=logger, prj_name=prj_name)
-    """instantiate deviceaDB class (crea gli indici per alcuni attributi) """
+    """instantiate deviceaDB class """
 
 
-
-
-    gv.clear_retained               = False
-    gv.args                         = args
-    gv.mqttmonitor_runtime_dir: str = os.path.expandvars("${ln_RUNTIME_DIR}/mqttMonitor")
-    gv.envars_dir: str              = os.environ.get("ln_ENVARS_DIR")
-    gv.config: dict                 = config
-    gv.devicesDB: dict              = devicesDB
-    gv.telegramMessage              = TelegramSendMessage_Class(devicesDB=devicesDB, logger=logger)
-    gv.broker                       = devicesDB.getBroker()
-
-
+    # ----- extra variables
+    gv=setVars("02")
 
     # savePidFile(args.pid_file)
     mqttClientMonitor.run(gVars=gv)
