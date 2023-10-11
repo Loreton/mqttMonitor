@@ -5,7 +5,7 @@
 # Date .........: 2021-09-17
 #
 # updated by ...: Loreto Notarantonio
-# Date .........: 31-07-2023 08.28.55
+# Date .........: 11-10-2023 12.10.41
 #
 
 import  sys; sys.dont_write_bytecode = True
@@ -120,7 +120,7 @@ def ParseInput(version):
 
     parser.add_argument('--retained',
                         action='store_true',
-                        help='''display retaied messages (default: %(default)s)\n\n''')
+                        help='''display retained messages (default: %(default)s)\n\n''')
 
     parser.add_argument('--just-monitor',
                         action='store_true',

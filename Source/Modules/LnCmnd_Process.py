@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 01-08-2023 08.10.15
+# Date .........: 10-10-2023 15.37.54
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -43,7 +43,7 @@ def process(topic, payload, mqttClient_CB):
 
     ### --------------
     if prefix=='LnCmnd':
-        if topic=='LnCmnd/mqtt_monitor_application/query':
+        if topic=='LnCmnd/mqtt_monitor_application/ping': # serve solo per far ripartire il publish_timer nel on_message()
             gv.logger.notify('%s keepalive message has been received', topic)
             return
 
@@ -51,7 +51,7 @@ def process(topic, payload, mqttClient_CB):
         ### comandi derivanti da altre applicazioni per ottenere info
         ### da inviare a telegram group
         ### -----------------------------------------------
-    elif first_qualifier in ["LnTelegram"]:
+    elif prefix in ["LnTelegram"]:
         tgNotify.telegram_notify(deviceObj=deviceObj, topic_name=topic_name, payload=payload)
         return
 

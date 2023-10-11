@@ -25,6 +25,7 @@ from savePidFile import savePidFile
 import FileLoader
 import LnUtils
 from    devicesDB import devicesDB_Class
+import    TelegramSendMessage
 
 # from TelegramSendMessage_Class import TelegramSendMessage_Class
 
@@ -46,6 +47,7 @@ def setVars(type: str=None):
         # ----- modules initialization
         LnUtils.setup(gVars=gv)
         FileLoader.setup(gVars=gv)
+        TelegramSendMessage.setup(gVars=gv)
 
 
 
@@ -55,8 +57,9 @@ def setVars(type: str=None):
         gv.mqttmonitor_runtime_dir: str     = os.path.expandvars("${ln_RUNTIME_DIR}/mqttMonitor")
         gv.envars_dir: str                  = os.environ.get("ln_ENVARS_DIR")
         gv.config: dict                     = config
-        gv.devicesDB: devicesDB_Class = devicesDB
+        gv.devicesDB: devicesDB_Class       = devicesDB
         gv.broker                           = devicesDB.getBroker()
+        gv.telegramMessage                  = TelegramSendMessage
 
     return gv
 
@@ -66,7 +69,7 @@ def setVars(type: str=None):
 #######################################################
 if __name__ == '__main__':
     prj_name='mqttMonitor'
-    __ln_version__=f"{prj_name} version: V2023-09-09_183741"
+    __ln_version__=f"{prj_name} version: V2023-10-10_183314"
     args=ParseInput(__ln_version__)
 
     # ---- Loggging

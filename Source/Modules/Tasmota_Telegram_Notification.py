@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 01-08-2023 08.11.42
+# Date .........: 11-10-2023 16.36.17
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -21,6 +21,8 @@ from types import SimpleNamespace
 
 from LnUtils import dict_bold_italic
 import Tasmota_Human_Converter as THC
+from Tasmota_Class import TasmotaClass # solo per typing
+
 
 
 
@@ -58,7 +60,9 @@ def setup(gVars: dict):
 # topic='LnTelegram/topic_name/summary'
 #
 ######################################################
-def in_payload_notify(deviceObj, topic_name: str, action: str, payload: (dict, str)=None):
+# def in_payload_notify(deviceObj, topic_name: str, action: str, payload: (dict, str)=None):
+def in_payload_notify(deviceObj, action: str, payload: (dict, str)=None):
+    topic_name=deviceObj.device_name
     gv.logger.info('processing topic %s - %s ', topic_name, action, stacklevel=2)
 
     tg_dictMsg={"tg_notify": False}
@@ -71,17 +75,17 @@ def in_payload_notify(deviceObj, topic_name: str, action: str, payload: (dict, s
 
 
 
-    for index in range(deviceObj.relays):
-        relay_name=deviceObj.friendlyNames(index)
+    # for index in range(deviceObj.relays):
+    #     relay_name=deviceObj.friendlyNames(index)
 
-    relayNames=deviceObj.friendlyNames()
+    relayNames=deviceObj.deviceDB.friendlyNames
 
     #=====================================================================
     # actions from Topic_Process
     # @LnToDo:  03-03-2023 inserire il display del pulseTime
     #=====================================================================
     if action=='timers_in_payload':
-        _timers_data=deviceObj.getDeviceDB('TIMERS')
+        _timers_data=deviceObj.timers()
 
         for index, relay_name in enumerate(relayNames):
             relay_nr=index+1
@@ -91,7 +95,7 @@ def in_payload_notify(deviceObj, topic_name: str, action: str, payload: (dict, s
             # @ToDo:  15-03-2023 verificare timer di VescoviNew
             tg_dictMsg[relay_name]["Timers"]=THC.timersToHuman(timers_data=_timers_data, relay_nr=relay_nr)
 
-            pt_value, pt_remaining=THC.pulseTimeToHuman(pulsetime_data=deviceObj.getDeviceDB('PulseTime'), relay_nr=relay_nr, strip_leading=True)
+            pt_value, pt_remaining=THC.pulseTimeToHuman(pulsetime_data=deviceObj.pulsetime(), relay_nr=relay_nr, strip_leading=True)
             if pt_value!=0:
                 tg_dictMsg[relay_name]["Pulsetime"]=f"{pt_value} ({pt_remaining})"
 
@@ -123,7 +127,7 @@ def in_payload_notify(deviceObj, topic_name: str, action: str, payload: (dict, s
                     else:
                         tg_dictMsg[relay_name]['Status']=deviceObj.relayStatus(relay_nr=relay_nr)
 
-                    pt_value, pt_remaining=THC.pulseTimeToHuman(pulsetime_data=deviceObj.getDeviceDB('PulseTime'), relay_nr=relay_nr, strip_leading=True)
+                    pt_value, pt_remaining=THC.pulseTimeToHuman(pulsetime_data=deviceObj.pulsetime(), relay_nr=relay_nr, strip_leading=True)
 
                     if pt_value!=0:
                         tg_dictMsg[relay_name]["Pulsetime"]=f"{pt_value} ({pt_remaining})"
@@ -139,7 +143,7 @@ def in_payload_notify(deviceObj, topic_name: str, action: str, payload: (dict, s
         for index, relay_name in enumerate(relayNames):
             relay_nr=index+1
             name=f'relay_{relay_name}'
-            pt_value, pt_remaining=THC.pulseTimeToHuman(pulsetime_data=deviceObj.getDeviceDB('PulseTime'), relay_nr=relay_nr, strip_leading=True)
+            pt_value, pt_remaining=THC.pulseTimeToHuman(pulsetime_data=deviceObj.pulsetime(), relay_nr=relay_nr, strip_leading=True)
 
             tg_dictMsg[relay_name]={}
             tg_dictMsg[relay_name]["Pulsetime"]=f"{pt_value} ({pt_remaining})"
@@ -160,7 +164,8 @@ def in_payload_notify(deviceObj, topic_name: str, action: str, payload: (dict, s
     else:
         return
 
-    notify_telegram_group(topic_name=topic_name, data=tg_dictMsg)
+    # notify_telegram_group(topic_name=topic_name, data=tg_dictMsg)
+    notify_telegram_group(deviceObj=deviceObj, data=tg_dictMsg)
 
 
 
@@ -173,13 +178,16 @@ def in_payload_notify(deviceObj, topic_name: str, action: str, payload: (dict, s
 #
 ######################################################
 # def telegram_notify(deviceObj, topic_name: str, action: str, payload: (dict, str)=None):
-def telegram_notify(deviceObj, topic_name: str,  payload: (dict, str)=None):
+# def telegram_notify(deviceObj: TasmotaClass, topic_name: str,  payload: (dict, str)=None):
+def telegram_notify(deviceObj: TasmotaClass, payload: (dict, str)=None):
+    topic_name=deviceObj.device_name
     gv.logger.info('processing topic %s - payload: %s ', topic_name, str(payload))
 
     if isinstance(payload, dict):
         if 'debug' in payload and payload['debug'] is True: ### in caso di debug da telegram
             tg_msg[gv.prj_name]['msg']="has been received"
-            gv.telegramMessage.send(group_name=topic_name, message=tg_msg)
+            # gv.telegramMessage.send_html(tg_group=topic_name, message=tg_msg) # @ToDo:  10-10-2023 tg_group deve essere un dictionary
+            gv.telegramMessage.send_html(tg_group=deviceObj.deviceDB.tg, message=tg_msg) # @ToDo:  10-10-2023 tg_group deve essere un dictionary
     else:
         gv.logger.warning('%s - payload is not a dictionary: %s', topic_name, payload)
         return
@@ -187,7 +195,7 @@ def telegram_notify(deviceObj, topic_name: str,  payload: (dict, str)=None):
     alias=payload["alias"]
     tg_dictMsg={"tg_notify": False}
 
-    relayNames=deviceObj.friendlyNames()
+    # relayNames=deviceObj.friendlyNames
 
     #=====================================================================
     # actions from telegramBot
@@ -195,11 +203,11 @@ def telegram_notify(deviceObj, topic_name: str,  payload: (dict, str)=None):
     if alias in ['summary', 'status']:
         tg_dictMsg.update(deviceObj.Info())
         tg_dictMsg['Wifi']=deviceObj.wifi()
-        _timers_data=deviceObj.getDeviceDB('TIMERS')
+        _timers_data=deviceObj.timers()
 
-        for index, relay_name in enumerate(relayNames):
+        for index, relay_name in enumerate(deviceObj.friendlyNames()):
             relay_nr=index+1
-            pt_value, pt_remaining=THC.pulseTimeToHuman(pulsetime_data=deviceObj.getDeviceDB('PulseTime'), relay_nr=relay_nr, strip_leading=True)
+            pt_value, pt_remaining=THC.pulseTimeToHuman(pulsetime_data=deviceObj.pulsetime(), relay_nr=relay_nr, strip_leading=True)
             # pt_value, pt_remaining=deviceObj.pulseTimeToHuman(relay_nr=index) ### parte da '0''
 
             relay_name=f'relay_{relay_name}'
@@ -225,14 +233,14 @@ def telegram_notify(deviceObj, topic_name: str,  payload: (dict, str)=None):
 
 
     if tg_dictMsg:
-        notify_telegram_group(topic_name=topic_name, data=tg_dictMsg)
+        notify_telegram_group(deviceObj=deviceObj, data=tg_dictMsg)
 
 
 
 ############################################################
 #
 ############################################################
-def notify_telegram_group(topic_name: str, data: (dict, str)):
+def notify_telegram_group(deviceObj: TasmotaClass, data: (dict, str)):
     tg_notify=False
 
     if isinstance(data, dict):
@@ -247,5 +255,6 @@ def notify_telegram_group(topic_name: str, data: (dict, str)):
     else:
         tg_msg=data
 
-    gv.telegramMessage.send_html(group_name=topic_name, message=tg_msg, caller=True, notify=tg_notify)
+    # gv.telegramMessage.send_html(tg_group=topic_name, message=tg_msg, caller=True, notify=tg_notify) # @ToDo:  10-10-2023 tg_group deve essere un dictionary
+    gv.telegramMessage.send_html(tg_group=deviceObj.deviceDB.tg, message=tg_msg, caller=True, notify=tg_notify) # @ToDo:  10-10-2023 tg_group deve essere un dictionary
 

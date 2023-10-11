@@ -181,12 +181,16 @@ def on_message(client, userdata, message):
         topic='tasmota/discovery/DC4F22D3B32F/config'
     cambiare il topic attraverso il MAC """
     if full_topic.startswith("tasmota/discovery"):
-        # _tasmota, _discovery, _mac,  suffix, *rest=topic.split('/')
-        mac=payload.get('mac')
-        topic_name=payload.get('t')
+        _tasmota, _discovery, _mac,  suffix, *rest=full_topic.split('/')
+        if _mac and not ":" in _mac:
+            _mac=':'.join(_mac[i:i+2] for i in range(0,12,2))
 
-        if (device:=gv.devicesDB.getDeviceInstance(mac=mac)) is None:
-            gv.logger.error("MAC: %s [%s] NOT found in devicesDB.", mac, full_topic)
+        if "t" in payload: # contains topic_name
+            topic_name=payload["t"]
+            if (device:=gv.devicesDB.getDeviceInstance(mac=_mac)) is None:
+                gv.logger.error("MAC: %s [topic: %s] NOT found in devicesDB.", _mac, full_topic)
+                return
+        else:
             return
 
         full_topic=f'tasmota/{topic_name}/{suffix}'
@@ -194,27 +198,36 @@ def on_message(client, userdata, message):
 
     first_qualifier, topic_name, *rest=full_topic.split('/')
 
+    if first_qualifier in ["LnCmnd"]:
+        LnCmnd.process(topic=message.topic, payload=payload, mqttClient_CB=client)
+        return
+
 
     # ------------------------------------------------------
+    # - prendiamo le caratteristiche del device
     # - device è un object_class e non un dictionary
     # ------------------------------------------------------
     if (device:=gv.devicesDB.getDeviceInstance(dev_name=topic_name)) is None:
-        gv.logger.error("tgGroup: %s NOT found in devicesDB.", topic_name)
+        gv.logger.error("tgGroup: '%s' [topic: %s]  NOT found in devicesDB - payload: %s", topic_name, full_topic, payload)
         return
 
 
 
 
-    """ create relative class_type intance"""
+    """ create relative class_type intance
+        include also deviceDB data
+    """
     if device.type=="tasmota":
+        # se non presente nella lista dinamica tasmotaDevices
         if not device.name in gv.tasmotaDevices.keys():
-            tasmota_dev=TasmotaClass(device_class=device, gVars=gv)
-            gv.tasmotaDevices[device.name]=tasmota_dev
+            dynamic_dev=TasmotaClass(device_class=device, gVars=gv)
+            gv.tasmotaDevices[device.name]=dynamic_dev
+            # dynamic_dev.deviceDB=device ### aggiungiamo lo static_device al dynamic_device
         else:
-            tasmota_dev=gv.tasmotaDevices[device.name]
+            dynamic_dev=gv.tasmotaDevices[device.name]
 
 
-        tasmota_dev.processMqttMessage(topic=full_topic, payload=payload, mqttClient_CB=client)
+        dynamic_dev.processMqttMessage(topic=full_topic, payload=payload, mqttClient_CB=client)
 
 
     elif device.type=='shelly':
@@ -399,8 +412,8 @@ def run(gVars: dict):
                 TSM.send_html(tg_group=appl_device.tg, message="I'm still alive!", caller=True, notify=False)
 
 
-        gv.logger.info('publishing check/ping mqtt message')
-        result=client.publish(topic='LnCmnd/mqtt_monitor_application/query', payload='publish timer', qos=0, retain=False)
+        gv.logger.info('publishing ping mqtt message to restart publish_timer')
+        result=client.publish(topic='LnCmnd/mqtt_monitor_application/ping', payload='publish timer', qos=0, retain=False)
 
         """ ho notato che dopo un pò il client va in hang e non cattura più
             i messaggi. Il codice che segue serve a monitorare lo status
