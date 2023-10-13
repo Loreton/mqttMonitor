@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 09-09-2023 16.05.44
+# Date .........: 13-10-2023 17.21.19
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -85,7 +85,7 @@ def tasmota_discovery_modify_topic(topic, mac_table, payload):
 ##########################################################
 # Invia un summary status per tutti i device
 ##########################################################
-def sendStatus():
+def sendStatus_OLD():
     gv.logger.notify("Sending summary to Telegram")
     for topic_name in gv.running_devices.keys():
         gv.logger.notify("Sending summary for %s to Telegram", topic_name)
@@ -101,7 +101,7 @@ def sendStatus():
 #########################################################
 #  Per comodità cerco di utilizzare il topic_name==Device_name
 #########################################################
-def process(topic, payload, mqttClient_CB):
+def process_OLD(topic, payload, mqttClient_CB):
     gv.logger.info('processing topic: %s', topic)
     gv.logger.info('   payload: %s - %s', type(payload), payload)
 
@@ -130,11 +130,12 @@ def process(topic, payload, mqttClient_CB):
     ### create device object if not exists
     ### -----------------------------------------------
     if not topic_name in gv.running_devices:
-        if not topic_name:
-            return
+        gv.logger.error('device_name: %s NOT found in running devices', topic_name)
+        return
+
         import pdb; pdb.set_trace(); pass # by Loreto
         gv.logger.info('creating device: %s', topic_name)
-        gv.running_devices[topic_name]=TasmotaClass(device_name=topic_name, gVars=gv)
+        # gv.running_devices[topic_name]=TasmotaClass(deviceDB_class=topic_name, gVars=gv)
 
         xxObj=gv.running_devices[topic_name]
         static_device=gv.devicesDB_class.getDeviceInstance(mac=xxObj.mac())
@@ -149,6 +150,8 @@ def process(topic, payload, mqttClient_CB):
                 commands=static_device.get("tasmota_refresh_commands", [])
                 result=mqttClient_CB.publish(f'cmnd/{topic_name}/backlog', ";".join(commands), qos=0, retain=False)
 
+        '''
+        '''
 
     deviceObj=gv.running_devices[topic_name]
 
@@ -187,7 +190,7 @@ def process(topic, payload, mqttClient_CB):
             pulsetime_key=payload.in_key(in_str='PulseTime', first_match=True)
             timer_key=payload.in_key(in_str='Timer', first_match=True)
             
-            ### action indica se dobbiamo inviare un messaggio a telegram
+            ### action indica quale tipo di messaggio dobbiamo inviare un messaggio a telegram
             action=None
 
             if power_key:

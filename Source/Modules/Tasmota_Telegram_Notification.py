@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 11-10-2023 16.36.17
+# Date .........: 13-10-2023 16.33.14
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -195,7 +195,6 @@ def telegram_notify(deviceObj: TasmotaClass, payload: (dict, str)=None):
     alias=payload["alias"]
     tg_dictMsg={"tg_notify": False}
 
-    # relayNames=deviceObj.friendlyNames
 
     #=====================================================================
     # actions from telegramBot

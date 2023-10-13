@@ -25,8 +25,8 @@ from benedict import benedict
 from    LnTimer import TimerLN as LnTimer
 from    savePidFile import savePidFile
 
-import  Tasmota_Device
-import  Shellies_Device
+# import  Tasmota_Device
+# import  Shellies_Device
 import  LnCmnd_Process as LnCmnd
 import  Tasmota_Telegram_Notification as tgNotify
 import  TelegramSendMessage as TSM
@@ -220,14 +220,13 @@ def on_message(client, userdata, message):
     if device.type=="tasmota":
         # se non presente nella lista dinamica tasmotaDevices
         if not device.name in gv.tasmotaDevices.keys():
-            dynamic_dev=TasmotaClass(device_class=device, gVars=gv)
-            gv.tasmotaDevices[device.name]=dynamic_dev
-            # dynamic_dev.deviceDB=device ### aggiungiamo lo static_device al dynamic_device
+            tasmota_dynamic_dev=TasmotaClass(deviceDB_class=device, gVars=gv)
+            gv.tasmotaDevices[device.name]=tasmota_dynamic_dev
         else:
-            dynamic_dev=gv.tasmotaDevices[device.name]
+            tasmota_dynamic_dev=gv.tasmotaDevices[device.name]
 
 
-        dynamic_dev.processMqttMessage(topic=full_topic, payload=payload, mqttClient_CB=client)
+        tasmota_dynamic_dev.processMqttMessage(full_topic=full_topic, payload=payload, mqttClient_CB=client)
 
 
     elif device.type=='shelly':
@@ -249,66 +248,6 @@ def on_message(client, userdata, message):
 
 
 
-
-
-    # if gv.just_monitor:
-    #     pass
-
-    # elif first_qualifier in ["shellies"]:
-    #     Shellies_Device.process(topic=message.topic, payload=payload, mqttClient_CB=client)
-
-    # elif first_qualifier in ["LnCmnd"]:
-    #     LnCmnd.process(topic=message.topic, payload=payload, mqttClient_CB=client)
-
-    # elif first_qualifier in ["cmnd", "tele", "stat", "tasmota", "LnTelegram"]:
-    #     Tasmota_Device.process(topic=message.topic, payload=payload, mqttClient_CB=client)
-
-
-    # else:
-    #     gv.logger.error('%s: NOT managed. payload: %s', message.topic, payload)
-
-
-
-####################################################################
-#
-####################################################################
-def on_message_prev(client, userdata, message):
-    gv.publish_timer.restart() # if message has been received means application is alive.
-
-
-    gv.logger.info("Received:")
-    if message.retain==1:
-        gv.logger.notify("   topic: %s - retained: %s", message.topic, message.retain)
-        gv.logger.notify("   payload: %s", message.payload)
-        if message.topic=='tele/xxxxxVecoviNew/LWT': # forzatura per uno specifico....
-            clear_retained_topic(client, message)
-    else:
-        gv.logger.info("   topic: %s", message.topic)
-        gv.logger.info("   payload: %s", message.payload)
-
-    payload=checkPayload(message)
-
-    if gv.clear_retained and message.retain:
-        clear_retained_topic(client, message)
-
-
-    first_qualifier, *rest=message.topic.split('/')
-
-    if gv.just_monitor:
-        pass
-
-    elif first_qualifier in ["shellies"]:
-        Shellies_Device.process(topic=message.topic, payload=payload, mqttClient_CB=client)
-
-    elif first_qualifier in ["LnCmnd"]:
-        LnCmnd.process(topic=message.topic, payload=payload, mqttClient_CB=client)
-
-    elif first_qualifier in ["cmnd", "tele", "stat", "tasmota", "LnTelegram"]:
-        Tasmota_Device.process(topic=message.topic, payload=payload, mqttClient_CB=client)
-
-
-    else:
-        gv.logger.error('%s: NOT managed. payload: %s', message.topic, payload)
 
 
 
@@ -405,7 +344,12 @@ def run(gVars: dict):
 
         if mm==0:
             if hh in gv.config['main.send_status_hours']:
-                Tasmota_Device.sendStatus()
+                # @ToDo:  13-10-2023 da verificare
+                gv.logger.notify("Sending summary to Telegram")
+                for name in gv.tasmotaDevices:
+                    device=gv.tasmotaDevices[device]
+                    device.sendStatus(payload={"alias": "summary"})
+
 
             if hh in gv.config['main.still_alive_interval_hours']:
                 savePidFile(gv.args.pid_file)
