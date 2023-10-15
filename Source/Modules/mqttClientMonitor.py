@@ -220,10 +220,16 @@ def on_message(client, userdata, message):
     if device.type=="tasmota":
         # se non presente nella lista dinamica tasmotaDevices
         if not device.name in gv.tasmotaDevices.keys():
-            tasmota_dynamic_dev=TasmotaClass(deviceDB_class=device, gVars=gv)
-            gv.tasmotaDevices[device.name]=tasmota_dynamic_dev
+            tasmota_dynamic_dev: tasmotaClass = TasmotaClass(deviceDB_class=device, gVars=gv)
+            gv.tasmotaDevices[device.name]: tasmotaClass = tasmota_dynamic_dev
+            # @ToDo:  14-10-2023 inserire il setup ed i comandi di refresh
+            setup_commands   : list[str] = tasmota_dynamic_dev.tasmota_setup_commands()
+            refresh_commands : list[str] = tasmota_dynamic_dev.tasmota_refresh_commands()
+            gv.logger.notify("sendig setup_commands to: %s", device.name)
+            result=client.publish(topic=f"cmnd/{device.name}/backlog", payload=';'.join(setup_commands), qos=0, retain=False)
+
         else:
-            tasmota_dynamic_dev=gv.tasmotaDevices[device.name]
+            tasmota_dynamic_dev: tasmotaClass = gv.tasmotaDevices[device.name]
 
 
         tasmota_dynamic_dev.processMqttMessage(full_topic=full_topic, payload=payload, mqttClient_CB=client)
@@ -288,8 +294,8 @@ def run(gVars: dict):
 
     ### initialize my modules
     TSM.setup(gVars)
-    Tasmota_Device.setup(gVars)
-    Shellies_Device.setup(gVars)
+    # Tasmota_Device.setup(gVars)
+    # Shellies_Device.setup(gVars)
     LnCmnd.setup(gVars)
     tgNotify.setup(gVars)
 
