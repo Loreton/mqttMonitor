@@ -97,7 +97,7 @@ def connect_mqtt(client_id: str) -> mqtt_client:
             gv.logger.info("Connected to MQTT Broker!")
         else:
             gv.logger.info("Failed to connect, return code %d\n", rc)
-            gv.telegramMessage.send_html(group_name=gv.tg_group_name, message=f"Failed to connect to mqtt, return code:{rc}", caller=True) ### markdown dà errore
+            gv.telegramMessage.send_html(tg_group=gv.obj_appl_device.tg(), message=f"Failed to connect to mqtt, return code:{rc}", caller=True) ### markdown dà errore
             os.kill(int(os.getpid()), signal.SIGTERM)
             sys.exit(1)
 
@@ -157,17 +157,20 @@ def on_message(client, userdata, message):
     gv.publish_timer.restart() # if message has been received means application is alive.
     gv.logger.info("Received:")
     full_topic=message.topic
+    payload=checkPayload(message)
+    formatted_payload=payload.to_yaml() if isinstance(payload, benedict) else payload
+    formatted_payload=payload
 
     if message.retain==1:
         gv.logger.notify("   topic: %s - retained: %s", full_topic, message.retain)
-        gv.logger.notify("   payload: %s", message.payload)
+        gv.logger.notify("   payload: %s", formatted_payload)
         if full_topic=='tele/xxxxxVecoviNew/LWT': # forzatura per uno specifico....
             clear_retained_topic(client, message)
     else:
         gv.logger.info("   topic: %s", full_topic)
-        gv.logger.info("   payload: %s", message.payload)
+        gv.logger.info("   payload: %s", formatted_payload)
 
-    payload=checkPayload(message)
+
 
     if gv.clear_retained and message.retain:
         clear_retained_topic(client, message)
@@ -187,7 +190,7 @@ def on_message(client, userdata, message):
 
         if "t" in payload: # contains topic_name
             topic_name=payload["t"]
-            if (device:=gv.devicesDB.getDeviceInstance(mac=_mac)) is None:
+            if (obj_device:=gv.obj_devicesDB.getDeviceInstance(mac=_mac)) is None:
                 gv.logger.error("MAC: %s [topic: %s] NOT found in devicesDB.", _mac, full_topic)
                 return
         else:
@@ -207,7 +210,7 @@ def on_message(client, userdata, message):
     # - prendiamo le caratteristiche del device
     # - device è un object_class e non un dictionary
     # ------------------------------------------------------
-    if (device:=gv.devicesDB.getDeviceInstance(dev_name=topic_name)) is None:
+    if (obj_device:=gv.obj_devicesDB.getDeviceInstance(dev_name=topic_name)) is None:
         gv.logger.error("tgGroup: '%s' [topic: %s]  NOT found in devicesDB - payload: %s", topic_name, full_topic, payload)
         return
 
@@ -217,29 +220,39 @@ def on_message(client, userdata, message):
     """ create relative class_type intance
         include also deviceDB data
     """
-    if device.type=="tasmota":
+    if obj_device.type()=="tasmota":
         # se non presente nella lista dinamica tasmotaDevices
-        if not device.name in gv.tasmotaDevices.keys():
-            tasmota_dynamic_dev: tasmotaClass = TasmotaClass(deviceDB_class=device, gVars=gv)
-            gv.tasmotaDevices[device.name]: tasmotaClass = tasmota_dynamic_dev
-            # @ToDo:  14-10-2023 inserire il setup ed i comandi di refresh
-            setup_commands   : list[str] = tasmota_dynamic_dev.tasmota_setup_commands()
-            refresh_commands : list[str] = tasmota_dynamic_dev.tasmota_refresh_commands()
-            gv.logger.notify("sendig setup_commands to: %s", device.name)
-            result=client.publish(topic=f"cmnd/{device.name}/backlog", payload=';'.join(setup_commands), qos=0, retain=False)
+        if not obj_device.name() in gv.tasmotaDevices.keys():
+            tasmota_dynamic_dev: tasmotaClass = TasmotaClass(obj_device=obj_device, gVars=gv)
+            gv.tasmotaDevices[obj_device.name()]: tasmotaClass = tasmota_dynamic_dev
+
+
+            # facciamo il setup ed il refresh solo per quelli monitorati
+            setupTasmotaDevice(client=client, tasmota_device=tasmota_dynamic_dev)
+            '''
+            for topic in gv.topics:
+                if topic_name in topic:
+                    setup_commands   : list[str] = tasmota_dynamic_dev.tasmota_setup_commands()
+                    gv.logger.info("sendig setup_commands to: %s data: %s", obj_device.name(), setup_commands)
+                    result=client.publish(topic=f"cmnd/{obj_device.name()}/backlog", payload=';'.join(setup_commands), qos=0, retain=False)
+
+                    gv.logger.info("sendig refresh_commands to: %s data: %s", obj_device.name(), refresh_commands)
+                    refresh_commands : list[str] = tasmota_dynamic_dev.tasmota_refresh_commands()
+                    result=client.publish(topic=f"cmnd/{obj_device.name()}/backlog", payload=';'.join(refresh_commands), qos=0, retain=False)
+            '''
 
         else:
-            tasmota_dynamic_dev: tasmotaClass = gv.tasmotaDevices[device.name]
+            tasmota_dynamic_dev: tasmotaClass = gv.tasmotaDevices[obj_device.name()]
 
 
         tasmota_dynamic_dev.processMqttMessage(full_topic=full_topic, payload=payload, mqttClient_CB=client)
 
 
-    elif device.type=='shelly':
+    elif obj_device.type()=='shelly':
         err_msg="per gli shelly non ancora implementato"
         gv.logger.warning(err_msg)
 
-    elif device.type=='application':
+    elif obj_device.type()=='application':
         err_msg="per i gruppi tipo application non ancora implementato"
         gv.logger.warning(err_msg)
 
@@ -260,11 +273,47 @@ def on_message(client, userdata, message):
 ####################################################################
 #
 ####################################################################
-def subscribe(client: mqtt_client, topics: list):
-    for topic in topics:
+def subscribe(client: mqtt_client, topic_list: list):
+    full_topics=[]
+
+    if "+/#" in topic_list:
+        full_topics.append('+/#')
+    else:
+        for topic_name in topic_list:
+            # obj_device=gv.obj_devicesDB.getDeviceInstance(dev_name=topic_name)
+            # if obj_device:
+            #     mac=obj_device.mac().replace(":", "")
+                full_topics.append(f'+/{topic_name}/#')
+                # if obj_device.type()=="tasmota":
+                #     full_topics.append(f'tasmota/discovery/{mac}/#') ### MAC
+
+        full_topics.append('LnCmnd/#')
+        full_topics.append('tasmota/discovery/#')
+
+
+    for topic in full_topics:
         gv.logger.info('Subscribing... %s', topic)
         client.subscribe(topic)
     client.on_message = on_message
+
+
+
+
+####################################################################
+#
+####################################################################
+def setupTasmotaDevice(client, tasmota_device: TasmotaClass):
+    topic_name=tasmota_device.name()
+
+    # facciamo il setup ed il refresh del device interessato
+    setup_commands: list[str] = tasmota_device.tasmota_setup_commands()
+    gv.logger.info("sendig setup_commands to: %s data: %s", topic_name, setup_commands)
+    result=client.publish(topic=f"cmnd/{topic_name}/backlog", payload=';'.join(setup_commands), qos=0, retain=False)
+
+    refresh_commands: list[str] = tasmota_device.tasmota_refresh_commands()
+    gv.logger.info("sendig refresh_commands to: %s data: %s", topic_name, refresh_commands)
+    result=client.publish(topic=f"cmnd/{topic_name}/backlog", payload=';'.join(refresh_commands), qos=0, retain=False)
+
 
 
 
@@ -277,42 +326,56 @@ def run(gVars: dict):
     global gv
     gv=gVars
     topic_list = gv["topics"]
+    # topics_name_list = gv["topics"]
     gv.tasmotaDevices={}
     gv.macTable={}
 
 
-
     ### - get application info from deviceDB
-    if (appl_device := gv.devicesDB.getDeviceInstance(dev_name=gv.tg_group_name)):
-        assert appl_device.type=="application"
-        # appl_tg=appl_device.tg
+    if (obj_appl_device := gv.obj_devicesDB.getDeviceInstance(dev_name=gv.tg_group_name)):
+        assert obj_appl_device.type()=="application"
     else:
         gv.logger.error("%s NOT found in devicesDB.", gv.tg_group_name)
         sys.exit(1)
 
-    gv.appl_device=appl_device
+    gv.obj_appl_device=obj_appl_device
 
     ### initialize my modules
     TSM.setup(gVars)
-    # Tasmota_Device.setup(gVars)
-    # Shellies_Device.setup(gVars)
     LnCmnd.setup(gVars)
     tgNotify.setup(gVars)
 
 
+
+    '''
+    ### check if a specific topics are entered
+    full_topics=[]
+    for topic_name in topic_name_list:
+        obj_device=gv.obj_devicesDB.getDeviceInstance(dev_name=topic_name)
+        if obj_device:
+            mac=obj_device.mac().replace(":", "")
+            full_topics.append(f'+/{topic_name}/#')
+            if obj_device.type()=="tasmota":
+                full_topics.append(f'tasmota/discovery/{mac}/#') ### MAC
+
+    else:
+        if not '+/#' in topic_name_list:
+            full_topics.append('tasmota/discovery/#')
+
+    full_topics.append('LnCmnd/#')
 
 
 
     ### check if a specific topics are entered
     topics=topic_list[:]
     for topic in topics:
-        device=gv.devicesDB.getDeviceInstance(dev_name=topic)
-        if device:
+        obj_device=gv.obj_devicesDB.getDeviceInstance(dev_name=topic)
+        if obj_device:
             topic_list.remove(topic)
-            topic_name=device.name
-            mac=device.mac.replace(":", "")
+            topic_name=obj_device.name()
+            mac=obj_device.mac().replace(":", "")
             topic_list.append(f'+/{topic_name}/#')
-            if device.type=="tasmota":
+            if obj_device.type()=="tasmota":
                 topic_list.append(f'tasmota/discovery/{mac}/#') ### MAC
 
     else:
@@ -320,6 +383,7 @@ def run(gVars: dict):
             topic_list.append('tasmota/discovery/#')
 
     topic_list.append('LnCmnd/#')
+    '''
 
     client_id = f'LnMqttMonitor-{random.randint(0, 1000)}'
     client=connect_mqtt(client_id)
@@ -331,12 +395,13 @@ def run(gVars: dict):
     subscribe(client, topic_list)
 
 
+
     if gv.just_monitor:
         client.loop_forever()
 
 
     client.loop_start()
-    TSM.send_html(tg_group=appl_device.tg, message="application has been started!", caller=True, notify=True)
+    TSM.send_html(tg_group=obj_appl_device.tg(), message="application has been started!", caller=True, notify=True)
     time.sleep(4) # Wait for connection setup to complete
 
 
@@ -359,7 +424,7 @@ def run(gVars: dict):
 
             if hh in gv.config['main.still_alive_interval_hours']:
                 savePidFile(gv.args.pid_file)
-                TSM.send_html(tg_group=appl_device.tg, message="I'm still alive!", caller=True, notify=False)
+                TSM.send_html(tg_group=obj_appl_device.tg, message="I'm still alive!", caller=True, notify=False)
 
 
         gv.logger.info('publishing ping mqtt message to restart publish_timer')
@@ -372,7 +437,7 @@ def run(gVars: dict):
         if gv.publish_timer.remaining_time() <= 0:
             gv.logger.error('publish_timer - exausted')
             gv.logger.error('restarting application')
-            TSM.send_html(tg_group=appl_device.tg, message="publish_timer - exausted - application is restarting!", caller=True, notify=False)
+            TSM.send_html(tg_group=obj_appl_device.tg, message="publish_timer - exausted - application is restarting!", caller=True, notify=False)
 
             os.kill(int(os.getpid()), signal.SIGTERM)
 

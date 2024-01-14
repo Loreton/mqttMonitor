@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "TavoloLavoro",
+            "name": "singleDev",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/__main__.py",
@@ -15,9 +15,9 @@
                 "--logging-dir=/tmp/mqttmonitor", 
                 "--pid-file=/tmp/mqttmonitor/mqttmonitor.pid", 
                 "--file-logger-level=warning",
-                "--console-logger-level=info",
-                // "--topics=+/VescoviNew/#",
-                "--topics=TavoloLavoro",
+                "--console-logger-level=debug",
+                "--topics=VescoviNew",
+                //"--topics=TavoloLavoro",
                 "--tg-group-name=Ln_MqttMonitor_Client"
                 // "--clean",
             ],

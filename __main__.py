@@ -57,8 +57,8 @@ def setVars(type: str=None):
         gv.mqttmonitor_runtime_dir: str     = os.path.expandvars("${ln_RUNTIME_DIR}/mqttMonitor")
         gv.envars_dir: str                  = os.environ.get("ln_ENVARS_DIR")
         gv.config: dict                     = config
-        gv.devicesDB: devicesDB_Class       = devicesDB
-        gv.broker                           = devicesDB.getBroker()
+        gv.obj_devicesDB: devicesDB_Class       = obj_devicesDB
+        gv.broker                           = obj_devicesDB.getBroker()
         gv.telegramMessage                  = TelegramSendMessage
 
     return gv
@@ -69,7 +69,7 @@ def setVars(type: str=None):
 #######################################################
 if __name__ == '__main__':
     prj_name='mqttMonitor'
-    __ln_version__=f"{prj_name} version: V2023-10-10_183314"
+    __ln_version__=f"{prj_name} version: V2024-01-14_080201"
     args=ParseInput(__ln_version__)
 
     # ---- Loggging
@@ -94,9 +94,8 @@ if __name__ == '__main__':
     config=FileLoader.loadConfigurationData(config_file=config_file, tmp_dir=gv.tmp_dir, gVars=gv)
 
     devices_data=config.pop("devices_data")
-    devicesDB=devicesDB_Class(db_data=devices_data, error_on_duplicate=True, save_on_file=True, logger=logger, prj_name=prj_name)
+    obj_devicesDB=devicesDB_Class(db_data=devices_data, error_on_duplicate=True, save_on_file=True, logger=logger, prj_name=prj_name)
     """instantiate deviceaDB class """
-
 
     # ----- extra variables
     gv=setVars("02")
