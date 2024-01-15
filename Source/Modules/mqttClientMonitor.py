@@ -25,8 +25,6 @@ from benedict import benedict
 from    LnTimer import TimerLN as LnTimer
 from    savePidFile import savePidFile
 
-# import  Tasmota_Device
-# import  Shellies_Device
 import  LnCmnd_Process as LnCmnd
 import  Tasmota_Telegram_Notification as tgNotify
 import  TelegramSendMessage as TSM
@@ -45,15 +43,26 @@ def signal_handler_Mqtt(signalLevel, frame):
     gv.client.loop_stop()
     pid=os.getpid()
 
+        ### chiudo il processo perché ci pensa systemD a farlo ripartire
     if gv.args.systemd:
-        print('sono qui')
-        gv.logger.warning("MQTT server - Terminating on SIGTERM signalLevel [%s] under systemd control ", signalLevel)
+        err_msg=f"MQTT server - Terminating on SIGTERM signalLevel [{signalLevel}] under systemd control "
+        gv.logger.error(err_msg)
         # threading.Thread(target=shutdown).start()
+        gv.telegramMessage.send_html(tg_group=gv.obj_appl_device.tg(), message=err_msg, caller=True) ### markdown dà errore
         os.kill(int(os.getpid()), signal.SIGTERM)
         sys.exit(1)
 
+
+        ### Ctrl-c
     elif int(signalLevel)==2:
-        print('\n'*5)
+        print('\n'*3)
+        choice = input("       Ctrl-c was pressed. [r]estart [any-key] exit \n\n")
+        if choice != 'r':
+            os.kill(int(os.getpid()), signal.SIGTERM)
+            os.system("clear")
+            sys.exit(1)
+
+        ### restart using the same command line
         gv.logger.warning("MQTT server - Restarting on SIGINT [ctrl-c] signalLevel [%s]", signalLevel)
         command=f'ps -p {pid} -o args'
         splitted_cmd=shlex.split(command)
@@ -61,12 +70,13 @@ def signal_handler_Mqtt(signalLevel, frame):
         cmd_line=output.split('\n')[1]
         splitted_cmd=shlex.split(cmd_line)
         gv.logger.warning('restarting: %s', splitted_cmd)
-        print('\n'*5)
-        # time.sleep(2)
-        input('Press enter to continue...')
         os.execv(sys.executable, splitted_cmd)
+
+        ### errore
     else:
-        gv.logger.warning("MQTT server - Terminating on SIGTERM signalLevel [%s]", signalLevel)
+        err_msg=f"MQTT server - Terminating on SIGTERM signalLevel [{signalLevel}]"
+        gv.logger.error(err_msg)
+        gv.telegramMessage.send_html(tg_group=gv.obj_appl_device.tg(), message=err_msg, caller=True) ### markdown dà errore
         sys.exit(1)
 
 
@@ -154,7 +164,7 @@ def checkPayload(message):
 #
 ####################################################################
 def on_message(client, userdata, message):
-    gv.publish_timer.restart() # if message has been received means application is alive.
+    gv.publish_timer.restart(seconds=100, stacklevel=4) # if message has been received means application is alive.
     gv.logger.info("Received:")
     full_topic=message.topic
     payload=checkPayload(message)
@@ -163,7 +173,7 @@ def on_message(client, userdata, message):
 
     if message.retain==1:
         gv.logger.notify("   topic: %s - retained: %s", full_topic, message.retain)
-        gv.logger.notify("   payload: %s", formatted_payload)
+        gv.logger.info("   payload: %s", formatted_payload)
         if full_topic=='tele/xxxxxVecoviNew/LWT': # forzatura per uno specifico....
             clear_retained_topic(client, message)
     else:
@@ -178,11 +188,10 @@ def on_message(client, userdata, message):
 
 
 
-
     """viene rilasciato automaticamente da tasmota
         topic='tasmota/discovery/DC4F22D3B32F/sensors'
         topic='tasmota/discovery/DC4F22D3B32F/config'
-    cambiare il topic attraverso il MAC """
+    risaliamo al topic_name attraverso il MAC """
     if full_topic.startswith("tasmota/discovery"):
         _tasmota, _discovery, _mac,  suffix, *rest=full_topic.split('/')
         if _mac and not ":" in _mac:
@@ -197,6 +206,10 @@ def on_message(client, userdata, message):
             return
 
         full_topic=f'tasmota/{topic_name}/{suffix}'
+
+    ### JUST MONITOR
+    if gv.just_monitor:
+        return
 
 
     first_qualifier, topic_name, *rest=full_topic.split('/')
@@ -217,35 +230,24 @@ def on_message(client, userdata, message):
 
 
 
-    """ create relative class_type intance
-        include also deviceDB data
-    """
+    """ create relative class_type instance
+        include also deviceDB data """
     if obj_device.type()=="tasmota":
-        # se non presente nella lista dinamica tasmotaDevices
         if not obj_device.name() in gv.tasmotaDevices.keys():
-            tasmota_dynamic_dev: tasmotaClass = TasmotaClass(obj_device=obj_device, gVars=gv)
-            gv.tasmotaDevices[obj_device.name()]: tasmotaClass = tasmota_dynamic_dev
+            """se non presente nella lista dinamica tasmotaDevices"""
+            tasmota_device: tasmotaClass = TasmotaClass(obj_device=obj_device, gVars=gv)
+            gv.tasmotaDevices[obj_device.name()]: tasmotaClass = tasmota_device
 
 
             # facciamo il setup ed il refresh solo per quelli monitorati
-            setupTasmotaDevice(client=client, tasmota_device=tasmota_dynamic_dev)
-            '''
-            for topic in gv.topics:
-                if topic_name in topic:
-                    setup_commands   : list[str] = tasmota_dynamic_dev.tasmota_setup_commands()
-                    gv.logger.info("sendig setup_commands to: %s data: %s", obj_device.name(), setup_commands)
-                    result=client.publish(topic=f"cmnd/{obj_device.name()}/backlog", payload=';'.join(setup_commands), qos=0, retain=False)
+            setupTasmotaDevice(client=client, tasmota_device=tasmota_device)
 
-                    gv.logger.info("sendig refresh_commands to: %s data: %s", obj_device.name(), refresh_commands)
-                    refresh_commands : list[str] = tasmota_dynamic_dev.tasmota_refresh_commands()
-                    result=client.publish(topic=f"cmnd/{obj_device.name()}/backlog", payload=';'.join(refresh_commands), qos=0, retain=False)
-            '''
 
         else:
-            tasmota_dynamic_dev: tasmotaClass = gv.tasmotaDevices[obj_device.name()]
+            tasmota_device: tasmotaClass = gv.tasmotaDevices[obj_device.name()]
 
 
-        tasmota_dynamic_dev.processMqttMessage(full_topic=full_topic, payload=payload, mqttClient_CB=client)
+        tasmota_device.processMqttMessage(full_topic=full_topic, payload=payload, mqttClient_CB=client)
 
 
     elif obj_device.type()=='shelly':
@@ -310,9 +312,11 @@ def setupTasmotaDevice(client, tasmota_device: TasmotaClass):
     gv.logger.info("sendig setup_commands to: %s data: %s", topic_name, setup_commands)
     result=client.publish(topic=f"cmnd/{topic_name}/backlog", payload=';'.join(setup_commands), qos=0, retain=False)
 
-    refresh_commands: list[str] = tasmota_device.tasmota_refresh_commands()
-    gv.logger.info("sendig refresh_commands to: %s data: %s", topic_name, refresh_commands)
-    result=client.publish(topic=f"cmnd/{topic_name}/backlog", payload=';'.join(refresh_commands), qos=0, retain=False)
+    fREFRESH=False
+    if fREFRESH:
+        refresh_commands: list[str] = tasmota_device.tasmota_refresh_commands()
+        gv.logger.info("sendig refresh_commands to: %s data: %s", topic_name, refresh_commands)
+        result=client.publish(topic=f"cmnd/{topic_name}/backlog", payload=';'.join(refresh_commands), qos=0, retain=False)
 
 
 
@@ -347,58 +351,22 @@ def run(gVars: dict):
 
 
 
-    '''
-    ### check if a specific topics are entered
-    full_topics=[]
-    for topic_name in topic_name_list:
-        obj_device=gv.obj_devicesDB.getDeviceInstance(dev_name=topic_name)
-        if obj_device:
-            mac=obj_device.mac().replace(":", "")
-            full_topics.append(f'+/{topic_name}/#')
-            if obj_device.type()=="tasmota":
-                full_topics.append(f'tasmota/discovery/{mac}/#') ### MAC
-
-    else:
-        if not '+/#' in topic_name_list:
-            full_topics.append('tasmota/discovery/#')
-
-    full_topics.append('LnCmnd/#')
-
-
-
-    ### check if a specific topics are entered
-    topics=topic_list[:]
-    for topic in topics:
-        obj_device=gv.obj_devicesDB.getDeviceInstance(dev_name=topic)
-        if obj_device:
-            topic_list.remove(topic)
-            topic_name=obj_device.name()
-            mac=obj_device.mac().replace(":", "")
-            topic_list.append(f'+/{topic_name}/#')
-            if obj_device.type()=="tasmota":
-                topic_list.append(f'tasmota/discovery/{mac}/#') ### MAC
-
-    else:
-        if not '+/#' in topic_list:
-            topic_list.append('tasmota/discovery/#')
-
-    topic_list.append('LnCmnd/#')
-    '''
-
     client_id = f'LnMqttMonitor-{random.randint(0, 1000)}'
+    gv.logger.notify("mqtt client_ID: %s", client_id)
     client=connect_mqtt(client_id)
     gv.client=client
-
-    gv.publish_timer=LnTimer(name='mqtt publish', default_time=100, logger=gv.logger)
-    gv.publish_timer.start()
-
     subscribe(client, topic_list)
+
+    gv.publish_timer=LnTimer(name='mqtt publish', default_time=100, stacklevel=3, logger=gv.logger)
+    gv.publish_timer.start(seconds=100, stacklevel=3)
+
 
 
 
     if gv.just_monitor:
         client.loop_forever()
-
+        os.kill(int(os.getpid()), signal.SIGTERM)
+        sys.exit(1)
 
     client.loop_start()
     TSM.send_html(tg_group=obj_appl_device.tg(), message="application has been started!", caller=True, notify=True)
@@ -440,10 +408,23 @@ def run(gVars: dict):
             TSM.send_html(tg_group=obj_appl_device.tg, message="publish_timer - exausted - application is restarting!", caller=True, notify=False)
 
             os.kill(int(os.getpid()), signal.SIGTERM)
+            sys.exit(1)
 
-
-
-        time.sleep(60)
+        # import pdb; pdb.set_trace();trace=True # by Loreto
+        sleepTime=60
+        gv.logger.warning("vado in sleep: %s seconds", sleepTime)
+        gv.logger.warning("vado in sleep: %s seconds", sleepTime)
+        gv.logger.warning("vado in sleep: %s seconds", sleepTime)
+        gv.logger.warning("vado in sleep: %s seconds", sleepTime)
+        gv.logger.warning("vado in sleep: %s seconds", sleepTime)
+        gv.logger.warning("vado in sleep: %s seconds", sleepTime)
+        time.sleep(sleepTime)
+        gv.logger.warning("esco dallo sleep di %s seconds", sleepTime)
+        gv.logger.warning("esco dallo sleep di %s seconds", sleepTime)
+        gv.logger.warning("esco dallo sleep di %s seconds", sleepTime)
+        gv.logger.warning("esco dallo sleep di %s seconds", sleepTime)
+        gv.logger.warning("esco dallo sleep di %s seconds", sleepTime)
+        gv.logger.warning("esco dallo sleep di %s seconds", sleepTime)
 
 
 

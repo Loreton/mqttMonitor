@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 14-01-2024 08.33.54
+# Date .........: 14-01-2024 18.23.43
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -135,7 +135,7 @@ def in_payload_notify(tasmotaObj, action: str, payload: (dict, str)=None):
 
 
         else:
-            print('NO NON.........................ci sono', payload)
+            gv.logger.warning('payload non contiene keys: %s - %s', type(payload), payload)
 
 
     ### Tested
