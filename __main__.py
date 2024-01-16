@@ -34,13 +34,13 @@ def setVars(type: str=None):
     if type=="01":
         # ----- basic variables
         gv=benedict(**vars(args), keyattr_enabled=True, keyattr_dynamic=False) # copy all input args to gv
-        gv.logger             = logger
-        gv.OpSys: str         = platform.system()
-        gv.prj_name: str      = prj_name
-        gv.search_paths: list = ['conf']
-        gv.date_time: str     = datetime.now().strftime("%Y%m%d_%H%M")
-        gv.tmp_dir=f"/tmp/{prj_name}"
-        os.environ['DATE_TIME']=gv.date_time
+        gv.logger               = logger
+        gv.OpSys: str           = platform.system()
+        gv.prj_name: str        = prj_name
+        gv.search_paths: list   = ['conf']
+        gv.date_time: str       = datetime.now().strftime("%Y%m%d_%H%M")
+        gv.tmp_dir              = f"/tmp/{prj_name}"
+        os.environ['DATE_TIME'] = gv.date_time
 
         # ----- modules initialization
         LnUtils.setup(gVars=gv)
@@ -55,7 +55,7 @@ def setVars(type: str=None):
         gv.mqttmonitor_runtime_dir: str     = os.path.expandvars(f"${ln_RUNTIME_DIR}/{prj_name}")
         gv.envars_dir: str                  = os.environ.get("ln_ENVARS_DIR")
         gv.config: dict                     = config
-        gv.obj_devicesDB: devicesDB_Class       = obj_devicesDB
+        gv.obj_devicesDB: devicesDB_Class   = obj_devicesDB
         gv.broker                           = obj_devicesDB.getBroker()
         gv.telegramMessage                  = TelegramSendMessage
 
@@ -66,8 +66,8 @@ def setVars(type: str=None):
 #
 #######################################################
 if __name__ == '__main__':
-    prj_name='mqttmonitor'
-    __ln_version__=f"{prj_name} version: V2024-01-15_111054"
+    prj_name='mqttMonitor'
+    __ln_version__=f"{prj_name} version: V2024-01-16_145542"
     args=ParseInput(__ln_version__)
 
     # ---- Loggging
@@ -91,9 +91,17 @@ if __name__ == '__main__':
     config_file=f"{prj_name}_config.yaml"
     config=FileLoader.loadConfigurationData(config_file=config_file, tmp_dir=gv.tmp_dir, gVars=gv)
 
+    """extract device_data """
     devices_data=config.pop("devices_data")
-    obj_devicesDB=devicesDB_Class(db_data=devices_data, error_on_duplicate=True, save_on_file=True, logger=logger, prj_name=prj_name)
+
+    """write only device_data to file """
+    LnUtils.writeFile(filepath=f"/tmp/{prj_name}/devicesDB_config.yaml", data=devices_data, replace=True, write_datetime=True)
+
     """instantiate deviceaDB class """
+    obj_devicesDB=devicesDB_Class(db_data=devices_data, error_on_duplicate=True, logger=logger)
+
+
+
 
     # ----- extra variables
     gv=setVars("02")
