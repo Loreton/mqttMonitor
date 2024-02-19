@@ -18,7 +18,7 @@
                 "--console-logger-level=debug",
                 "--topics=VescoviNew",
                 //"--topics=TavoloLavoro",
-                "--tg-group-name=Ln_MqttMonitor_Client"
+                "--telegram-group-name=Ln_MqttMonitor_Client"
                 // "--clean",
             ],
                 

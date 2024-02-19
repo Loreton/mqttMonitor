@@ -10,7 +10,7 @@ dest_Dir="Source/lnLib"
 
     ### - Utils
     "Utils/LnUtils.py"
-    # "Utils/devicesDB.py"
+    Utils/dictUtils.py
     "Utils/devicesDB_New_20230902.py"         devicesDB.py
 
 
@@ -27,9 +27,6 @@ dest_Dir="Source/lnLib"
     ### - Logger
     "Logger/ColoredLogger_V103.py"          ColoredLogger.py ### rename it
 
-    ### - Dictionary
-    files/FileLoader.py                FileLoader.py
-
 
     ### - Time
     Time/LnTime.py
@@ -37,25 +34,31 @@ dest_Dir="Source/lnLib"
     Time/LnSunTime.py
 
 
+    # files
+    files/FileLoader_main.py                FileLoader.py
+    files/FileLoader_csv.py
+    files/FileLoader_json.py
+    files/FileLoader_ini.py
+    files/FileLoader_yaml.py
+
+
+
 
 dest_Dir="conf"
+# source_Dir=""
+# source_Dir="${HOME}/.ln/config/devicesDB/source_202402"
 
-    "$HOME/.ln/envars/yaml/ln_system_variables.yaml"          "ln_system_variables.lnk.yaml"
+
+    ${HOME}/.ln/envars/yaml/ln_system_variables.yaml        ln_system_variables.lnk.yaml
+
+    "${HOME}/.ln/config/devicesDB/source_202402/telegramBots.yaml"        "telegramBots.lnk.yaml"
+    "${HOME}/.ln/config/devicesDB/source_202402/Mqtt_Brokers.yaml"        "Mqtt_Brokers.lnk.yaml"
+    "${HOME}/.ln/config/devicesDB/source_202402/devicesDB_list.csv"        "devicesDB_list.lnk.csv"
+
+    ### - extra_data
+    "${HOME}/.ln/config/devicesDB/source_202402/Computers.yaml"            "Computers.lnk.yaml"
+    "${HOME}/.ln/config/devicesDB/source_202402/Tasmota.yaml"               "Tasmota.lnk.yaml"
+    "${HOME}/.ln/config/devicesDB/source_202402/telegramApplications.yaml"  "telegramApplications.lnk.yaml"
+    "${HOME}/.ln/config/devicesDB/source_202402/telegramChannels.yaml"      "telegramChannels.lnk.yaml"
 
 
-    "${HOME}/.ln/config/devicesDB/source_2023/telegramBots.yaml"        "telegramBots.lnk.yaml"
-    "${HOME}/.ln/config/devicesDB/source_2023/Mqtt_Brokers.yaml"        "Mqtt_Brokers.lnk.yaml"
-    "${HOME}/.ln/config/devicesDB/source_2023/telegramBots.yaml"        "telegramBots.lnk.yaml"
-
-    "${HOME}/.ln/config/devicesDB/source_2023/telegramApplGroups.yaml"  "telegramApplGroups.lnk.yaml"
-    "${HOME}/.ln/config/devicesDB/source_2023/telegramChannels.yaml"    "telegramChannels.lnk.yaml"
-
-    "${HOME}/.ln/config/devicesDB/source_2023/Computers.yaml"           "Computers.lnk.yaml"
-    "${HOME}/.ln/config/devicesDB/source_2023/Cellulari.yaml"           "Cellulari.lnk.yaml"
-    "${HOME}/.ln/config/devicesDB/source_2023/Printers.yaml"            "Printers.lnk.yaml"
-    "${HOME}/.ln/config/devicesDB/source_2023/Routers.yaml"             "Routers.lnk.yaml"
-    "${HOME}/.ln/config/devicesDB/source_2023/Tasmota.yaml"             "Tasmota.lnk.yaml"
-    "${HOME}/.ln/config/devicesDB/source_2023/Shelly.yaml"              "Shelly.lnk.yaml"
-    "${HOME}/.ln/config/devicesDB/source_2023/Telecamere.yaml"          "Telecamere.lnk.yaml"
-    "${HOME}/.ln/config/devicesDB/source_2023/TV.yaml"                  "TV.lnk.yaml"
-    "${HOME}/.ln/config/devicesDB/source_2023/Unused.yaml"               "Unused.lnk.yaml"

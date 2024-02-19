@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 14-01-2024 18.23.43
+# Date .........: 19-02-2024 18.44.16
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -19,7 +19,7 @@ import signal
 from benedict import benedict
 from types import SimpleNamespace
 
-from LnUtils import dict_bold_italic
+import dictUtils
 import Tasmota_Human_Converter as THC
 from Tasmota_Class import TasmotaClass # solo per typing
 
@@ -34,19 +34,6 @@ def setup(gVars: dict):
     gv=gVars
     C=gv.logger.getColors()
     THC.setup(gVars)
-
-# def setup(**kwargs: dict):
-#     global gv
-#     gv=benedict(kwargs, keyattr_enabled=True, keyattr_dynamic=False)
-#     THC.setup(**kwargs)
-
-# def setup(**kwargs):
-#     global gv
-#     gv=SimpleNamespace()
-
-#     gv.logger=kwargs["logger"]
-#     gv.devicesDB=kwargs["devicesDB"]
-
 
 
 
@@ -247,7 +234,7 @@ def notify_telegram_group(tasmotaObj: TasmotaClass, data: (dict, str)):
         gv.logger.notify('tg_msg: %s', tg_msg.to_json())
 
         gv.logger.notify('sending telegram message: %s', tg_msg)
-        tg_msg=dict_bold_italic(tg_msg, keys='bold', values='italic', nlevels=2)
+        tg_msg=dictUtils.dict_bold_italic(tg_msg, keys='bold', values='italic', nlevels=2)
     else:
         tg_msg=data
 

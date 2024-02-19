@@ -6,7 +6,7 @@
 
 
 import  sys; sys.dont_write_bytecode = True
-import  os, glob
+import  os
 
 from types import SimpleNamespace
 from benedict import benedict
@@ -14,18 +14,19 @@ from datetime import datetime, timedelta
 import platform
 
 
-
+## Project modules
+os.environ['Loader_modules']="csv ini yaml json"
 import Source
+import prepare_gVars
+import LnUtils
+import FileLoader
 import mqttClientMonitor
 
 from ColoredLogger import setColoredLogger, testLogger
 from ParseInput import ParseInput
 from savePidFile import savePidFile
 
-import FileLoader
-import LnUtils
-from    devicesDB import devicesDB_Class
-import    TelegramSendMessage
+from devicesDB import devicesDB_Class
 
 
 
@@ -67,7 +68,7 @@ def setVars(type: str=None):
 #######################################################
 if __name__ == '__main__':
     prj_name='mqttMonitor'
-    __ln_version__=f"{prj_name} version: V2024-01-23_145303"
+    __ln_version__=f"{prj_name} version: V2024-02-19_172401"
     args=ParseInput(__ln_version__)
 
     # ---- Loggging
@@ -84,27 +85,27 @@ if __name__ == '__main__':
     logger.warning(__ln_version__)
 
     # ----- basic variables
-    gv=setVars("01")
+    gv=prepare_gVars.setMainVars(logger=logger, input_args=args, prj_name=prj_name)
 
-
-    # ----- read configuration data
+    ### ===============================================
+    ### -   Load configuration data
+    ### ===============================================
     config_file=f"{prj_name}_config.yaml"
-    config=FileLoader.loadConfigurationData(config_file=config_file, tmp_dir=gv.tmp_dir, gVars=gv)
+    if not (config:=FileLoader.loadConfigurationData(config_file=config_file, tmp_dir=gv.tmp_dir, gVars=gv, return_resolved=False)):
+        logger.error("Configuration data error")
+        sys.exit(1)
 
-    """extract device_data """
-    devices_data=config.pop("devices_data")
+    ### extract devices e lo passa al devicesDB
+    only_devices=config.pop("devices")
+    gv.obj_devicesDB=devicesDB_Class(db_data=only_devices, error_on_duplicate=True, logger=logger)
 
-    """write only device_data to file """
-    LnUtils.writeFile(filepath=f"/tmp/{prj_name}/devicesDB_config.yaml", data=devices_data, replace=True, write_datetime=True)
+    config.resolveDictCrossReferences()
+    config.toYaml(filepath=f"/tmp/resolved_config.yaml", replace=True)
+    gv.config: dict = config
+    gv.broker: dict = gv.obj_devicesDB.getBroker()
 
-    """instantiate deviceaDB class """
-    obj_devicesDB=devicesDB_Class(db_data=devices_data, error_on_duplicate=True, logger=logger)
+    ### ===============================================
 
-
-
-
-    # ----- extra variables
-    gv=setVars("02")
 
     # savePidFile(args.pid_file)
     mqttClientMonitor.run(gVars=gv)

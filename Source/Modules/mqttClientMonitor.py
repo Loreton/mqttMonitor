@@ -56,8 +56,8 @@ def signal_handler_Mqtt(signalLevel, frame):
         ### Ctrl-c
     elif int(signalLevel)==2:
         print('\n'*3)
-        choice = input("       Ctrl-c was pressed. [r]estart [any-key] exit \n\n")
-        if choice != 'r':
+        choice = input("       Ctrl-c was pressed. [q]quit [any-key] restart \n\n")
+        if choice == 'q':
             os.kill(int(os.getpid()), signal.SIGTERM)
             os.system("clear")
             sys.exit(1)
@@ -208,7 +208,7 @@ def on_message(client, userdata, message):
         full_topic=f'tasmota/{topic_name}/{suffix}'
 
     ### JUST MONITOR
-    if gv.just_monitor:
+    if gv.args.just_monitor:
         return
 
 
@@ -308,13 +308,13 @@ def setupTasmotaDevice(client, tasmota_device: TasmotaClass):
     topic_name=tasmota_device.name()
 
     # facciamo il setup ed il refresh del device interessato
-    setup_commands: list[str] = tasmota_device.tasmota_setup_commands()
+    setup_commands: list[str] = tasmota_device.setup_commands()
     gv.logger.info("sendig setup_commands to: %s data: %s", topic_name, setup_commands)
     result=client.publish(topic=f"cmnd/{topic_name}/backlog", payload=';'.join(setup_commands), qos=0, retain=False)
 
     fREFRESH=False
     if fREFRESH:
-        refresh_commands: list[str] = tasmota_device.tasmota_refresh_commands()
+        refresh_commands: list[str] = tasmota_device.refresh_commands()
         gv.logger.info("sendig refresh_commands to: %s data: %s", topic_name, refresh_commands)
         result=client.publish(topic=f"cmnd/{topic_name}/backlog", payload=';'.join(refresh_commands), qos=0, retain=False)
 
@@ -329,17 +329,17 @@ def setupTasmotaDevice(client, tasmota_device: TasmotaClass):
 def run(gVars: dict):
     global gv
     gv=gVars
-    topic_list = gv["topics"]
+    topic_list = gv.args.topics
     # topics_name_list = gv["topics"]
     gv.tasmotaDevices={}
     gv.macTable={}
 
 
     ### - get application info from deviceDB
-    if (obj_appl_device := gv.obj_devicesDB.getDeviceInstance(dev_name=gv.tg_group_name)):
+    if (obj_appl_device := gv.obj_devicesDB.getDeviceInstance(dev_name=gv.args.telegram_group_name)):
         assert obj_appl_device.type()=="application"
     else:
-        gv.logger.error("%s NOT found in devicesDB.", gv.tg_group_name)
+        gv.logger.error("%s NOT found in devicesDB.", gv.args.telegram_group_name)
         sys.exit(1)
 
     gv.obj_appl_device=obj_appl_device
@@ -363,7 +363,7 @@ def run(gVars: dict):
 
 
 
-    if gv.just_monitor:
+    if gv.args.just_monitor:
         client.loop_forever()
         os.kill(int(os.getpid()), signal.SIGTERM)
         sys.exit(1)

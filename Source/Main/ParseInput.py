@@ -5,7 +5,7 @@
 # Date .........: 2021-09-17
 #
 # updated by ...: Loreto Notarantonio
-# Date .........: 11-10-2023 12.10.41
+# Date .........: 19-02-2024 17.36.26
 #
 
 import  sys; sys.dont_write_bytecode = True
@@ -132,7 +132,7 @@ def ParseInput(version):
                         type=int,
                         help="period to save device data on file (default: %(default)s)\n\n")
 
-    parser.add_argument('--tg-group-name',
+    parser.add_argument('--telegram-group-name',
                         metavar='-',
                         required=True,
                         type=str,
