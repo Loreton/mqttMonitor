@@ -30,45 +30,12 @@ from devicesDB import devicesDB_Class
 
 
 
-def setVars(type: str=None):
-    global gv
-    if type=="01":
-        # ----- basic variables
-        gv=benedict(**vars(args), keyattr_enabled=True, keyattr_dynamic=False) # copy all input args to gv
-        gv.logger               = logger
-        gv.OpSys: str           = platform.system()
-        gv.prj_name: str        = prj_name
-        gv.search_paths: list   = ['conf']
-        gv.date_time: str       = datetime.now().strftime("%Y%m%d_%H%M")
-        gv.tmp_dir              = f"/tmp/{prj_name}"
-        os.environ['DATE_TIME'] = gv.date_time
-
-        # ----- modules initialization
-        LnUtils.setup(gVars=gv)
-        FileLoader.setup(gVars=gv)
-        TelegramSendMessage.setup(gVars=gv)
-
-
-
-    else:
-        gv.clear_retained                   = False
-        gv.args                             = args
-        gv.mqttmonitor_runtime_dir: str     = os.path.expandvars(f"$ln_RUNTIME_DIR/{prj_name}")
-        gv.envars_dir: str                  = os.environ.get("ln_ENVARS_DIR")
-        gv.config: dict                     = config
-        gv.obj_devicesDB: devicesDB_Class   = obj_devicesDB
-        gv.broker                           = obj_devicesDB.getBroker()
-        gv.telegramMessage                  = TelegramSendMessage
-
-    return gv
-
-
 #######################################################
 #
 #######################################################
 if __name__ == '__main__':
     prj_name='mqttMonitor'
-    __ln_version__=f"{prj_name} version: V2024-02-19_172401"
+    __ln_version__=f"{prj_name} version: V2024-02-19_184616"
     args=ParseInput(__ln_version__)
 
     # ---- Loggging

@@ -309,14 +309,16 @@ def setupTasmotaDevice(client, tasmota_device: TasmotaClass):
 
     # facciamo il setup ed il refresh del device interessato
     setup_commands: list[str] = tasmota_device.setup_commands()
-    gv.logger.info("sendig setup_commands to: %s data: %s", topic_name, setup_commands)
-    result=client.publish(topic=f"cmnd/{topic_name}/backlog", payload=';'.join(setup_commands), qos=0, retain=False)
+    payload=';'.join(setup_commands)
+    gv.logger.info("sending setup_commands to: %s data: %s", topic_name, setup_commands)
+    result=client.publish(topic=f"cmnd/{topic_name}/backlog", payload=payload, qos=0, retain=False)
 
-    fREFRESH=False
+    fREFRESH=True
     if fREFRESH:
         refresh_commands: list[str] = tasmota_device.refresh_commands()
-        gv.logger.info("sendig refresh_commands to: %s data: %s", topic_name, refresh_commands)
-        result=client.publish(topic=f"cmnd/{topic_name}/backlog", payload=';'.join(refresh_commands), qos=0, retain=False)
+        payload=';'.join(refresh_commands)
+        gv.logger.info("sending refresh_commands to: %s data: %s", topic_name, refresh_commands)
+        result=client.publish(topic=f"cmnd/{topic_name}/backlog", payload=payload, qos=0, retain=False)
 
 
 
