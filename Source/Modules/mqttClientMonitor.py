@@ -23,13 +23,14 @@ import socket; hostname=socket.gethostname()
 from benedict import benedict
 
 from    LnTimer import TimerLN as LnTimer
-from    savePidFile import savePidFile
+# from    savePidFile import savePidFile
 
 import  LnCmnd_Process as LnCmnd
 import  Tasmota_Telegram_Notification as tgNotify
 import  TelegramSendMessage as TSM
-
 from Tasmota_Class import TasmotaClass
+
+from devicesDB_sqLite import devicesDB_Class
 
 
 
@@ -48,7 +49,7 @@ def signal_handler_Mqtt(signalLevel, frame):
         err_msg=f"MQTT server - Terminating on SIGTERM signalLevel [{signalLevel}] under systemd control "
         gv.logger.error(err_msg)
         # threading.Thread(target=shutdown).start()
-        gv.telegramMessage.send_html(tg_group=gv.obj_appl_device.tg(), message=err_msg, caller=True) ### markdown dà errore
+        gv.telegramMessage.send_html(tg_group=gv.appl_device.tg, message=err_msg, caller=True) ### markdown dà errore
         os.kill(int(os.getpid()), signal.SIGTERM)
         sys.exit(1)
 
@@ -76,7 +77,7 @@ def signal_handler_Mqtt(signalLevel, frame):
     else:
         err_msg=f"MQTT server - Terminating on SIGTERM signalLevel [{signalLevel}]"
         gv.logger.error(err_msg)
-        gv.telegramMessage.send_html(tg_group=gv.obj_appl_device.tg(), message=err_msg, caller=True) ### markdown dà errore
+        gv.telegramMessage.send_html(tg_group=gv.appl_device.tg, message=err_msg, caller=True) ### markdown dà errore
         sys.exit(1)
 
 
@@ -107,7 +108,7 @@ def connect_mqtt(client_id: str) -> mqtt_client:
             gv.logger.info("Connected to MQTT Broker!")
         else:
             gv.logger.info("Failed to connect, return code %d\n", rc)
-            gv.telegramMessage.send_html(tg_group=gv.obj_appl_device.tg(), message=f"Failed to connect to mqtt, return code:{rc}", caller=True) ### markdown dà errore
+            gv.telegramMessage.send_html(tg_group=gv.appl_device.tg, message=f"Failed to connect to mqtt, return code:{rc}", caller=True) ### markdown dà errore
             os.kill(int(os.getpid()), signal.SIGTERM)
             sys.exit(1)
 
@@ -118,18 +119,18 @@ def connect_mqtt(client_id: str) -> mqtt_client:
         client.connected_flag=False
         client.disconnect_flag=True
 
-
     HIVE_MQ=False
     if HIVE_MQ:
         print('da implemetare')
         sys.exit(1)
     else:
         broker=gv.broker
-        auth=dict(broker.auth)
+        # auth=dict(broker.auth)
 
     client = mqtt_client.Client(client_id)
     client.on_connect = on_connect
-    if auth: client.username_pw_set(**auth)
+    if broker.password:
+        client.username_pw_set(broker.username, broker.password)
     rcode=client.connect(broker.url, int(broker.port))
 
     return client
@@ -187,7 +188,6 @@ def on_message(client, userdata, message):
 
 
 
-
     """viene rilasciato automaticamente da tasmota
         topic='tasmota/discovery/DC4F22D3B32F/sensors'
         topic='tasmota/discovery/DC4F22D3B32F/config'
@@ -199,7 +199,8 @@ def on_message(client, userdata, message):
 
         if "t" in payload: # contains topic_name
             topic_name=payload["t"]
-            if (obj_device:=gv.obj_devicesDB.getDeviceInstance(mac=_mac)) is None:
+            if (obj_device := gv.devicesDB.getMac(mac=_mac)) == {}:
+            # if (obj_device:=gv.obj_devicesDB.getDeviceInstance(mac=_mac)) is None:
                 gv.logger.error("MAC: %s [topic: %s] NOT found in devicesDB.", _mac, full_topic)
                 return
         else:
@@ -223,7 +224,9 @@ def on_message(client, userdata, message):
     # - prendiamo le caratteristiche del device
     # - device è un object_class e non un dictionary
     # ------------------------------------------------------
-    if (obj_device:=gv.obj_devicesDB.getDeviceInstance(dev_name=topic_name)) is None:
+
+    if (obj_device := gv.devicesDB.getDevice(name=topic_name)) == {}:
+    # if (obj_device:=gv.obj_devicesDB.getDeviceInstance(dev_name=topic_name)) is None:
         gv.logger.error("tgGroup: '%s' [topic: %s]  NOT found in devicesDB - payload: %s", topic_name, full_topic, payload)
         return
 
@@ -232,11 +235,19 @@ def on_message(client, userdata, message):
 
     """ create relative class_type instance
         include also deviceDB data """
-    if obj_device.type()=="tasmota":
-        if not obj_device.name() in gv.tasmotaDevices.keys():
+
+
+    if not obj_device:
+        err_msg=f"{full_topic} NON lo vedo come device"
+        gv.logger.warning(err_msg)
+        # import pdb; pdb.set_trace();trace=True # by Loreto
+        return
+
+    elif obj_device.type=="tasmota":
+        if not obj_device.name in gv.tasmotaDevices.keys():
             """se non presente nella lista dinamica tasmotaDevices"""
             tasmota_device: tasmotaClass = TasmotaClass(obj_device=obj_device, gVars=gv)
-            gv.tasmotaDevices[obj_device.name()]: tasmotaClass = tasmota_device
+            gv.tasmotaDevices[obj_device.name]: tasmotaClass = tasmota_device
 
 
             # facciamo il setup ed il refresh solo per quelli monitorati
@@ -244,7 +255,7 @@ def on_message(client, userdata, message):
 
 
         else:
-            tasmota_device: tasmotaClass = gv.tasmotaDevices[obj_device.name()]
+            tasmota_device: tasmotaClass = gv.tasmotaDevices[obj_device.name]
 
 
         tasmota_device.processMqttMessage(full_topic=full_topic, payload=payload, mqttClient_CB=client)
@@ -282,12 +293,7 @@ def subscribe(client: mqtt_client, topic_list: list):
         full_topics.append('+/#')
     else:
         for topic_name in topic_list:
-            # obj_device=gv.obj_devicesDB.getDeviceInstance(dev_name=topic_name)
-            # if obj_device:
-            #     mac=obj_device.mac().replace(":", "")
-                full_topics.append(f'+/{topic_name}/#')
-                # if obj_device.type()=="tasmota":
-                #     full_topics.append(f'tasmota/discovery/{mac}/#') ### MAC
+            full_topics.append(f'+/{topic_name}/#')
 
         full_topics.append('LnCmnd/#')
         full_topics.append('tasmota/discovery/#')
@@ -305,11 +311,15 @@ def subscribe(client: mqtt_client, topic_list: list):
 #
 ####################################################################
 def setupTasmotaDevice(client, tasmota_device: TasmotaClass):
-    topic_name=tasmota_device.name()
+    topic_name=tasmota_device.device_name
 
     # facciamo il setup ed il refresh del device interessato
     setup_commands: list[str] = tasmota_device.setup_commands()
     payload=';'.join(setup_commands)
+    # try:
+    #     payload=';'.join(setup_commands)
+    # except:
+    #     import pdb; pdb.set_trace();trace=True # by Loreto
     gv.logger.info("sending setup_commands to: %s data: %s", topic_name, setup_commands)
     result=client.publish(topic=f"cmnd/{topic_name}/backlog", payload=payload, qos=0, retain=False)
 
@@ -328,23 +338,29 @@ def setupTasmotaDevice(client, tasmota_device: TasmotaClass):
 ####################################################################
 #
 ####################################################################
-def run(gVars: dict):
+def run(gVars: dict, main_config: dict, sqlite_config: dict):
     global gv
     gv=gVars
+
+    #================= open DB  ==================
+    gv.devicesDB=devicesDB_Class(db_filepath=sqlite_config.db_filepath, logger=gv.logger)
+
+
     topic_list = gv.args.topics
     # topics_name_list = gv["topics"]
     gv.tasmotaDevices={}
     gv.macTable={}
 
 
+
     ### - get application info from deviceDB
-    if (obj_appl_device := gv.obj_devicesDB.getDeviceInstance(dev_name=gv.args.telegram_group_name)):
-        assert obj_appl_device.type()=="application"
+    if (appl_device := gv.devicesDB.getDevice(name=gv.args.telegram_group_name)):
+        assert appl_device.type=="application"
     else:
         gv.logger.error("%s NOT found in devicesDB.", gv.args.telegram_group_name)
         sys.exit(1)
 
-    gv.obj_appl_device=obj_appl_device
+    gv.appl_device = appl_device
 
     ### initialize my modules
     TSM.setup(gVars)
@@ -355,6 +371,7 @@ def run(gVars: dict):
 
     client_id = f'LnMqttMonitor-{random.randint(0, 1000)}'
     gv.logger.notify("mqtt client_ID: %s", client_id)
+    gv.broker = gv.devicesDB.getBroker(name=main_config.mqtt_broker_name)
     client=connect_mqtt(client_id)
     gv.client=client
     subscribe(client, topic_list)
@@ -363,15 +380,13 @@ def run(gVars: dict):
     gv.publish_timer.start(seconds=100, stacklevel=3)
 
 
-
-
     if gv.args.just_monitor:
         client.loop_forever()
         os.kill(int(os.getpid()), signal.SIGTERM)
         sys.exit(1)
 
     client.loop_start()
-    TSM.send_html(tg_group=obj_appl_device.tg(), message="application has been started!", caller=True, notify=True)
+    TSM.send_html(tg_group=gv.appl_device.tg, message="application has been started!", caller=True, notify=True)
     time.sleep(4) # Wait for connection setup to complete
 
 
@@ -384,7 +399,7 @@ def run(gVars: dict):
         ss=int(time.strftime("%S"))
 
         if mm==0:
-            if hh in gv.config['main.send_status_hours']:
+            if hh in main_config['send_status_hours']:
                 # @ToDo:  13-10-2023 da verificare
                 gv.logger.notify("Sending summary to Telegram")
                 for name in gv.tasmotaDevices:
@@ -392,8 +407,9 @@ def run(gVars: dict):
                     device.sendStatus(payload={"alias": "summary"})
 
 
-            if hh in gv.config['main.still_alive_interval_hours']:
+            if hh in main_config['still_alive_interval_hours']:
                 savePidFile(gv.args.pid_file)
+                import pdb; pdb.set_trace();trace=True # by Loreto
                 TSM.send_html(tg_group=obj_appl_device.tg, message="I'm still alive!", caller=True, notify=False)
 
 
@@ -427,9 +443,6 @@ def run(gVars: dict):
         gv.logger.warning("esco dallo sleep di %s seconds", sleepTime)
         gv.logger.warning("esco dallo sleep di %s seconds", sleepTime)
         gv.logger.warning("esco dallo sleep di %s seconds", sleepTime)
-
-
-
 
 
 

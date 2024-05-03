@@ -1,6 +1,6 @@
 #
 # updated by ...: Loreto Notarantonio
-# Date .........: 19-02-2024 17.13.15
+# Date .........: 03-05-2024 13.41.32
 #
 
 #########################################################
@@ -19,21 +19,15 @@ main:
             - 21
             # - 21
 
-
-system_variables: !include conf/ln_system_variables.lnk.yaml#system_envars
-
+    mqtt_broker_name: LnMqtt
 
 
-devices:
-    bots:       !include "conf/telegramBots.lnk.yaml#bots"
-    broker:     !include "conf/Mqtt_Brokers.lnk.yaml#brokers.lnmqtt"
-    data:       !include "conf/devicesDB_list.lnk.csv#name"
-    extra_data: !include_merge [
-                    "conf/Computers.lnk.yaml#raspberry",
-                    "conf/Computers.lnk.yaml#pc",
-                    "conf/Tasmota.lnk.yaml#tasmota",
-                    "conf/telegramApplications.lnk.yaml#application_groups",
-                    "conf/telegramChannels.lnk.yaml#channels",
-                ]
 
+system_variables: !include system_variables.lnk.yaml#system_envars
+
+
+sqlite:
+    tables: !include devices_DBase.lnk.yaml#tables
+
+    db_filepath:    will be filled by __main__ program
 

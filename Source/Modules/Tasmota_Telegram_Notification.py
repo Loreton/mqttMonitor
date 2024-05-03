@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 19-02-2024 18.44.16
+# Date .........: 03-05-2024 14.57.38
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -211,7 +211,7 @@ def telegram_notify(tasmotaObj: TasmotaClass, payload: (dict, str)=None):
         telegramReplyMsg=tasmotaObj.firmware()
 
 
-    elif alias=="net_status":  ### LnTelegram/topic_name/mqtt
+    elif alias in ["net_status", "net"]:  ### LnTelegram/topic_name/mqtt
         telegramReplyMsg=tasmotaObj.net_status()
 
 

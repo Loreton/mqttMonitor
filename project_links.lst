@@ -3,16 +3,35 @@ dest_Dir="Source/lnLib"
 
 
 
+    #- logger
+    Logger/ColoredLogger_V103.py          ColoredLogger.py ### rename it
 
+    #- subprocess
+    # System/checkingRunningProcess.py
+    # System/subprocessLN.py
 
-
-
-
-    ### - Utils
-    "Utils/LnUtils.py"
+    #- utils
+    Utils/LnUtils.py
     Utils/dictUtils.py
-    "Utils/devicesDB_New_20230902.py"         devicesDB.py
+    Utils/devicesDB_sqLite.py
 
+    # files
+    files/FileLoader.py
+    files/File_csv.py
+    files/File_json.py
+    files/File_ini.py
+    files/File_yaml.py
+
+    # SQLite/SQLite_Class.py
+    SQLite/SQLiteDB_Class.py
+    SQLite/SQLiteTable_Class.py
+
+
+
+    ### - Time
+    Time/LnTime.py
+    Time/LnTimer.py
+    Time/LnSunTime.py
 
     ### - Telegram
     # telegram/sendTelegramMsg_Class_V2023b.py  TelegramSendMessage_Class.py
@@ -24,41 +43,20 @@ dest_Dir="Source/lnLib"
 
     "MQTT/MqttTxRx_Class.py"                          ### - Mqtt
 
-    ### - Logger
-    "Logger/ColoredLogger_V103.py"          ColoredLogger.py ### rename it
-
-
-    ### - Time
-    Time/LnTime.py
-    Time/LnTimer.py
-    Time/LnSunTime.py
-
-
-    # files
-    files/FileLoader_main.py                FileLoader.py
-    files/FileLoader_csv.py
-    files/FileLoader_json.py
-    files/FileLoader_ini.py
-    files/FileLoader_yaml.py
 
 
 
 
-dest_Dir="conf"
-# source_Dir=""
-# source_Dir="${HOME}/.ln/config/devicesDB/source_202402"
 
 
-    ${HOME}/.ln/envars/yaml/ln_system_variables.yaml        ln_system_variables.lnk.yaml
 
-    "${HOME}/.ln/config/devicesDB/source_202402/telegramBots.yaml"        "telegramBots.lnk.yaml"
-    "${HOME}/.ln/config/devicesDB/source_202402/Mqtt_Brokers.yaml"        "Mqtt_Brokers.lnk.yaml"
-    "${HOME}/.ln/config/devicesDB/source_202402/devicesDB_list.csv"        "devicesDB_list.lnk.csv"
 
-    ### - extra_data
-    "${HOME}/.ln/config/devicesDB/source_202402/Computers.yaml"            "Computers.lnk.yaml"
-    "${HOME}/.ln/config/devicesDB/source_202402/Tasmota.yaml"               "Tasmota.lnk.yaml"
-    "${HOME}/.ln/config/devicesDB/source_202402/telegramApplications.yaml"  "telegramApplications.lnk.yaml"
-    "${HOME}/.ln/config/devicesDB/source_202402/telegramChannels.yaml"      "telegramChannels.lnk.yaml"
+
+dest_Dir="links_conf"
+
+    ${HOME}/lnProfile/config/sysVars/system_variables.yaml        system_variables.lnk.yaml
+
+source_Dir="${HOME}/lnProfile/config/devicesDB_sqLite/data_202405"
+    "devices_DBase.yaml"              "devices_DBase.lnk.yaml"
 
 

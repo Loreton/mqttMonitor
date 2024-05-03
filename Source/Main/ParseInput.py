@@ -5,7 +5,7 @@
 # Date .........: 2021-09-17
 #
 # updated by ...: Loreto Notarantonio
-# Date .........: 19-02-2024 17.36.26
+# Date .........: 03-05-2024 13.39.58
 #
 
 import  sys; sys.dont_write_bytecode = True
@@ -46,7 +46,7 @@ def ParseInput(version):
         _parser.add_argument('--display-args', action='store_true', help='''Display arguments\n\n''' )
         _parser.add_argument('--systemd', action='store_true', help='''It's a systemd process\n\n''' )
         _parser.add_argument('--clean-device-data', action='store_true', help='''Clean all devices data\n\n''' )
-        _parser.add_argument('--pid-file', type=str, required=False, default='/tmp/mqttmonitor/mqttmonitor.pid', help='''pid file\n\n''' )
+        # _parser.add_argument('--pid-file', type=str, required=False, default='/tmp/mqttmonitor/mqttmonitor.pid', help='''pid file\n\n''' )
 
         _parser.add_argument( "--console-logger-level",
                                 metavar='<optional>',
@@ -93,6 +93,8 @@ def ParseInput(version):
     if len(sys.argv) == 1:
         sys.argv.append('-h')
 
+    db_file=os.environ.get("DB_FILE")
+
     # parser=argparse.ArgumentParser(description='mqtt monitoring', formatter_class=argparse.RawTextHelpFormatter)
     # https://stackoverflow.com/questions/61324536/python-argparse-with-argumentdefaultshelpformatter-and-rawtexthelpformatter
     class UltimateHelpFormatter_xx(argparse.ArgumentDefaultsHelpFormatter, argparse.RawTextHelpFormatter ): pass
@@ -138,6 +140,12 @@ def ParseInput(version):
                         type=str,
                         default=None,
                         help='Telegram group_name related to this application (default: %(default)s)\n\n')
+
+    parser.add_argument('--db-file', default=db_file, ## type=check_file,  non posso nel caso sia dentro lo zip
+                required=False if db_file else True,
+                # required=True,
+                help='sqlite database directory (default: %(default)s)\n')
+
 
 
     single_parser_common_options(parser)
