@@ -403,12 +403,12 @@ def run(gVars: dict, main_config: dict, sqlite_config: dict):
                 # @ToDo:  13-10-2023 da verificare
                 gv.logger.notify("Sending summary to Telegram")
                 for name in gv.tasmotaDevices:
-                    device=gv.tasmotaDevices[device]
+                    device=gv.tasmotaDevices[name]
                     device.sendStatus(payload={"alias": "summary"})
 
 
             if hh in main_config['still_alive_interval_hours']:
-                savePidFile(gv.args.pid_file)
+                # savePidFile(gv.args.pid_file)
                 import pdb; pdb.set_trace();trace=True # by Loreto
                 TSM.send_html(tg_group=obj_appl_device.tg, message="I'm still alive!", caller=True, notify=False)
 

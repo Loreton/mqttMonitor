@@ -52,7 +52,7 @@ if __name__ == '__main__':
     os.environ["DB_FILE"] = "/home/loreto/lnProfile/config/devicesDB_sqLite/data_202405/devicesDB.sqlite_sample"
 
     prj_name=Path(sys.argv[0]).resolve().parent.stem
-    __ln_version__=f"{prj_name} version: V2024-05-03_145219"
+    __ln_version__=f"{prj_name} version: V2024-05-04_082239"
     args=ParseInput(__ln_version__)
 
     logger=setColoredLogger(logger_name=prj_name,
@@ -89,7 +89,8 @@ if __name__ == '__main__':
     # os.system(f"/usr/bin/subl {unresolved_fileout}")
 
     sqlite_config=full_config.pop("sqlite") ### extrai la parte sqlite
-    sqlite_config.db_filepath = args.db_file
+    # sqlite_config.db_filepath = args.db_file
+
     main_config=full_config.pop("main") ### extrai la parte sqlite
 
 

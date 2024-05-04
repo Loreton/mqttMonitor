@@ -1,6 +1,6 @@
 #
 # updated by ...: Loreto Notarantonio
-# Date .........: 03-05-2024 13.41.32
+# Date .........: 04-05-2024 08.20.51
 #
 
 #########################################################
@@ -27,7 +27,9 @@ system_variables: !include system_variables.lnk.yaml#system_envars
 
 
 sqlite:
-    tables: !include devices_DBase.lnk.yaml#tables
 
-    db_filepath:    will be filled by __main__ program
+    !include devices_DBTables.lnk.yaml
+    # tables: !include devices_DBase.lnk.yaml#tables
+
+    # db_filepath:    will be filled by __main__ program
 
