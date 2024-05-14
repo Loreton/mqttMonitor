@@ -52,11 +52,10 @@ dest_Dir="Source/lnLib"
 
 
 
+
+
 dest_Dir="links_conf"
-
-    "${HOME}/lnProfile/config/sysVars/system_variables.yaml"                system_variables.lnk.yaml
-
-    "${HOME}/lnProfile/config/devicesDB_mqtt/D202405/devices_DBTables.yaml"  devices_DBTables.lnk.yaml
-
+    ${HOME}/lnProfile/config/sysVars/system_variables.yaml                        system_variables.lnk.yaml
+    ${HOME}/lnProfile/config/devicesDB/mqtt/D202405/conf/devices_DBTables.yaml   mqtt_devices_DBase.lnk.yaml
 
 

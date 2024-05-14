@@ -134,5 +134,6 @@ dmypy.json
 .vscode/
 **/bin/*.zip
 conf/*lnk*
+*lnk*
 Source/lnLib/*
 
