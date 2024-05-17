@@ -344,6 +344,12 @@ def run(gVars: dict, main_config: dict, sqlite_config: dict):
 
     #================= open DB  ==================
     gv.devicesDB=devicesDB_Class(db_filepath=sqlite_config.db_filepath, logger=gv.logger)
+    print('''
+        NON posso migrare a sqlite perché:
+        [ERROR] /home/loreto/lnProfile/config/devicesDB/mqtt/D202405/devicesDB.sqlite: ...
+        problem: SQLite objects created in a thread can only be used in that same thread.
+        The object was created in thread id 132161168961536 and this is thread id 132161130935872.
+        ''')
 
 
     topic_list = gv.args.topics
