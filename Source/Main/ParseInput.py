@@ -5,7 +5,7 @@
 # Date .........: 2021-09-17
 #
 # updated by ...: Loreto Notarantonio
-# Date .........: 04-05-2024 08.20.03
+# Date .........: 17-05-2024 14.14.34
 #
 
 import  sys; sys.dont_write_bytecode = True
@@ -141,10 +141,17 @@ def ParseInput(version):
                         default=None,
                         help='Telegram group_name related to this application (default: %(default)s)\n\n')
 
-    # parser.add_argument('--db-file', default=db_file, ## type=check_file,  non posso nel caso sia dentro lo zip
-    #             required=False if db_file else True,
-    #             # required=True,
-    #             help='sqlite database directory (default: %(default)s)\n')
+
+    parser.add_argument( "--project-env", type=str,
+                            # required='export' in sys.argv or 'load' in sys.argv,
+                            required=False,
+                            default=None,
+                            choices=["devel", "prod", "mqtt"], nargs="?", # just one entry
+                            help=f"""one of th following tables:
+                                    ["devel", "prod", "mqtt"],
+                                    \n\n""".replace('  ', '')
+                        )
+
 
 
 

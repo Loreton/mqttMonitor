@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 03-05-2024 14.57.38
+# Date .........: 17-05-2024 15.03.31
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -48,6 +48,8 @@ def setup(gVars: dict):
 #
 ######################################################
 def in_payload_notify(tasmotaObj, action: str, payload: (dict, str)=None):
+    gv.logger.caller('Entering in function...')
+
     topic_name=tasmotaObj.device_name
     gv.logger.info('processing topic %s - %s ', topic_name, action, stacklevel=2)
 
@@ -60,9 +62,6 @@ def in_payload_notify(tasmotaObj, action: str, payload: (dict, str)=None):
             return
 
 
-
-    # for index in range(tasmotaObj.relays):
-    #     relay_name=tasmotaObj.friendlyNames(index)
 
     relayNames=tasmotaObj.friendlyNames()
 
@@ -165,6 +164,8 @@ def in_payload_notify(tasmotaObj, action: str, payload: (dict, str)=None):
 #
 ######################################################
 def telegram_notify(tasmotaObj: TasmotaClass, payload: (dict, str)=None):
+    gv.logger.caller('Entering in function...')
+
     topic_name=tasmotaObj.device_name
     gv.logger.info('processing topic %s - payload: %s ', topic_name, str(payload))
 
@@ -224,6 +225,8 @@ def telegram_notify(tasmotaObj: TasmotaClass, payload: (dict, str)=None):
 #
 ############################################################
 def notify_telegram_group(tasmotaObj: TasmotaClass, data: (dict, str)):
+    gv.logger.caller('Entering in function...')
+
     tg_notify=False
 
     if isinstance(data, dict):

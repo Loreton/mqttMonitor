@@ -48,14 +48,7 @@ dest_Dir="Source/lnLib"
 
 
 
-
-
-
-
-
-
+set_var@PRJ_ENV='devel/D202405'
 dest_Dir="links_conf"
     ${HOME}/lnProfile/config/sysVars/system_variables.yaml                        system_variables.lnk.yaml
-    ${HOME}/lnProfile/config/devicesDB/mqtt/D202405/conf/devices_DBTables.yaml   mqtt_devices_DBase.lnk.yaml
-
-
+    ${HOME}/lnProfile/config/devicesDB/${PRJ_ENV}/conf/devices_DBTables.yaml     devices_DBase.lnk.yaml

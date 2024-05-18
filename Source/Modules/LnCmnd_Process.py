@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 12-01-2024 07.06.54
+# Date .........: 17-05-2024 15.02.52
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -39,6 +39,8 @@ def setup(gVars: dict):
 #  Per comodità cerco di utilizzare il topic_name==Device_name
 #########################################################
 def process(topic, payload, mqttClient_CB):
+    gv.logger.caller('Entering in function...')
+
     prefix, topic_name, suffix, *rest=topic.split('/')
 
     ### --------------

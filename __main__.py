@@ -54,7 +54,7 @@ project_log_levels={
 if __name__ == '__main__':
     prj_env = "mqtt"
     prj_name="mqttMonitor"
-    __ln_version__=f"{prj_name} version: V2024-05-14_080819"
+    __ln_version__=f"{prj_name} version: V2024-05-17_142950"
     args=ParseInput(__ln_version__)
 
     logger=setColoredLogger(logger_name=prj_name,
@@ -71,6 +71,7 @@ if __name__ == '__main__':
     logger.info('------- Starting -----------')
     logger.warning(__ln_version__)
 
+    os.environ["PRJ_ENV"] = f"{args.project_env}/D202405"
 
     # ----- prepare global project variables
     gv=prepare_gVars.setMainVars(logger=logger, input_args=args, prj_name=prj_name, search_paths=["conf", "links_conf"])
@@ -90,7 +91,7 @@ if __name__ == '__main__':
         sys.exit(1)
     # os.system(f"/usr/bin/subl {unresolved_fileout}")
 
-    sqlite_config = full_config.sqlite.pop(prj_env) ### extrai la parte sqlite
+    sqlite_config = full_config.pop("sqlite") ### extrai la parte sqlite
 
     main_config=full_config.pop("main") ### extrai la parte sqlite
 

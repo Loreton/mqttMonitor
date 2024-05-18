@@ -28,7 +28,7 @@ from    LnTimer import TimerLN as LnTimer
 import  LnCmnd_Process as LnCmnd
 import  Tasmota_Telegram_Notification as tgNotify
 import  TelegramSendMessage as TSM
-from Tasmota_Class import TasmotaClass
+from    Tasmota_Class import TasmotaClass
 
 from devicesDB_sqLite import devicesDB_Class
 
@@ -186,21 +186,21 @@ def on_message(client, userdata, message):
     if gv.clear_retained and message.retain:
         clear_retained_topic(client, message)
 
-
+    gv.logger.info("full topic: %s", full_topic)
 
     """viene rilasciato automaticamente da tasmota
         topic='tasmota/discovery/DC4F22D3B32F/sensors'
         topic='tasmota/discovery/DC4F22D3B32F/config'
     risaliamo al topic_name attraverso il MAC """
     if full_topic.startswith("tasmota/discovery"):
+        gv.logger.info("tasmota/discovery - [topic: %s]", full_topic)
         _tasmota, _discovery, _mac,  suffix, *rest=full_topic.split('/')
         if _mac and not ":" in _mac:
             _mac=':'.join(_mac[i:i+2] for i in range(0,12,2))
 
         if "t" in payload: # contains topic_name
             topic_name=payload["t"]
-            if (obj_device := gv.devicesDB.getMac(mac=_mac)) == {}:
-            # if (obj_device:=gv.obj_devicesDB.getDeviceInstance(mac=_mac)) is None:
+            if (obj_device := gv.devicesDB.getDevice(mac=_mac)) == {}:
                 gv.logger.error("MAC: %s [topic: %s] NOT found in devicesDB.", _mac, full_topic)
                 return
         else:
@@ -216,6 +216,7 @@ def on_message(client, userdata, message):
     first_qualifier, topic_name, *rest=full_topic.split('/')
 
     if first_qualifier in ["LnCmnd"]:
+        gv.logger.info("LnCmd - [topic: %s]", full_topic)
         LnCmnd.process(topic=message.topic, payload=payload, mqttClient_CB=client)
         return
 
@@ -224,10 +225,8 @@ def on_message(client, userdata, message):
     # - prendiamo le caratteristiche del device
     # - device è un object_class e non un dictionary
     # ------------------------------------------------------
-
     if (obj_device := gv.devicesDB.getDevice(name=topic_name)) == {}:
-    # if (obj_device:=gv.obj_devicesDB.getDeviceInstance(dev_name=topic_name)) is None:
-        gv.logger.error("tgGroup: '%s' [topic: %s]  NOT found in devicesDB - payload: %s", topic_name, full_topic, payload)
+        gv.logger.warning("tgGroup: '%s' [topic: %s]  NOT found in devicesDB - payload: %s", topic_name, full_topic, payload)
         return
 
 
@@ -240,7 +239,6 @@ def on_message(client, userdata, message):
     if not obj_device:
         err_msg=f"{full_topic} NON lo vedo come device"
         gv.logger.warning(err_msg)
-        # import pdb; pdb.set_trace();trace=True # by Loreto
         return
 
     elif obj_device.type=="tasmota":
@@ -314,7 +312,7 @@ def setupTasmotaDevice(client, tasmota_device: TasmotaClass):
     topic_name=tasmota_device.device_name
 
     # facciamo il setup ed il refresh del device interessato
-    setup_commands: list[str] = tasmota_device.setup_commands()
+    setup_commands = tasmota_device.setup_commands()
     payload=';'.join(setup_commands)
     # try:
     #     payload=';'.join(setup_commands)
@@ -343,7 +341,7 @@ def run(gVars: dict, main_config: dict, sqlite_config: dict):
     gv=gVars
 
     #================= open DB  ==================
-    gv.devicesDB=devicesDB_Class(db_filepath=sqlite_config.db_filepath, logger=gv.logger)
+    gv.devicesDB=devicesDB_Class(db_filepath=sqlite_config.db_filepath, close_after_read=False, logger=gv.logger)
     print('''
         NON posso migrare a sqlite perché:
         [ERROR] /home/loreto/lnProfile/config/devicesDB/mqtt/D202405/devicesDB.sqlite: ...
@@ -392,6 +390,7 @@ def run(gVars: dict, main_config: dict, sqlite_config: dict):
         sys.exit(1)
 
     client.loop_start()
+
     TSM.send_html(tg_group=gv.appl_device.tg, message="application has been started!", caller=True, notify=True)
     time.sleep(4) # Wait for connection setup to complete
 
@@ -434,7 +433,6 @@ def run(gVars: dict, main_config: dict, sqlite_config: dict):
             os.kill(int(os.getpid()), signal.SIGTERM)
             sys.exit(1)
 
-        # import pdb; pdb.set_trace();trace=True # by Loreto
         sleepTime=60
         gv.logger.warning("vado in sleep: %s seconds", sleepTime)
         gv.logger.warning("vado in sleep: %s seconds", sleepTime)
