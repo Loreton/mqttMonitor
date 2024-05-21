@@ -313,7 +313,15 @@ def setupTasmotaDevice(client, tasmota_device: TasmotaClass):
 
     # facciamo il setup ed il refresh del device interessato
     setup_commands = tasmota_device.setup_commands()
+    setup_commands.insert(0, f"devicename {tasmota_device.device_name}")
+    setup_commands.insert(0, f"topic {topic_name}")
+    index = 0
+    for name in tasmota_device.friendlyNames():
+        index += 1
+        setup_commands.insert(0, f"FriendlyName{index} {name}")
+
     payload=';'.join(setup_commands)
+
     # try:
     #     payload=';'.join(setup_commands)
     # except:
@@ -397,16 +405,19 @@ def run(gVars: dict, main_config: dict, sqlite_config: dict):
 
     print('Started...')
     systemChannelName=f"{hostname}"
-
+    topic_ping = "LnCmnd/mqtt_monitor_application/ping"
     while True:
         mm=int(time.strftime("%M"))
         hh=int(time.strftime("%H"))
         ss=int(time.strftime("%S"))
 
+        now=time.strftime("%H:%M:%S")
+        gv.logger.notify("now is: %s", now)
+
         if mm==0:
+            gv.logger.notify("minute o'clock")
             if hh in main_config['send_status_hours']:
                 # @ToDo:  13-10-2023 da verificare
-                gv.logger.notify("Sending summary to Telegram")
                 for name in gv.tasmotaDevices:
                     device=gv.tasmotaDevices[name]
                     device.sendStatus(payload={"alias": "summary"})
@@ -418,8 +429,8 @@ def run(gVars: dict, main_config: dict, sqlite_config: dict):
                 TSM.send_html(tg_group=obj_appl_device.tg, message="I'm still alive!", caller=True, notify=False)
 
 
-        gv.logger.info('publishing ping mqtt message to restart publish_timer')
-        result=client.publish(topic='LnCmnd/mqtt_monitor_application/ping', payload='publish timer', qos=0, retain=False)
+        gv.logger.notify("publishing ping mqtt message to restart publish_timer: %s", topic_ping)
+        result=client.publish(topic=topic_ping, payload="publish timer", qos=0, retain=False)
 
         """ ho notato che dopo un pò il client va in hang e non cattura più
             i messaggi. Il codice che segue serve a monitorare lo status
@@ -434,20 +445,11 @@ def run(gVars: dict, main_config: dict, sqlite_config: dict):
             sys.exit(1)
 
         sleepTime=60
-        gv.logger.warning("vado in sleep: %s seconds", sleepTime)
-        gv.logger.warning("vado in sleep: %s seconds", sleepTime)
-        gv.logger.warning("vado in sleep: %s seconds", sleepTime)
-        gv.logger.warning("vado in sleep: %s seconds", sleepTime)
-        gv.logger.warning("vado in sleep: %s seconds", sleepTime)
-        gv.logger.warning("vado in sleep: %s seconds", sleepTime)
+        now=time.strftime("%H:%M:%S")
+        gv.logger.notify("[%s] - vado in sleep: %s seconds", now, sleepTime)
         time.sleep(sleepTime)
-        gv.logger.warning("esco dallo sleep di %s seconds", sleepTime)
-        gv.logger.warning("esco dallo sleep di %s seconds", sleepTime)
-        gv.logger.warning("esco dallo sleep di %s seconds", sleepTime)
-        gv.logger.warning("esco dallo sleep di %s seconds", sleepTime)
-        gv.logger.warning("esco dallo sleep di %s seconds", sleepTime)
-        gv.logger.warning("esco dallo sleep di %s seconds", sleepTime)
-
+        now=time.strftime("%H:%M:%S")
+        gv.logger.notify("[%s] - esco dallo sleep di %s seconds", now, sleepTime)
 
 
 
