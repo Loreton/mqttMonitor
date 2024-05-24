@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 20-05-2024 12.18.58
+# Date .........: 23-05-2024 20.57.35
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -100,12 +100,15 @@ def in_payload_notify(tasmotaObj, action: str, payload: (dict, str)=None):
         keys=list(payload.keys())
         if len(keys)==1:
             if keys[0].startswith('POWER'):
+                if keys[0] == "POWER":
+                    keys[0] == "POWER1"
                 telegramReplyMsg={"tg_notify": True}
                 try:
                     cur_relay=int(keys[0].split('POWER')[1])
                 except (Exception) as why: # sotto controllo perch=é non sempre da errore
                     gv.logger.error(why)
                     gv.logger.error(str(why))
+                    import pdb; pdb.set_trace();trace=True # by Loreto
 
                 for index, relay_name in enumerate(relayNames):  ### scan friendly names
                     relay_nr=index+1

@@ -1,7 +1,7 @@
 #!/bin/bash
 # ------------------------------------
 # updated by ...: Loreto Notarantonio
-# Date .........: 17-05-2024 14.18.48
+# Date .........: 21-05-2024 09.18.34
 # ------------------------------------
 
 Environment="ln_ENVARS_DIR=/home/pi/lnProfile/envars"
@@ -27,7 +27,10 @@ LOG_LEVEL=$1
                 --file-logger-level critical \
                 --logging-dir /tmp/mqttmonitor \
                 --telegram-group-name Ln_MqttMonitor_Client \
+                --project-env mqtt \
                 --topics +/# "
+
+
 
 }
 

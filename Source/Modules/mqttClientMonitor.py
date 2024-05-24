@@ -186,7 +186,7 @@ def on_message(client, userdata, message):
     if gv.clear_retained and message.retain:
         clear_retained_topic(client, message)
 
-    gv.logger.info("full topic: %s", full_topic)
+    # gv.logger.info("full topic: %s", full_topic)
 
     """viene rilasciato automaticamente da tasmota
         topic='tasmota/discovery/DC4F22D3B32F/sensors'
@@ -350,14 +350,6 @@ def run(gVars: dict, main_config: dict, sqlite_config: dict):
 
     #================= open DB  ==================
     gv.devicesDB=devicesDB_Class(db_filepath=sqlite_config.db_filepath, close_after_read=False, logger=gv.logger)
-    print('''
-        NON posso migrare a sqlite perché:
-        [ERROR] /home/loreto/lnProfile/config/devicesDB/mqtt/D202405/devicesDB.sqlite: ...
-        problem: SQLite objects created in a thread can only be used in that same thread.
-        The object was created in thread id 132161168961536 and this is thread id 132161130935872.
-        ''')
-
-
     topic_list = gv.args.topics
     # topics_name_list = gv["topics"]
     gv.tasmotaDevices={}

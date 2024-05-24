@@ -5,7 +5,7 @@
 # Date .........: 2021-09-17
 #
 # updated by ...: Loreto Notarantonio
-# Date .........: 17-05-2024 14.14.34
+# Date .........: 21-05-2024 09.16.41
 #
 
 import  sys; sys.dont_write_bytecode = True
@@ -107,15 +107,30 @@ def ParseInput(version):
 
 
     parser.add_argument('--topics',
+                                type=str,
                                 metavar='topics',
                                 required=True,
                                 default=['+/#'],
                                 # nargs='*',
-                                nargs='+', type=str,
+                                nargs='+',
                                 help="""topics to listen, delimited by spaces.
         Es: --topics topic1 topic2 +/#
             (default: %(default)s)
     """)
+
+
+    parser.add_argument("--project-env",
+                            type=str,
+                            metavar='-',
+                            required=True,
+                            default="mqtt",
+                            choices=["devel", "prod", "mqtt"], nargs="?", # just one entry
+                            help="""one of the following tables:
+                                    ["devel", "prod", "mqtt"]
+                                    (default: %(default)s)
+                    """ )
+
+
     parser.add_argument('--clear-retained',
                         action='store_true',
                         help='''clear retained messages (topic +/# far all) (default: %(default)s)\n\n''')
@@ -134,6 +149,7 @@ def ParseInput(version):
                         type=int,
                         help="period to save device data on file (default: %(default)s)\n\n")
 
+
     parser.add_argument('--telegram-group-name',
                         metavar='-',
                         required=True,
@@ -142,15 +158,6 @@ def ParseInput(version):
                         help='Telegram group_name related to this application (default: %(default)s)\n\n')
 
 
-    parser.add_argument( "--project-env", type=str,
-                            # required='export' in sys.argv or 'load' in sys.argv,
-                            required=False,
-                            default=None,
-                            choices=["devel", "prod", "mqtt"], nargs="?", # just one entry
-                            help=f"""one of th following tables:
-                                    ["devel", "prod", "mqtt"],
-                                    \n\n""".replace('  ', '')
-                        )
 
 
 
