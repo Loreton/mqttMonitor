@@ -36,10 +36,10 @@ project_log_levels={
     "critical": 50,
     "error":    40,
     "warning":  30,
-    "function": 25,
+    "notify":   25,
     "info":     20,
-    "notify":   18,
-    "caller":   12,
+    "function": 18,
+    "caller":   15,
     "debug":    10,
     "trace":    5,
     "notset":   0,
@@ -54,7 +54,7 @@ project_log_levels={
 if __name__ == '__main__':
     prj_env = "mqtt"
     prj_name="mqttMonitor"
-    __ln_version__=f"{prj_name} version: V2024-05-17_142950"
+    __ln_version__=f"{prj_name} version: V2024-05-25_073116"
     args=ParseInput(__ln_version__)
 
     logger=setColoredLogger(logger_name=prj_name,

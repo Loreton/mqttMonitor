@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
-# Date .........: 23-05-2024 20.57.35
+# Date .........: 25-05-2024 08.14.21
 
 # https://github.com/python-telegram-bot/python-telegram-bot
 
@@ -128,8 +128,8 @@ def in_payload_notify(tasmotaObj, action: str, payload: (dict, str)=None):
 
 
 
-        else:
-            gv.logger.warning('payload non contiene keys: %s - %s', type(payload), payload)
+        # else:
+        #     gv.logger.warning('power_in_payload ma non contiene la key POWER: %s', payload)
 
 
     ### Tested
@@ -236,19 +236,20 @@ def notify_telegram_group(tasmotaObj: TasmotaClass, data: (dict, str)):
     gv.logger.caller('Entering in function...')
 
     tg_notify=False
+    tg=tasmotaObj.tg()
 
     if isinstance(data, dict):
         if "tg_notify" in data:
             tg_notify=data.pop("tg_notify")
 
         tg_msg=benedict(data, keypath_separator='§') ### potrebbe esserci il '.' da qualche parte e lo '/' non va bene per il parsemode 'html'
-        gv.logger.notify('tg_msg: %s', tg_msg.to_json())
+        gv.logger.debug('tg_msg: %s', tg_msg.to_json())
 
-        gv.logger.notify('sending telegram message: %s', tg_msg)
+        gv.logger.notify('sending telegram message: %s: %s', tg.name, tg_msg)
         tg_msg=dictUtils.dict_bold_italic(tg_msg, keys='bold', values='italic', nlevels=2)
     else:
         tg_msg=data
 
-    # gv.telegramMessage.send_html(tg_group=topic_name, message=tg_msg, caller=True, notify=tg_notify) # @ToDo:  10-10-2023 tg_group deve essere un dictionary
+    if not data: return
     gv.telegramMessage.send_html(tg_group=tasmotaObj.tg(), message=tg_msg, caller=True, notify=tg_notify) # @ToDo:  10-10-2023 tg_group deve essere un dictionary
 

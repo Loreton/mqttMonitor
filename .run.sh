@@ -1,7 +1,7 @@
 #!/bin/bash
 # ------------------------------------
 # updated by ...: Loreto Notarantonio
-# Date .........: 21-05-2024 09.18.34
+# Date .........: 25-05-2024 07.39.27
 # ------------------------------------
 
 Environment="ln_ENVARS_DIR=/home/pi/lnProfile/envars"
@@ -35,6 +35,6 @@ LOG_LEVEL=$1
 }
 
 
-main "info"
+main "notify"
 echo $cmd $@
 $cmd $@

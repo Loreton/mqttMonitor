@@ -92,10 +92,10 @@ signal.signal(signal.SIGINT, signal_handler_Mqtt)
 ####################################################################
 def clear_retained_topic(client, message):
     _msg=str(message.payload.decode("utf-8"))
-    gv.logger.warning('Trying to clear retained on message: %s topic: %s', _msg, message.topic)
+    gv.logger.notify('Trying to clear retained on message: %s topic: %s', _msg, message.topic)
     _msg=''
     result=client.publish(message.topic, _msg, qos=0, retain=True)
-    gv.logger.warning(result)
+    gv.logger.notify(result)
 
 
 ####################################################################
@@ -166,7 +166,7 @@ def checkPayload(message):
 ####################################################################
 def on_message(client, userdata, message):
     gv.publish_timer.restart(seconds=100, stacklevel=4) # if message has been received means application is alive.
-    gv.logger.info("Received:")
+    gv.logger.notify("\nReceived:")
     full_topic=message.topic
     payload=checkPayload(message)
     formatted_payload=payload.to_yaml() if isinstance(payload, benedict) else payload
@@ -174,12 +174,12 @@ def on_message(client, userdata, message):
 
     if message.retain==1:
         gv.logger.notify("   topic: %s - retained: %s", full_topic, message.retain)
-        gv.logger.info("   payload: %s", formatted_payload)
+        gv.logger.notify("   payload: %s", formatted_payload)
         if full_topic=='tele/xxxxxVecoviNew/LWT': # forzatura per uno specifico....
             clear_retained_topic(client, message)
     else:
-        gv.logger.info("   topic: %s", full_topic)
-        gv.logger.info("   payload: %s", formatted_payload)
+        gv.logger.notify("   topic: %s", full_topic)
+        gv.logger.debug("   payload: %s", formatted_payload)
 
 
 
@@ -259,11 +259,11 @@ def on_message(client, userdata, message):
         tasmota_device.processMqttMessage(full_topic=full_topic, payload=payload, mqttClient_CB=client)
 
 
-    elif obj_device.type()=='shelly':
+    elif obj_device.type=='shelly':
         err_msg="per gli shelly non ancora implementato"
         gv.logger.warning(err_msg)
 
-    elif obj_device.type()=='application':
+    elif obj_device.type=='application':
         err_msg="per i gruppi tipo application non ancora implementato"
         gv.logger.warning(err_msg)
 
