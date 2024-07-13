@@ -1,6 +1,6 @@
 #
 # updated by ...: Loreto Notarantonio
-# Date .........: 17-05-2024 14.03.08
+# Date .........: 08-07-2024 17.14.33
 #
 
 #########################################################
@@ -26,6 +26,11 @@ main:
 system_variables: !include system_variables.lnk.yaml#system_envars
 
 
+# sqlite:
+#     !include devices_DBase.lnk.yaml
+
+
+
 sqlite:
     !include devices_DBase.lnk.yaml
-
+    # !include "${HOME}/lnProfile/devicesDB/${DB_VERSION_DIR}/conf/devices_DBTables.yaml"

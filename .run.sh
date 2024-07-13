@@ -1,7 +1,7 @@
 #!/bin/bash
 # ------------------------------------
 # updated by ...: Loreto Notarantonio
-# Date .........: 25-05-2024 07.39.27
+# Date .........: 08-07-2024 17.12.20
 # ------------------------------------
 
 Environment="ln_ENVARS_DIR=/home/pi/lnProfile/envars"
@@ -27,14 +27,18 @@ LOG_LEVEL=$1
                 --file-logger-level critical \
                 --logging-dir /tmp/mqttmonitor \
                 --telegram-group-name Ln_MqttMonitor_Client \
-                --project-env mqtt \
                 --topics +/# "
 
 
 
 }
 
+args=$*
+echo "${TAB}script args:   $args"
+word='--go'; [[ " $args " == *" $word "* ]] && args=${args//$word/} && g_fEXECUTE=1 && g_DRY_RUN=''
+g_Args=$(echo $args) # remove BLANKs
+echo "${TAB}application args:   $g_Args"
 
-main "notify"
-echo $cmd $@
-$cmd $@
+main "notify" # set log level
+echo -e "\n" $cmd $g_Args
+[[ "$g_fEXECUTE" == "1" ]] && $cmd $g_Args || echo -e '\n     entrer --go to execute\n'

@@ -166,7 +166,8 @@ def checkPayload(message):
 ####################################################################
 def on_message(client, userdata, message):
     gv.publish_timer.restart(seconds=100, stacklevel=4) # if message has been received means application is alive.
-    gv.logger.notify("\nReceived:")
+
+    gv.logger.notify("Received:\n")
     full_topic=message.topic
     payload=checkPayload(message)
     formatted_payload=payload.to_yaml() if isinstance(payload, benedict) else payload
@@ -179,7 +180,10 @@ def on_message(client, userdata, message):
             clear_retained_topic(client, message)
     else:
         gv.logger.notify("   topic: %s", full_topic)
-        gv.logger.debug("   payload: %s", formatted_payload)
+        if gv.args.just_monitor:
+            gv.logger.notify("   payload: %s", formatted_payload)
+        else:
+            gv.logger.debug("   payload: %s", formatted_payload)
 
 
 
@@ -225,7 +229,10 @@ def on_message(client, userdata, message):
     # - prendiamo le caratteristiche del device
     # - device è un object_class e non un dictionary
     # ------------------------------------------------------
+    # if topic_name=="Orto_4ch":
+    #     import pdb; pdb.set_trace();print(topic_name) # by Loreto
     if (obj_device := gv.devicesDB.getDevice(name=topic_name)) == {}:
+        # import pdb; pdb.set_trace();trace=True # by Loreto
         gv.logger.warning("tgGroup: '%s' [topic: %s]  NOT found in devicesDB - payload: %s", topic_name, full_topic, payload)
         return
 
@@ -398,6 +405,9 @@ def run(gVars: dict, main_config: dict, sqlite_config: dict):
     print('Started...')
     systemChannelName=f"{hostname}"
     topic_ping = "LnCmnd/mqtt_monitor_application/ping"
+    sleepTime=10
+    last_publish_remaining_time = 0
+
     while True:
         mm=int(time.strftime("%M"))
         hh=int(time.strftime("%H"))
@@ -407,9 +417,8 @@ def run(gVars: dict, main_config: dict, sqlite_config: dict):
         gv.logger.notify("now is: %s", now)
 
         if mm==0:
-            gv.logger.notify("minute o'clock")
+            gv.logger.notify("hour o'clock")
             if hh in main_config['send_status_hours']:
-                # @ToDo:  13-10-2023 da verificare
                 for name in gv.tasmotaDevices:
                     device=gv.tasmotaDevices[name]
                     device.sendStatus(payload={"alias": "summary"})
@@ -418,7 +427,7 @@ def run(gVars: dict, main_config: dict, sqlite_config: dict):
             if hh in main_config['still_alive_interval_hours']:
                 # savePidFile(gv.args.pid_file)
                 import pdb; pdb.set_trace();trace=True # by Loreto
-                TSM.send_html(tg_group=obj_appl_device.tg, message="I'm still alive!", caller=True, notify=False)
+                TSM.send_html(tg_group=gv.appl_device.tg, message="I'm still alive!", caller=True, notify=False)
 
 
         gv.logger.notify("publishing ping mqtt message to restart publish_timer: %s", topic_ping)
@@ -428,15 +437,20 @@ def run(gVars: dict, main_config: dict, sqlite_config: dict):
             i messaggi. Il codice che segue serve a monitorare lo status
             dell'applicazione e farla ripartire se necessario.
             publish_timer if exausted means that the application is NOT responding """
-        if gv.publish_timer.remaining_time() <= 0:
+        publish_remaining_time = gv.publish_timer.remaining_time()
+
+        gv.logger.notify("publish remaining time: %s - last_publish_remaining_time: %s", publish_remaining_time, last_publish_remaining_time)
+
+        if (gv.publish_timer.remaining_time() <= 0) or (publish_remaining_time == last_publish_remaining_time):
             gv.logger.error('publish_timer - exausted')
             gv.logger.error('restarting application')
-            TSM.send_html(tg_group=obj_appl_device.tg, message="publish_timer - exausted - application is restarting!", caller=True, notify=False)
+            TSM.send_html(tg_group=gv.appl_device.tg, message="publish_timer - exausted - application is restarting!", caller=True, notify=False)
 
             os.kill(int(os.getpid()), signal.SIGTERM)
             sys.exit(1)
 
-        sleepTime=60
+        last_publish_remaining_time = publish_remaining_time
+
         now=time.strftime("%H:%M:%S")
         gv.logger.notify("[%s] - vado in sleep: %s seconds", now, sleepTime)
         time.sleep(sleepTime)

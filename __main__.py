@@ -54,8 +54,9 @@ project_log_levels={
 if __name__ == '__main__':
     prj_env = "mqtt"
     prj_name="mqttMonitor"
-    __ln_version__=f"{prj_name} version: V2024-05-25_073116"
-    args=ParseInput(__ln_version__)
+    base_devicesdb_dir = os.path.expandvars("${HOME}/lnProfile/devicesDB")
+    __ln_version__=f"{prj_name} version: V2024-07-08_171255"
+    args=ParseInput(__ln_version__, db_dir=base_devicesdb_dir)
 
     logger=setColoredLogger(logger_name=prj_name,
                             console_logger_level=args.console_logger_level,
@@ -69,9 +70,8 @@ if __name__ == '__main__':
     # testLogger()
 
     logger.info('------- Starting -----------')
-    logger.warning(__ln_version__)
+    logger.notify(__ln_version__)
 
-    os.environ["PRJ_ENV"] = f"{args.project_env}/D202405"
 
     # ----- prepare global project variables
     gv=prepare_gVars.setMainVars(logger=logger, input_args=args, prj_name=prj_name, search_paths=["conf", "links_conf"])
@@ -81,7 +81,9 @@ if __name__ == '__main__':
     # -------------------------------
     # ----- Load configuration data
     # -------------------------------
-    os.environ["DB_NAME"]="devicesDB"
+    # os.environ["DB_NAME"]="devicesDB"
+    os.environ["DB_VERSION_DIR"] = args.db_version_dir # if args.db_dir else Path(base_devicesdb_dir) / "D20240618"
+
     config_file=f"{prj_name}_config.yaml"
     gv.exit_on_config_file_not_found=True
 

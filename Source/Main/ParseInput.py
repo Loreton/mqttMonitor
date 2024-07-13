@@ -5,17 +5,18 @@
 # Date .........: 2021-09-17
 #
 # updated by ...: Loreto Notarantonio
-# Date .........: 21-05-2024 09.16.41
+# Date .........: 08-07-2024 17.11.38
 #
 
 import  sys; sys.dont_write_bytecode = True
 import  os
+from pathlib import Path
 
 import argparse
 
+
 # -----------------------------
-def check_dir(path):
-    from pathlib import Path
+def check_log_dir(path):
     p = Path(path).resolve()
     if p.is_dir():
         return str(p)
@@ -24,11 +25,30 @@ def check_dir(path):
         return str(p)
 
 
+# -----------------------------
+def check_db_dir(path):
+    p = Path(base_device_db_dir) / path
+    if (p).is_dir():
+        return str(p.resolve())
+    else:
+        print(f"""\n    Input arg ERROR:  {p} doesn't exists.
+            pleas enter on of the following directories
+            under the path: {base_device_db_dir}\n""")
+
+        files=os.listdir(base_device_db_dir)
+        for file in files:
+            if (base_device_db_dir / file).is_dir() and file.startswith("D20"):
+                print("     -", file)
+        print()
+        sys.exit(1)
+
 
 ##############################################################
 # - Parse Input
 ##############################################################
-def ParseInput(version):
+def ParseInput(version: str, db_dir: str):
+    global base_device_db_dir
+    base_device_db_dir = Path(db_dir)
     logger_levels=['trace', 'debug', 'notify', 'info', 'function', 'warning', 'error', 'critical']
 
     # -- add common options to all subparsers
@@ -77,7 +97,7 @@ def ParseInput(version):
 
         _parser.add_argument( "--logging-dir",
                                 metavar='<logger_dir>',
-                                type=check_dir,
+                                type=check_log_dir,
                                 required=True,
                                 default=None,
                                 help=f"""full path of logger directory. It will be created dinamically. \n\n""".replace('  ', '')
@@ -119,16 +139,17 @@ def ParseInput(version):
     """)
 
 
-    parser.add_argument("--project-env",
-                            type=str,
+    parser.add_argument("--db-version-dir",
+                            type=check_db_dir,
                             metavar='-',
                             required=True,
-                            default="mqtt",
-                            choices=["devel", "prod", "mqtt"], nargs="?", # just one entry
-                            help="""one of the following tables:
-                                    ["devel", "prod", "mqtt"]
+                            default=None,
+                            help=f"""directory:
+                                    under path: {base_device_db_dir}
                                     (default: %(default)s)
                     """ )
+
+
 
 
     parser.add_argument('--clear-retained',
