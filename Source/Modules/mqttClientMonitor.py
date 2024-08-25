@@ -21,6 +21,7 @@ import  time
 import  subprocess, shlex
 import socket; hostname=socket.gethostname()
 from benedict import benedict
+from pathlib import Path
 
 from    LnTimer import TimerLN as LnTimer
 # from    savePidFile import savePidFile
@@ -254,10 +255,17 @@ def on_message(client, userdata, message):
             tasmota_device: tasmotaClass = TasmotaClass(obj_device=obj_device, gVars=gv)
             gv.tasmotaDevices[obj_device.name]: tasmotaClass = tasmota_device
 
-
             # facciamo il setup ed il refresh solo per quelli monitorati
             setupTasmotaDevice(client=client, tasmota_device=tasmota_device)
+            # gv.tasmotaDevices[obj_device.name]["telegramNotification_timer"] = LnTimer(name=f'{obj_device.name} - telegramNotification_timer',
+            #                                                                         start=True,
+            #                                                                         default_time=60,
+            #                                                                         stacklevel=3,
+            #                                                                         logger=gv.logger)
+            # gv.tasmotaDevices[obj_device.name].telegramNotification_timer.start(seconds=60, stacklevel=3) # stop noification for 120 seconds after start
 
+            # print(gv.tasmotaDevices[obj_device.name].to_yaml())
+            # import pdb; pdb.set_trace();trace=True # by Loreto
 
         else:
             tasmota_device: tasmotaClass = gv.tasmotaDevices[obj_device.name]
@@ -355,8 +363,12 @@ def run(gVars: dict, main_config: dict, sqlite_config: dict):
     global gv
     gv=gVars
 
-    #================= open DB  ==================
-    gv.devicesDB=devicesDB_Class(db_filepath=sqlite_config.db_filepath, close_after_read=False, logger=gv.logger)
+    #================= open mqtt DB  ==================
+    db_filepath = Path(sqlite_config.db_filepath)
+    mqtt_db_filepath = f'{db_filepath.parent}/{db_filepath.stem}_mqtt{db_filepath.suffix}'
+    gv.devicesDB=devicesDB_Class(db_filepath=mqtt_db_filepath, close_after_read=False, logger=gv.logger)
+
+
     topic_list = gv.args.topics
     # topics_name_list = gv["topics"]
     gv.tasmotaDevices={}
@@ -382,13 +394,16 @@ def run(gVars: dict, main_config: dict, sqlite_config: dict):
 
     client_id = f'LnMqttMonitor-{random.randint(0, 1000)}'
     gv.logger.notify("mqtt client_ID: %s", client_id)
-    gv.broker = gv.devicesDB.getBroker(name=main_config.mqtt_broker_name)
+    # gv.broker = gv.devicesDB.getBroker(name=main_config.mqtt_broker_name)
+    gv.broker = gv.devicesDB.getBroker(name=gv.args.broker_name)
     client=connect_mqtt(client_id)
     gv.client=client
     subscribe(client, topic_list)
 
     gv.publish_timer=LnTimer(name='mqtt publish', default_time=100, stacklevel=3, logger=gv.logger)
     gv.publish_timer.start(seconds=100, stacklevel=3)
+
+
 
 
     if gv.args.just_monitor:

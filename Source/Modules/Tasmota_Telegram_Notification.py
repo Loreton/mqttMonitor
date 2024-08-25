@@ -235,6 +235,16 @@ def telegram_notify(tasmotaObj: TasmotaClass, payload: (dict, str)=None):
 def notify_telegram_group(tasmotaObj: TasmotaClass, data: (dict, str)):
     gv.logger.caller('Entering in function...')
 
+
+    # print(tasmotaObj.telegramNotification_timer.name)
+    # print(tasmotaObj.telegramNotification_timer.isExausted())
+    # print(tasmotaObj.telegramNotification_timer.remainingTime())
+    # import pdb; pdb.set_trace();trace=True # by Loreto
+
+    if tasmotaObj.telegramNotification_timer.isRunning():
+        gv.logger.warning("message not delivered to Telegram dut to silent notification timer. Remainig: %s", tasmotaObj.telegramNotification_timer.remainingTime())
+        return
+
     tg_notify=False
     tg=tasmotaObj.tg()
 
@@ -252,4 +262,3 @@ def notify_telegram_group(tasmotaObj: TasmotaClass, data: (dict, str)):
 
     if not data: return
     gv.telegramMessage.send_html(tg_group=tasmotaObj.tg(), message=tg_msg, caller=True, notify=tg_notify) # @ToDo:  10-10-2023 tg_group deve essere un dictionary
-

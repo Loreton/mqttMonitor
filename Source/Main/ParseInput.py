@@ -5,7 +5,7 @@
 # Date .........: 2021-09-17
 #
 # updated by ...: Loreto Notarantonio
-# Date .........: 08-07-2024 17.11.38
+# Date .........: 14-07-2024 18.01.29
 #
 
 import  sys; sys.dont_write_bytecode = True
@@ -151,6 +151,15 @@ def ParseInput(version: str, db_dir: str):
 
 
 
+
+    parser.add_argument(
+            '--broker-name',
+            metavar='-',
+            type=str,
+            required=True,
+            choices=['LnMqtt', "emq", 'hiveMQ'],
+            help='MQTT broker alias name  (default: %(default)s)'
+        )
 
     parser.add_argument('--clear-retained',
                         action='store_true',
