@@ -1,9 +1,18 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 # updated by ...: Loreto Notarantonio
 # Date .........: 2021-09-17
 
+# VENV https://florianwilhelm.info/2016/10/python_udf_in_hive/
+# VENV https://florianwilhelm.info/2016/10/python_udf_in_hive/
+# VENV https://florianwilhelm.info/2016/10/python_udf_in_hive/
+# VENV https://florianwilhelm.info/2016/10/python_udf_in_hive/
+# VENV https://florianwilhelm.info/2016/10/python_udf_in_hive/
+# VENV https://florianwilhelm.info/2016/10/python_udf_in_hive/
+# VENV https://florianwilhelm.info/2016/10/python_udf_in_hive/
+# VENV https://florianwilhelm.info/2016/10/python_udf_in_hive/
+# VENV https://florianwilhelm.info/2016/10/python_udf_in_hive/
 
 import  sys; sys.dont_write_bytecode = True
 import  os

@@ -104,19 +104,18 @@ def clear_retained_topic(client, message):
 ####################################################################
 def connect_mqtt(client_id: str) -> mqtt_client:
     gv.logger.info("Connecting to MQTT Broker: %s", gv.broker)
-    # def on_connect(client, userdata, flags, rc):
-    def on_connect(client, userdata, flags, reason_code, properties):
-        if reason_code == 0:
+    def on_connect(client, userdata, flags, rc):
+        if rc == 0:
             gv.logger.info("Connected to MQTT Broker!")
         else:
-            gv.logger.info("Failed to connect, return code %d\n", reason_code)
-            gv.telegramMessage.send_html(tg_group=gv.appl_device.tg, message=f"Failed to connect to mqtt, return code:{reason_code}", caller=True) ### markdown dà errore
+            gv.logger.info("Failed to connect, return code %d\n", rc)
+            gv.telegramMessage.send_html(tg_group=gv.appl_device.tg, message=f"Failed to connect to mqtt, return code:{rc}", caller=True) ### markdown dà errore
             os.kill(int(os.getpid()), signal.SIGTERM)
             sys.exit(1)
 
 
-    def on_disconnect(client, userdata, flags, reason_code, properties):
-        logging.info("disconnecting reason: %s", reason_code)
+    def on_disconnect(client, userdata, rc):
+        logging.info("disconnecting reason: %s", rc)
         client.loop_stop()
         client.connected_flag=False
         client.disconnect_flag=True
@@ -129,7 +128,7 @@ def connect_mqtt(client_id: str) -> mqtt_client:
         broker=gv.broker
         # auth=dict(broker.auth)
 
-    client = mqtt_client.Client(mqtt_client.CallbackAPIVersion.VERSION2, client_id)
+    client = mqtt_client.Client(mqtt_client.CallbackAPIVersion.VERSION1, client_id)
     client.on_connect = on_connect
     if broker.password:
         client.username_pw_set(broker.username, broker.password)

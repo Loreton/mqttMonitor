@@ -7,9 +7,11 @@
 Environment="ln_ENVARS_DIR=/home/pi/lnProfile/envars"
 Environment="ln_RUNTIME_DIR=/home/pi/ln_runtime"
 
+VIRTUAL_ENV="${HOME}/.lnVenv/mqttmonitor312"
+PATH="$VIRTUAL_ENV/bin:$PATH"
 
 function production() {
-    cmd="/usr/bin/python /home/loreto/lnProfile/liveProduction/mqttMonitor.zip \
+    cmd="python3 /home/loreto/lnProfile/liveProduction/mqttMonitor.zip \
                 --console-logger-level error \
                 --file-logger-level warning \
                 --logging-dir /tmp/mqttmonitor \
@@ -22,7 +24,7 @@ function production() {
 function main() {
 LOG_LEVEL=$1
 
-    cmd="/usr/bin/python /home/loreto//GIT-REPO/Python/mqttMonitor/__main__.py \
+    cmd="python3 /home/loreto//GIT-REPO/Python/mqttMonitor/__main__.py \
                 --console-logger-level $LOG_LEVEL \
                 --file-logger-level critical \
                 --logging-dir /tmp/mqttmonitor \
@@ -34,7 +36,7 @@ LOG_LEVEL=$1
 
 
 function start() {
-    cmd="/usr/bin/python ${program} \
+    cmd="python3 ${program} \
                 --console-logger-level $LOG_LEVEL \
                 --file-logger-level critical \
                 --logging-dir ${log_dir} \
