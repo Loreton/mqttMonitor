@@ -136,3 +136,5 @@ dmypy.json
 *lnk*
 Source/lnLib/*
 just_as_ref/*
+.venv*/*
+
